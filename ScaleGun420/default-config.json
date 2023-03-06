@@ -5,6 +5,14 @@
     "Your Powers:": { "type": "separator" },
 
     "Big Your Ball": "B",
-    "Small Your Ball": "N"
+    "Small Your Ball": "N",
+
+    "Menu Navigation": { "type": "separator" },
+
+    "Up a layer (default: \"UpArrow\")": "UpArrow",
+    "Down a layer (default: \"DownArrow\")": "DownArrow",
+    "Left in layer (default: \"LeftArrow\")": "LeftArrow",
+    "Right in layer (default: \"RightArrow\")":  "RightArrow"
+
   }
 }
