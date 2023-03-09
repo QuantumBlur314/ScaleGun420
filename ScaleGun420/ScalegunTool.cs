@@ -52,7 +52,7 @@ namespace ScaleGun420
         {
             LoadStaff();
             _staffProp = Instantiate(GameObject.Find("BrittleHollow_Body/Sector_BH/Sector_NorthHemisphere/Sector_NorthPole/Sector_HangingCity" +
-                "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff", Locator.GetPlayerTransform().transform)
+                "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff", Locator.GetPlayerTransform().transform);
             _staffProp.transform.localPosition = new Vector3(0.5496f, -1.11f, -0.119f);
             _staffProp.transform.localEulerAngles = new Vector3(343.8753f, 200.2473f, 345.2718f);
             var streamingRenderMeshHandle = _staffProp.GetComponentInChildren<StreamingRenderMeshHandle>();
