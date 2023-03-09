@@ -34,6 +34,7 @@ namespace ScaleGun420
 
         public GameObject _lookingAt;
         public GameObject _recentTargetObject;
+        public GameObject _vesselThroughWhichIExertMyWill;
         public ScalegunTool _theGunTool;
         public Key GunToggle;        //Idk if it'll be more or less work to prevent gun from working while in ship.  guess we'll find out
         public bool toggleGunKey; //whether right-click & other scout-related actions reach the Scalegun instead
@@ -59,6 +60,7 @@ namespace ScaleGun420
                 ModHelper.Events.Unity.FireOnNextUpdate(
     () =>
     {
+        _vesselThroughWhichIExertMyWill = Locator.GetPlayerTransform().transform;
         this._theGunTool = this.GetRequiredComponentInChildren<ScalegunTool>();        //Same as how the NomaiTranslator tool's Awake() method declares NomaiTranslatorProp
         _theGunTool.SpawnNomaiStaff();
     }
