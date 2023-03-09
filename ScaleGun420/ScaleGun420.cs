@@ -44,20 +44,14 @@ namespace ScaleGun420
         {
             Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly());
             Instance = this;
-            // You won't be able to access OWML's mod helper in Awake.
-            // So you probably don't want to do anything here.
-            // Use Start() instead.
+
         }
 
         private void Start()
         {
-
-            // Starting here, you'll have access to OWML's mod helper.
             ModHelper.Console.WriteLine($"My mod {nameof(ScaleGun420)} is loaded!", MessageType.Success);
             // INewHorizons NewHorizonsAPI = ModHelper.Interaction.TryGetModApi<INewHorizons>("xen.NewHorizons");
 
-
-            // Example of accessing game code.
             LoadManager.OnCompleteSceneLoad += (scene, loadScene) =>
             {
                 if (loadScene != OWScene.SolarSystem) return;
@@ -65,7 +59,8 @@ namespace ScaleGun420
                 ModHelper.Events.Unity.FireOnNextUpdate(
     () =>
     {
-        EquipNomaiStaff();
+        this._theGunTool = this.GetRequiredComponentInChildren<ScalegunTool>();        //Same as how the NomaiTranslator tool's Awake() method declares NomaiTranslatorProp
+        _theGunTool.SpawnNomaiStaff();
     }
 );
 
@@ -76,24 +71,13 @@ namespace ScaleGun420
             // GlobalMessenger<ProbeLauncher>.AddListener("ProbeLauncherEquipped", new Callback<ProbeLauncher>(this.OnProbeLauncherEquipped)); //Listens for ProbeLauncher events
             // GlobalMessenger<ProbeLauncher>.AddListener("ProbeLauncherUnequipped", new Callback<ProbeLauncher>(this.OnProbeLauncherUnequipped));
         }
-        private void EquipNomaiStaff()
-        {
-            LoadStaff();
-            var instancedStaff = Instantiate(GameObject.Find("BrittleHollow_Body/Sector_BH/Sector_NorthHemisphere/Sector_NorthPole/Sector_HangingCity" +
-                "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff"), Locator.GetPlayerTransform().transform);
-            instancedStaff.transform.localPosition = new Vector3(0.5496f, -1.11f, -0.119f);
-            instancedStaff.transform.localEulerAngles = new Vector3(343.8753f, 200.2473f, 345.2718f);  
-            var streamingRenderMeshHandle = instancedStaff.GetComponentInChildren<StreamingRenderMeshHandle>();
-            streamingRenderMeshHandle.OnMeshUnloaded += LoadStaff;
-            void LoadStaff() { StreamingManager.LoadStreamingAssets("brittlehollow/meshes/props"); }
-            ModHelper.Console.WriteLine("THE STICK HAS BEEN LOADED, GET HUNTING");
+        //private void booty()
 
-            instancedStaff.AddComponent<ScalegunTool>();
-            _theGunTool = instancedStaff.GetComponent<ScalegunTool>();
-            instancedStaff.SetActive(true);
-        }
-        private void LoadStaffButDiffrnt()
-        { StreamingManager.LoadStreamingAssets("brittlehollow/meshes/props"); }
+        //  instancedStaff.AddComponent<ScalegunTool>();
+        //   _theGunTool = instancedStaff.GetComponent<ScalegunTool>();    //DO I STILL NEED TO DO THIS NOW THE STAFF IS ALREADY INSIDE ScalegunTool'S CLASS?
+        // instancedStaff.SetActive(true);
+
+
         public override void Configure(IModConfig config)
         {
             Big = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Big Your Ball"));
@@ -114,26 +98,26 @@ namespace ScaleGun420
             if (_gunIsEquipped)
             {
                 _gunIsEquipped = false;
-                _theGunTool.UnequipTool(); 
+                _theGunTool.UnequipTool();
                 ModHelper.Console.WriteLine("unequipped Scalestaff");
             }
             else if (!_gunIsEquipped)
             {
-                PutAwayOtherTools();
+                //PutAwayOtherTools();
                 _gunIsEquipped = true;
                 _theGunTool.EquipTool();
                 ModHelper.Console.WriteLine("equipped Scalestaff");
 
             }
         }
-       
-        public void PutAwayOtherTools()
-        {
-            if (Locator.GetToolModeSwapper().GetToolMode() != ToolMode.Item) //if player is in a toolmode other than Item, unequips the tool
-            {
-                Locator.GetToolModeSwapper().UnequipTool();
-            }
-        }
+
+        //private void PutAwayOtherTools()
+        //{ var currentToolMode = Locator.GetToolModeSwapper().GetToolMode();
+        //   if (currentToolMode != ToolMode.Item || ToolMode.None) //if player is in a toolmode other than Item, unequips the tool
+        //  {
+        //     Locator.GetToolModeSwapper().UnequipTool();
+        // }
+        // }
 
         private void EyesDrillHoles()          //GameObjects have a SetActive method, the menu uses this, maybe it's single-target?  maybe I don't have to use my own thingus?
         {
