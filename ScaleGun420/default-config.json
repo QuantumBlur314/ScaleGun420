@@ -6,13 +6,14 @@
 
     "Big Your Ball": "B",
     "Small Your Ball": "N",
+    "Equip Scalegun":  "H",
 
     "Menu Navigation": { "type": "separator" },
 
-    "Up a layer (default: \"UpArrow\")": "UpArrow",
-    "Down a layer (default: \"DownArrow\")": "DownArrow",
-    "Left in layer (default: \"LeftArrow\")": "LeftArrow",
-    "Right in layer (default: \"RightArrow\")":  "RightArrow"
+    "Up a layer (default: UpArrow)": "UpArrow",
+    "Down a layer (default: DownArrow)": "DownArrow",
+    "Left in layer (default: LeftArrow)": "LeftArrow",
+    "Right in layer (default: RightArrow)":  "RightArrow"
 
   }
 }
