@@ -31,7 +31,6 @@ namespace ScaleGun420
         public Key Right;
         public bool RightBubbon;
 
-
         public GameObject _lookingAt;
         public GameObject _recentTargetObject;
         public GameObject _vesselThroughWhichIExertMyWill;
@@ -47,7 +46,6 @@ namespace ScaleGun420
             Instance = this;
 
         }
-
         private void Start()
         {
             ModHelper.Console.WriteLine($"My mod {nameof(ScaleGun420)} is loaded!", MessageType.Success);
@@ -60,18 +58,32 @@ namespace ScaleGun420
                 ModHelper.Events.Unity.FireOnNextUpdate(
     () =>
     {
-        _vesselThroughWhichIExertMyWill = Locator.GetPlayerTransform().transform;
-        this._theGunTool = this.GetRequiredComponentInChildren<ScalegunTool>();        //Same as how the NomaiTranslator tool's Awake() method declares NomaiTranslatorProp
-        _theGunTool.SpawnNomaiStaff();
+        _vesselThroughWhichIExertMyWill = new GameObject();
+        if (_vesselThroughWhichIExertMyWill != null)
+        { ModHelper.Console.WriteLine("Spawned empty GameObject"); }
+        //_vesselThroughWhichIExertMyWill.transform.SetParent(Locator.GetPlayerTransform());
+
+        _vesselThroughWhichIExertMyWill.transform.rotation = Locator.GetPlayerTransform().transform.rotation;
+        _vesselThroughWhichIExertMyWill.transform.position = Locator.GetPlayerTransform().transform.position;
+        _vesselThroughWhichIExertMyWill.transform.parent = Locator.GetPlayerBody().transform;
+
+
+        if (_vesselThroughWhichIExertMyWill.transform != null)
+        {
+            ModHelper.Console.WriteLine("Got Transforms");
+        }
+        _vesselThroughWhichIExertMyWill.AddComponent<ScalegunTool>();
+        if (_vesselThroughWhichIExertMyWill.GetComponent<ScalegunTool>())
+        { ModHelper.Console.WriteLine("Added ScalegunTool component"); }
+        _theGunTool = _vesselThroughWhichIExertMyWill.GetRequiredComponentInChildren<ScalegunTool>();  //Same as how the NomaiTranslator tool's Awake() method declares NomaiTranslatorProp
+        _vesselThroughWhichIExertMyWill.SetActive(true);
     }
 );
-
             };
             //Local position: 0.5496 -1.121 -0.119
             //Rotation 343.8753 200.2473 345.2718
-
             // GlobalMessenger<ProbeLauncher>.AddListener("ProbeLauncherEquipped", new Callback<ProbeLauncher>(this.OnProbeLauncherEquipped)); //Listens for ProbeLauncher events
-            // GlobalMessenger<ProbeLauncher>.AddListener("ProbeLauncherUnequipped", new Callback<ProbeLauncher>(this.OnProbeLauncherUnequipped));
+
         }
         //private void booty()
 
@@ -97,7 +109,7 @@ namespace ScaleGun420
         {
             //if player is currently wielding another tool 
 
-            if (_gunIsEquipped)
+            if (_gunIsEquipped)  //can use PlayerTools' _isEquipped
             {
                 _gunIsEquipped = false;
                 _theGunTool.UnequipTool();
@@ -106,12 +118,14 @@ namespace ScaleGun420
             else if (!_gunIsEquipped)
             {
                 //PutAwayOtherTools();
+                Locator.GetToolModeSwapper().UnequipTool();      //Use EnumUTILS
                 _gunIsEquipped = true;
                 _theGunTool.EquipTool();
                 ModHelper.Console.WriteLine("equipped Scalestaff");
 
             }
         }
+
 
         //private void PutAwayOtherTools()
         //{ var currentToolMode = Locator.GetToolModeSwapper().GetToolMode();
