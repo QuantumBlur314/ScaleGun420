@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using OWML.Common;
 using OWML.ModHelper;
+using OWML.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -35,9 +36,13 @@ namespace ScaleGun420
         public GameObject _recentTargetObject;
         public GameObject _vesselThroughWhichIExertMyWill;
         public ScalegunTool _theGunTool;
+
         public Key GunToggle;        //Idk if it'll be more or less work to prevent gun from working while in ship.  guess we'll find out
         public bool toggleGunKey; //whether right-click & other scout-related actions reach the Scalegun instead
         public bool _gunIsEquipped;
+
+        public ToolMode SGToolmode;
+
 
         public static ScaleGun420 Instance;
         public void Awake()
@@ -51,6 +56,8 @@ namespace ScaleGun420
             ModHelper.Console.WriteLine($"My mod {nameof(ScaleGun420)} is loaded!", MessageType.Success);
             // INewHorizons NewHorizonsAPI = ModHelper.Interaction.TryGetModApi<INewHorizons>("xen.NewHorizons");
 
+            SGToolmode = EnumUtils.Create<ToolMode>("Scalegun = 10");  //Enum doesn't get created&destroyed over and over, it's a one-time thing anyway, don't have to put it on sceneload
+
             LoadManager.OnCompleteSceneLoad += (scene, loadScene) =>
             {
                 if (loadScene != OWScene.SolarSystem) return;
@@ -58,25 +65,9 @@ namespace ScaleGun420
                 ModHelper.Events.Unity.FireOnNextUpdate(
     () =>
     {
-        _vesselThroughWhichIExertMyWill = new GameObject();
-        if (_vesselThroughWhichIExertMyWill != null)
-        { ModHelper.Console.WriteLine("Spawned empty GameObject"); }
-        //_vesselThroughWhichIExertMyWill.transform.SetParent(Locator.GetPlayerTransform());
-
-        _vesselThroughWhichIExertMyWill.transform.rotation = Locator.GetPlayerTransform().transform.rotation;
-        _vesselThroughWhichIExertMyWill.transform.position = Locator.GetPlayerTransform().transform.position;
-        _vesselThroughWhichIExertMyWill.transform.parent = Locator.GetPlayerBody().transform;
+        ScalegunInit();
 
 
-        if (_vesselThroughWhichIExertMyWill.transform != null)
-        {
-            ModHelper.Console.WriteLine("Got Transforms");
-        }
-        _vesselThroughWhichIExertMyWill.AddComponent<ScalegunTool>();
-        if (_vesselThroughWhichIExertMyWill.GetComponent<ScalegunTool>())
-        { ModHelper.Console.WriteLine("Added ScalegunTool component"); }
-        _theGunTool = _vesselThroughWhichIExertMyWill.GetRequiredComponentInChildren<ScalegunTool>();  //Same as how the NomaiTranslator tool's Awake() method declares NomaiTranslatorProp
-        _vesselThroughWhichIExertMyWill.SetActive(true);
     }
 );
             };
@@ -91,7 +82,28 @@ namespace ScaleGun420
         //   _theGunTool = instancedStaff.GetComponent<ScalegunTool>();    //DO I STILL NEED TO DO THIS NOW THE STAFF IS ALREADY INSIDE ScalegunTool'S CLASS?
         // instancedStaff.SetActive(true);
 
+        private void ScalegunInit()
+        {
+            _vesselThroughWhichIExertMyWill = new GameObject();
+            if (_vesselThroughWhichIExertMyWill != null)
+            { ModHelper.Console.WriteLine("Spawned empty GameObject"); }
+            //_vesselThroughWhichIExertMyWill.transform.SetParent(Locator.GetPlayerTransform());
 
+            _vesselThroughWhichIExertMyWill.transform.rotation = Locator.GetPlayerTransform().transform.rotation;
+            _vesselThroughWhichIExertMyWill.transform.position = Locator.GetPlayerTransform().transform.position;
+            _vesselThroughWhichIExertMyWill.transform.parent = Locator.GetPlayerBody().transform;
+
+
+            if (_vesselThroughWhichIExertMyWill.transform != null)
+            {
+                ModHelper.Console.WriteLine("Got Transforms");
+            }
+            _vesselThroughWhichIExertMyWill.AddComponent<ScalegunTool>();
+            if (_vesselThroughWhichIExertMyWill.GetComponent<ScalegunTool>())
+            { ModHelper.Console.WriteLine("Added ScalegunTool component"); }
+            _theGunTool = _vesselThroughWhichIExertMyWill.GetRequiredComponentInChildren<ScalegunTool>();  //Same as how the NomaiTranslator tool's Awake() method declares NomaiTranslatorProp
+            _vesselThroughWhichIExertMyWill.SetActive(true);
+        }
         public override void Configure(IModConfig config)
         {
             Big = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Big Your Ball"));
@@ -198,11 +210,48 @@ namespace ScaleGun420
             return true;
         }
 
-        // public class ScaleGun420PatchClass
-        // {
-        //   [HarmonyPrefix, HarmonyPatch(typeof(ProbeLauncher), nameof(ProbeLauncher.AllowInput))]
-        //  }
+        public class ScaleGun420PatchClass
+        {
+
+            //in ToolModeSwapper's Awake method, it gets each individual tool by name/type and stores them in its class fields.  This is a problem.  I can't add fields to existing things.
+
+            [HarmonyPrefix, HarmonyPatch(typeof(ToolModeSwapper), nameof(ToolModeSwapper.Update))]
+            public static bool ToolModeSwapper_Update_Prefix(PlayerTool toolMode)
+            { return true; }  //Owl said i might not even have to patch ToolmodeSwapper.Update?  idk how not but
+
+            [HarmonyPrefix, HarmonyPatch(typeof(ToolModeSwapper), nameof(ToolModeSwapper.EquipToolMode))]
+            public static bool ToolModeSwapper_EquipToolMode_Prefix(ToolMode mode, ToolModeSwapper __instance, PlayerTool playerTool)  //instance is for referencing the class currently performing the method you're patching 
+            {
+                ToolMode scalegunMode = Instance.SGToolmode;
+                if (mode != scalegunMode) { return true; }
+
+                {mode = Instance.SGToolmode;
+                    playerTool = ScaleGun420.Instance._theGunTool;
+                }
+
+                //the essentials
+                if (__instance._equippedTool != playerTool)  //if the ToolModeSwapper's currently-equipped tool isn't the newly-set playerTool,
+                {
+                    if (__instance._equippedTool != null)    //and isn't null
+                    {
+                        __instance._equippedTool.UnequipTool();   //unequip the equipped tool,
+                        __instance._nextToolMode = mode;     //set the Instance.SGToolmode mode as ToolModeSwapper's _nextToolMode,
+                        __instance._nextTool = playerTool;        //
+                        __instance._isSwitchingToolMode = true;
+                        return false;                                         //if it's in a prefix that returns Bool, you have to have "return false" not just "return"
+                    }
+                    playerTool.EquipTool();
+                    __instance._equippedTool = playerTool;
+                    __instance._currentToolMode = mode;
+                    __instance._nextToolMode = ToolMode.None;
+                }
+                return false;
+            }
+
+        }
     }
 }
+
+
 
 
