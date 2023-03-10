@@ -109,7 +109,7 @@ namespace ScaleGun420
     }
     public override void UnequipTool()
     {
-            Locator.GetToolModeSwapper().UnequipTool();   //This unequips ANYTHING
+  
         base.UnequipTool();
         base.enabled = true;
             //this._isEquipped = false; //shouldn't need doing?

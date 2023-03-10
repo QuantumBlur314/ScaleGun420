@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using JetBrains.Annotations;
 using OWML.Common;
 using OWML.ModHelper;
 using OWML.Utils;
@@ -11,6 +12,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.SocialPlatforms;
+using static UnityEngine.EventSystems.StandaloneInputModule;
 
 namespace ScaleGun420
 {
@@ -41,6 +43,7 @@ namespace ScaleGun420
         public bool toggleGunKey; //whether right-click & other scout-related actions reach the Scalegun instead
         public bool _gunIsEquipped;
 
+        public ToolModeSwapper _pHSWAPPER;
         public ToolMode SGToolmode;
 
 
@@ -105,6 +108,8 @@ namespace ScaleGun420
             _vesselThroughWhichIExertMyWill.SetActive(true);
         }
         public override void Configure(IModConfig config)
+
+        //InputLibrary USES ENUMS, FOOD FOR THOTS
         {
             Big = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Big Your Ball"));
             Small = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Small Your Ball"));
@@ -120,23 +125,40 @@ namespace ScaleGun420
         private void ToggleScaleGun()    //need to patch ProbeLauncher.AllowInput to account for Scalegun. //Wait, won't that mess with ScalegunTool itself???//Probably also need to patch ProbeLauncher.Update
         {
             //if player is currently wielding another tool 
+            var toolModeSwapper = PlayerBody.FindObjectOfType<ToolModeSwapper>();
+            if (toolModeSwapper._isSwitchingToolMode && !toolModeSwapper._equippedTool.IsEquipped())
+            {
+                toolModeSwapper._equippedTool = toolModeSwapper._nextTool;
+                toolModeSwapper._nextTool = null;
+                if (toolModeSwapper._equippedTool != null)
+                {
+                    toolModeSwapper._equippedTool.EquipTool();
+                }
+                toolModeSwapper._currentToolMode = toolModeSwapper._nextToolMode;
+                toolModeSwapper._nextToolMode = ToolMode.None;
+                toolModeSwapper._isSwitchingToolMode = false;
 
-            if (_gunIsEquipped)  //can use PlayerTools' _isEquipped
-            {
-                _gunIsEquipped = false;
-                _theGunTool.UnequipTool();
-                ModHelper.Console.WriteLine("unequipped Scalestaff");
-            }
-            else if (!_gunIsEquipped)
-            {
-                //PutAwayOtherTools();
-                Locator.GetToolModeSwapper().UnequipTool();      //Use EnumUTILS
-                _gunIsEquipped = true;
-                _theGunTool.EquipTool();
-                ModHelper.Console.WriteLine("equipped Scalestaff");
+                InputMode inputMode = InputMode.Character | InputMode.ShipCockpit;
+                if (OWInput.IsInputMode(inputMode) && toggleGunKey)
+                {
+                    if (toolModeSwapper._currentToolMode == SGToolmode)
+                    {
+                        toolModeSwapper.UnequipTool();  //If you hit the signalscope button while it's already equipped, it puts it away
+                        ModHelper.Console.WriteLine("unequipped Scalestaff");
+                    }
+                    else
+                    {
+                        toolModeSwapper.EquipToolMode(SGToolmode);  //EquipToolMode's your signalscope.  Equipping stuff seems to be close to the end of things
+                        ModHelper.Console.WriteLine("equipped Scalestaff");
+                    }
+
+
+
+                }
 
             }
         }
+
 
 
         //private void PutAwayOtherTools()
@@ -184,8 +206,93 @@ namespace ScaleGun420
             {
                 ToggleScaleGun();
             }
-
         }
+
+
+
+        void OriginalSwapperUpdateTrainwreck(ToolModeSwapper agh)
+        {
+            if (_pHSWAPPER._isSwitchingToolMode && !_pHSWAPPER._equippedTool.IsEquipped())
+            {
+                _pHSWAPPER._equippedTool = _pHSWAPPER._nextTool;
+                _pHSWAPPER._nextTool = null;
+                if (_pHSWAPPER._equippedTool != null)
+                {
+                    _pHSWAPPER._equippedTool.EquipTool();
+                }
+                _pHSWAPPER._currentToolMode = _pHSWAPPER._nextToolMode;
+                _pHSWAPPER._nextToolMode = ToolMode.None;
+                _pHSWAPPER._isSwitchingToolMode = false;
+            }
+
+            InputMode inputMode = InputMode.Character | InputMode.ShipCockpit;    //establishing the inputMode variable here saves time when lots of "if's" will be addressing either of the InputModes it's , 
+            if (!_pHSWAPPER.IsNomaiTextInFocus())
+            {
+                _pHSWAPPER._waitForLoseNomaiTextFocus = false;  //sets _waitForLoseNomaiTextFocus to "false" as preparation for all the stuff checked this update
+            }
+            if (_pHSWAPPER._shipDestroyed && _pHSWAPPER._currentToolGroup == ToolGroup.Ship)    //if you're in the cockpit of a destroyed ship, ToolModeSwapper ignores you
+            {
+                return;
+            }
+            if (_pHSWAPPER._currentToolMode != ToolMode.None && _pHSWAPPER._currentToolMode != ToolMode.Item && (OWInput.IsNewlyPressed(InputLibrary.cancel, inputMode | InputMode.ScopeZoom) || PlayerState.InConversation()))
+            {  //I... THINK? this is what puts tools away when you hit Q or enter a conversation
+                InputLibrary.cancel.ConsumeInput();                     //i think this prevents the cancel input from lingering or being cashed in elsewhere, idk
+                if (_pHSWAPPER.GetAutoEquipTranslator() && _pHSWAPPER._currentToolMode == ToolMode.Translator)  //and if TranslatorAutoEquip is on, probably puts the translator away despite being focused on text?
+                {
+                    _pHSWAPPER._waitForLoseNomaiTextFocus = true;     //then UnequipTool will _waitForLoseNomaiTextFocus  //WHAT IS FOCUS?  DOES THE TRANSLATOR NOT UNEQUIP DURING TIMEFREEZE UNTIL YOU LOOK AWAY?
+                }
+                _pHSWAPPER.UnequipTool();
+            }
+            else if (_pHSWAPPER.IsNomaiTextInFocus() && _pHSWAPPER._currentToolMode != ToolMode.Translator && ((_pHSWAPPER.GetAutoEquipTranslator() && !_pHSWAPPER._waitForLoseNomaiTextFocus) || OWInput.IsNewlyPressed(InputLibrary.interact, inputMode)))
+            {           //Equips translator when not currently equipped once you hit E
+                _pHSWAPPER.EquipToolMode(ToolMode.Translator);
+                if (_pHSWAPPER._firstPersonManipulator.GetFocusedNomaiText() != null && _pHSWAPPER._firstPersonManipulator.GetFocusedNomaiText().CheckTurnOffFlashlight())
+                {  //and if there's FocusedNomaiText (whatever that is) and the text says to turn off your flashlight, then it turns off your flashlight (don't remember encountering this...)
+                    Locator.GetFlashlight().TurnOff(false);  //sets TurnOff to false.  That's a double-double negative!
+                }
+            }
+            else if (_pHSWAPPER._currentToolMode == ToolMode.Translator && !_pHSWAPPER.IsNomaiTextInFocus() && _pHSWAPPER.GetAutoEquipTranslator())
+            { //unequips translator if no spirals are in focus and AutoEquipTranslator is active. (when it's off, the translator stays equipped until you manually stow it.  coolio)
+                _pHSWAPPER.UnequipTool();
+            }
+            else if (OWInput.IsNewlyPressed(InputLibrary.probeLaunch, inputMode)) //PRESSED PROBELAUNCH
+            {
+                if (_pHSWAPPER._currentToolGroup == ToolGroup.Suit && _pHSWAPPER._itemCarryTool.GetHeldItemType() == ItemType.DreamLantern)
+                {
+                    return; //scout doesn't launch or deploy if you're wearing a suit while holding an artifact.
+                }
+                if (((_pHSWAPPER._currentToolMode == ToolMode.None || _pHSWAPPER._currentToolMode == ToolMode.Item) && Locator.GetPlayerSuit().IsWearingSuit(false)) || ((_pHSWAPPER._currentToolMode == ToolMode.None || _pHSWAPPER._currentToolMode == ToolMode.SignalScope) && OWInput.IsInputMode(InputMode.ShipCockpit)))
+                { //( You're suitless, armed with nothing, naught to your name, but perhaps an item.) OR (you have naught, or maybe your signalscope.)  Regardless, in your cockpit, you right click, or otherwise deploy your scout,
+                    _pHSWAPPER.EquipToolMode(ToolMode.Probe);  //and it works idk what this does actually
+                }
+            }
+            else if (OWInput.IsNewlyPressed(InputLibrary.signalscope, inputMode | InputMode.ScopeZoom))
+            {
+                if (PlayerState.InDreamWorld())
+                {
+                    return;  //can't deploy signalscope in the dreamworld.  idk why ScopeZoom is accounted for here.
+                }
+                if (_pHSWAPPER._currentToolMode == ToolMode.SignalScope)
+                {
+                    _pHSWAPPER.UnequipTool();  //If you hit the signalscope button while it's already equipped, it puts it away
+                }
+                else
+                {
+                    _pHSWAPPER.EquipToolMode(ToolMode.SignalScope);  //EquipToolMode's your signalscope.  Equipping stuff seems to be close to the end of things
+                }
+            }
+            bool flag = _pHSWAPPER._itemCarryTool.UpdateInteract(_pHSWAPPER._firstPersonManipulator, _pHSWAPPER.IsItemToolBlocked());  //UpdateInteract handles both picking up and setting down i think? 
+            if (!_pHSWAPPER._itemCarryTool.IsEquipped() && flag)  //if a carried item tool isn't equipped and can't be placed(?)
+            {
+                _pHSWAPPER.EquipToolMode(ToolMode.Item);  //equips the itemTool?
+                return;
+            }
+            if (_pHSWAPPER._itemCarryTool.GetHeldItem() != null && _pHSWAPPER._currentToolMode == ToolMode.None && OWInput.IsInputMode(InputMode.Character) && !OWInput.IsChangePending())
+            {//if you're holding a not-currently-equipped item, and current toolmode is none, and you're not at a cockpit, and no change is pending
+                _pHSWAPPER.EquipToolMode(ToolMode.Item);  //equip the itemTool 
+            }
+        }
+
         private void FixedUpdate()  //ripped from BlackHolePortalGun
         { }
 
@@ -225,7 +332,8 @@ namespace ScaleGun420
                 ToolMode scalegunMode = Instance.SGToolmode;
                 if (mode != scalegunMode) { return true; }
 
-                {mode = Instance.SGToolmode;
+                {
+                    mode = scalegunMode;
                     playerTool = ScaleGun420.Instance._theGunTool;
                 }
 
