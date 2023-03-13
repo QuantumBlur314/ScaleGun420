@@ -227,26 +227,26 @@ namespace ScaleGun420
                     return true;
                 }
                 
-               // PlayerTool playerTool = ScaleGun420.Instance._theGunToolClass;
-              //  ScaleGun420.Instance.ModHelper.Console.WriteLine("Reached EquipToolMode prefix at least!");
+                PlayerTool playerTool = ScaleGun420.Instance._theGunToolClass;
+                ScaleGun420.Instance.ModHelper.Console.WriteLine("Reached EquipToolMode prefix at least!");
 
-                //vv copied from the end of the normal EquipToolMode vv
+              //vv copied from the end of the normal EquipToolMode vv
 
-                //if (__instance._equippedTool != playerTool)  //if the ToolModeSwapper's currently-equipped tool isn't the newly-set playerTool,
-                //{
-                //    if (__instance._equippedTool != null)    //and isn't null
-                //    {
-                //        __instance._equippedTool.UnequipTool();   //unequip the equipped tool,
-               //         __instance._nextToolMode = mode;     //set the Instance.SGToolmode mode as ToolModeSwapper's _nextToolMode,  THIS PATCH'S BASE-GAME COUNTERPART ISN'T 
-               //         __instance._nextTool = playerTool;        //THIS IS HOW MIMICKUPDATE GETS ITS _nextTOOL AND WITHOUT THE PATCH FUNCTIONING NOTHING WILL HAPPEN
-               //         __instance._isSwitchingToolMode = true;
-               //         return false;                                         //if it's in a prefix that returns Bool, you have to have "return false" not just "return"
-               //     }
-                 //   playerTool.EquipTool();                                        ////CHECK ScalegunTool.EquipTool(); FIRST
-                 //   __instance._equippedTool = playerTool;
-                //    __instance._currentToolMode = mode;
-                //    __instance._nextToolMode = ToolMode.None;
-               // }
+                if (__instance._equippedTool != playerTool)  //if the ToolModeSwapper's currently-equipped tool isn't the newly-set playerTool,
+                {
+                    if (__instance._equippedTool != null)    //and isn't null
+                    {
+                        __instance._equippedTool.UnequipTool();   //unequip the equipped tool,
+                        __instance._nextToolMode = mode;     //set the Instance.SGToolmode mode as ToolModeSwapper's _nextToolMode,  THIS PATCH'S BASE-GAME COUNTERPART ISN'T 
+                        __instance._nextTool = playerTool;        //THIS IS HOW MIMICKUPDATE GETS ITS _nextTOOL AND WITHOUT THE PATCH FUNCTIONING NOTHING WILL HAPPEN
+                        __instance._isSwitchingToolMode = true;
+                        return false;                                         //if it's in a prefix that returns Bool, you have to have "return false" not just "return"
+                    }
+                    playerTool.EquipTool();                                        ////CHECK ScalegunTool.EquipTool(); FIRST
+                    __instance._equippedTool = playerTool;
+                    __instance._currentToolMode = mode;
+                    __instance._nextToolMode = ToolMode.None;
+                }
                 return false;
             }
 
