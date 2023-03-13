@@ -17,8 +17,7 @@ namespace ScaleGun420
     {
         private Transform _scalegunToolTransform; //used by Awake
         public GameObject _staffProp;
-        public GameObject _staffGameobject;
-
+        public GameObject _staffGameobject; //make some debug keybinds to toggle the object active/inactive.  Should be ez
 
 
         private void Awake()         //IS AWAKE EVEN BEING CALLED?
@@ -27,13 +26,13 @@ namespace ScaleGun420
 
             RenderNomaiStaff();
             StealOtherToolTransforms();  //NOT THE CULPRIT
-            _staffProp.SetActive(false);
+            _staffProp.SetActive(false);      //UNNECESSARY????    //Idk brop, NomaiTranslatorProp SetsActive(false) on Awake
         }
  
         public override void Start()
         {
             base.Start();
-            base.enabled = true;
+            base.enabled = true;  //UNNECESSARY?
         }
 
 
@@ -47,7 +46,6 @@ namespace ScaleGun420
             var streamingRenderMeshHandle = _staffProp.GetComponentInChildren<StreamingRenderMeshHandle>();
             streamingRenderMeshHandle.OnMeshUnloaded += LoadStaff;
             void LoadStaff() { StreamingManager.LoadStreamingAssets("brittlehollow/meshes/props"); }
-            _staffProp.SetActive(false);
         }
         private void StealOtherToolTransforms()
         {
@@ -69,7 +67,7 @@ namespace ScaleGun420
         public override bool HasEquipAnimation()            //RETURNS TRUE ONLY IF ScalegunTool._stowTransform && ScalegunTool._holdTransform AREN'T NULL; SET THESE!
         {
             bool hasEquipAnimation = (this._stowTransform != null && this._holdTransform != null);
-            ScaleGun420.Instance.ModHelper.Console.WriteLine($"HasEquipAnimation returned {hasEquipAnimation}");
+            ScaleGun420.Instance.ModHelper.Console.WriteLine($"Reminder: HasEquipAnimation returned {hasEquipAnimation} and will continue to do so until you sort this out");
             return base.HasEquipAnimation();
         }
         public override bool AllowEquipAnimation()
@@ -78,12 +76,12 @@ namespace ScaleGun420
         }
 
 
-        public override void EquipTool()          // skips animation if HasEquipAnimation is false, BUT SHOULD STILL WORK WITHOUT IT
+        public override void EquipTool()          // IS NEVER BEING CALLED FOR SOME REASON?????
         {
             ScaleGun420.Instance.ModHelper.Console.WriteLine($"called ScalegunTool.EquipTool");
             base.EquipTool();
 
-            base.enabled = true;
+            //base.enabled = true;  ALREADY PART OF base.EquipTool
             // this._isEquipped = true;
             if (this._staffProp)
             {
@@ -94,62 +92,50 @@ namespace ScaleGun420
         public override void UnequipTool()          //CALLED BY ToolModeSwapper.EquipToolMode(ToolMode toolMode), which is itself called by ToolModeSwapper.Update
         {
             ScaleGun420.Instance.ModHelper.Console.WriteLine($"called UnequipTool");
-            base.UnequipTool();         //nothing's being called
+            base.UnequipTool();         //nothing's being called   
 
-            base.enabled = true;
-            //this._isEquipped = false; //shouldn't need doing?
-            if (this._staffProp)
-            { this._staffProp.SetActive(false); } //NEED TO WAIT FOR PUT-AWAY ANIM TO FINISH
+            base.enabled = false;         //changed from "true" to "false" idk why tho //base.UnequipTool SETS _isPuttingAway TO TRUE, THEN PlayerTool.Update APPLIES THE STOWTRANSFORMS THEN SETS base.enabled = false ONCE DONE ANIMATING
+            //if (this._staffProp)
+           // { this._staffProp.SetActive(false); } //NEED TO WAIT FOR PUT-AWAY ANIM TO FINISH
         }
 
-        private void OnscalegunEquipped(ScalegunTool tool)  //might be useful 
-        {
-            if (tool == this)
-            {
-                Locator.GetPlayerAudioController().PlayEquipTool();
-                return;
-            }
+
             //if (this._shareActiveProbes && launcher.SharesActiveProbes() && this. != null)  //References GunInterface
             //{
             //  launcher.SetActiveProbe(this._activeProbe);
 
-        }
+        
         public override void Update()           //PlayerTool's default update handles deploy animations and nothing else.  I've confirmed it's running.
         {
             base.Update();        //DEPLOY ANIMS HANDLED BY PlayerTool.Update; Everything else here is for Scalegun functions
-            if (!this._isEquipped || this._isPuttingAway)           //Only does additional stuff if ScalegunTool is equipped.
+            if (!this._isEquipped || this._isPuttingAway)           //Only does additional stuff if ScalegunTool is equipped.  DISABLED ON A HUNCH  UPDATE HUNCH WAS WRONG, CARRY ON
             {
-                return;
+              return;
             }
         }
 
 
-        //REDUNDANT PlayerTool base. CLASS STUFF TO DEBUG WHATEVER'S BREAKING.  ONCE EVERYTHING WORKS, ALL THIS IS SAFE TO DELETE
-        //
-        public override bool IsCentered()         //ACTIVATES IF _stowTransform and/or _holdTransform ARE NULL; MEANS YOU MESSED SOMETHING UP
-        {
-            base.IsCentered();  //Does this 
-            if (!this.HasEquipAnimation())
-            { ScaleGun420.Instance.ModHelper.Console.WriteLine("IsCentered shouldn't be called, meaning _stowTransform and/or _holdTransform are currently null, or possibly base.EquipTool failed to assign"); }
-            return !this.HasEquipAnimation();   //returns same bool as _isCentered would normally return after base.EquipToolv
-        }
-
+        //REDUNDANT PlayerTool base. CLASS STUFF TO DEBUG WHATEVER'S BREAKING.  ONCE EVERYTHING WORKS, ALL THIS IS SAFE TO DELETE //UPDATE: ALL IRRELEVANT GARBAGE HAS BEEN CYCLED OUT
 
         // [[[  P R O P   S T U F F  ]]]
+
+
+
         private void OnEnable()
         {
             {
                 if (!PlayerState.AtFlightConsole())        //borrowed from Signalscope.  Idk why different tool props have their OnEnable & OnDisable methods as different access levels
                 {   
-
-                    ScaleGun420.Instance._sgToolGameobject.SetActive(true);
-
+                    ScaleGun420.Instance._sgToolGameobject.SetActive(true);  //NEITHER NECESSARY NOR KOSHER, SIGNALSCOPE DOESN'T DO THIS AND NEITHER SHOULD I //FUCK YOU
+                    _staffProp.SetActive(true);    //idk idk idk
+                    ScaleGun420.Instance.ModHelper.Console.WriteLine("Called ScalegunTool.OnEnable.  Set _staffProp to 'active' (ALLEGEDLY)"); //MESSAGE RECEIVED ON WORLD LOADED, HMM
                 }
             }
         }
         private void OnDisable()      //private void per 
         {
-            { ScaleGun420.Instance._sgToolGameobject.SetActive(false); }
+            _staffProp.SetActive(false); //NEW, DISABLED BELOW BECAUSE SUCKS AND BAD I THINK
+            //{ ScaleGun420.Instance._sgToolGameobject.SetActive(false); }
         }
 
 

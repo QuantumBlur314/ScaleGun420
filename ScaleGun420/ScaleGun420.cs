@@ -36,12 +36,12 @@ namespace ScaleGun420
         public bool RightBubbon;
 
         public bool sceneLoaded;                   //MimickSwapperUpdate uses this to determine when to start running
-        public GameObject _lookingAt;
-        public GameObject _recentTargetObject;
+        //public GameObject _lookingAt;
+        //public GameObject _recentTargetObject;
 
         public ToolModeSwapper _vanillaSwapper;
 
-        public GameObject _sgToolGameobject;
+        public GameObject _sgToolGameobject;  //This one should at least be active?  New Game Object starts disabled anyway for some reason
         public ScalegunTool _theGunToolClass;
 
         public Key GunToggle;        //Idk if it'll be more or less work to prevent gun from working while in ship.  guess we'll find out
@@ -67,7 +67,6 @@ namespace ScaleGun420
             LoadManager.OnCompleteSceneLoad += (scene, loadScene) =>
             {
                 if (loadScene != OWScene.SolarSystem) return;
-                ModHelper.Console.WriteLine("Loaded into solar system!", MessageType.Success);
                 ModHelper.Events.Unity.FireOnNextUpdate(
     () =>
     {
@@ -82,17 +81,18 @@ namespace ScaleGun420
 
         private void ScalegunInit()
         {
-            _sgToolGameobject = new GameObject();    //IS THIS REDUNDANT?
+            _sgToolGameobject = new GameObject("ScalegunObjectChildOfPlayerBody");    //IS THIS REDUNDANT?
             if (_sgToolGameobject != null)
             { ModHelper.Console.WriteLine("Spawned empty GameObject"); }
 
             _sgToolGameobject.transform.rotation = Locator.GetPlayerTransform().transform.rotation;
             _sgToolGameobject.transform.position = Locator.GetPlayerTransform().transform.position;
             _sgToolGameobject.transform.parent = Locator.GetPlayerBody().transform;
-
             _theGunToolClass = _sgToolGameobject.AddComponent<ScalegunTool>();
 
             _sgToolGameobject.SetActive(false);
+            _theGunToolClass.enabled = true;
+            _theGunToolClass._staffProp.SetActive(true);
 
         }
         public override void Configure(IModConfig config)
@@ -126,7 +126,7 @@ namespace ScaleGun420
 
 
         //ToolModeSwapper Mimickry:
-        public void Update()
+        public void Update()       //UNITY EXPLORER REVEALS ALL THE ScalegunTool's methods work fine and even animate well.  IsEquipped returns true.  Something is failing to pull its strings and read its info.
         {
             if (!OWInput.IsInputMode(InputMode.Menu))                //if the player isn't in the menu (RECOMMEND THIS TO BLOCKS MOD PERSON)
             {
@@ -138,55 +138,65 @@ namespace ScaleGun420
                 RightBubbon = Keyboard.current[Right].wasPressedThisFrame;
                 toggleGunKey = Keyboard.current[GunToggle].wasPressedThisFrame;
             }
-            EyesDrillHoles();
+           // EyesDrillHoles();
             if (sceneLoaded)
-            {
+            {    if (Keyboard.current[Down].isPressed)
+                {
+
+                    _vanillaSwapper.EquipToolMode(SGToolmode);
+                    ModHelper.Console.WriteLine($"PRESSED IT {SGToolmode} AGH AGH NIGHTMARE NIGHTMARE");
+                    //Locator.GetPlayerBody().GetComponent<OWAudioSource>().PlayOneShot(global::AudioType.AlarmChime_RW, Locator.GetAlarmSequenceController()._chimeIndex, 1f);
+                }
                 if (_vanillaSwapper._equippedTool == _theGunToolClass) { ModHelper.Console.WriteLine("But for just a moment, _theGunTool was equipped.  This fills you with determination."); }
                 MimickSwapperUpdate();
+
                 EyesDrillHoles();
+
             }
 
         }
         public void MimickSwapperUpdate()
         {
-
-            //ESSENTIAL since 
+            //_currentToolMode WILL ALWAYS REGISTER AS "None" EVEN WHEN ALSO REGISTERING THE CURRENT TOOL.  THIS IS HOW THE BASE GAME DOES THINGS, DON'T QUESTION IT
+            //BUT ToolModeSwapper.IsInToolMode returns FALSE when asked if "none" is true while _currentToolMode is ANYTHING?  SOMETHING I'M DOING IS SETTING _currentToolMode to "None" AND THE GAME'S MERCIFULLY IGNORING ME.
+            //CHECK BASELINE
+            //this model of the first part of ToolModeSwapper's Update method seems to be triggered when UNEQUIPPING one tool 
             if (_vanillaSwapper._isSwitchingToolMode && !_vanillaSwapper._equippedTool.IsEquipped())  //This should be my own special update that only runs to equip/unequip the Scalegun
             {
                 ModHelper.Console.WriteLine($"Mimick Ln154: Triggered when _equippedTool {_vanillaSwapper._equippedTool} returned false on PlayerTool-class IsEquipped method");
 
-                _vanillaSwapper._equippedTool = _vanillaSwapper._nextTool;
-                ModHelper.Console.WriteLine($"Mimick Ln158: Set _equippedTool to {_vanillaSwapper._equippedTool} from _nextTool (line 157)");  //triggers when stowing, but not equipping, a vanilla tool (aka equipping ToolMode.None) idk why
+                _vanillaSwapper._equippedTool = _vanillaSwapper._nextTool;  //Scalegun isn't getting from _nextToolMode to _nextTool, somewhere between those two/in that translation, 
+                ModHelper.Console.WriteLine($"Mimick Ln157: Set _equippedTool to {_vanillaSwapper._equippedTool} from _nextTool {_vanillaSwapper._nextTool}, which was obvs assigned by vanilla ToolModeSwapper.EquipToolMode Lns251/252 since my patch has been silent ");  //triggers when stowing, but not equipping, a vanilla tool (aka equipping ToolMode.None) idk why
 
                 _vanillaSwapper._nextTool = null;
 
                 if (_vanillaSwapper._equippedTool != null)
                 {
                     _vanillaSwapper._equippedTool.EquipTool();
-                    ModHelper.Console.WriteLine($"Mimick: _equippedTool {_vanillaSwapper._equippedTool} wasn't null, so ran _equippedTool's special PlayerTool EquipTool() method. (line 163)");
+                    ModHelper.Console.WriteLine($"Mimick Ln164: _equippedTool {_vanillaSwapper._equippedTool} wasn't null, so ran _equippedTool's special PlayerTool EquipTool() method");
 
                 }
-                _vanillaSwapper._currentToolMode = _vanillaSwapper._nextToolMode;
+                ModHelper.Console.WriteLine($"Mimick Ln171: updated _currentToolMode {_vanillaSwapper._currentToolMode} using _nextToolMode {_vanillaSwapper._nextToolMode},",MessageType.Info );
+                _vanillaSwapper._currentToolMode = _vanillaSwapper._nextToolMode;    //This also runs successfully
                 _vanillaSwapper._nextToolMode = ToolMode.None;
                 _vanillaSwapper._isSwitchingToolMode = false;
             }
 
             if (SmallBubbon) { ModHelper.Console.WriteLine($"_equippedTool is {_vanillaSwapper._equippedTool}"); }
-            if (UpBubbon) { ModHelper.Console.WriteLine($"_nextTool is {_vanillaSwapper._nextTool}"); }  //This is yielding "Next ToolMode is 
+            if (UpBubbon) { ModHelper.Console.WriteLine($"_nextTool is {_vanillaSwapper._nextTool}"); } 
 
-
-
-            if (toggleGunKey)          //LOADS SAVE WITH STAFF ALREADY EQUIPPED
+            if (toggleGunKey)          //_nextToolMode BECOMES SGToolMode for a SPLIT SECOND then becomes NONE, BUT _nextTOOL NEVER GETS CALLED AT ALL, WHAT ASSIGNS _nextToolMode?
             {
-                if (_vanillaSwapper._currentToolMode != SGToolmode)    //Put the EquipToolMode(SGToolmode) as the FIRST condition and UnequipTool as the SECOND possible action.  idk im desperate at this point
+
+                
+                if (_vanillaSwapper._currentToolMode != SGToolmode)    
                 {
                     _vanillaSwapper.EquipToolMode(SGToolmode);
-                    ModHelper.Console.WriteLine($"Current toolmode: {_vanillaSwapper.GetToolMode()}.  Should be {SGToolmode}. Next toolmode is {_vanillaSwapper._nextToolMode}");
-
+                    ModHelper.Console.WriteLine($"Current toolmode: {_vanillaSwapper.GetToolMode()}.  Should be {SGToolmode}. Next toolmode is {_vanillaSwapper._nextToolMode} next tool is {_vanillaSwapper._nextTool}");  //When hitting H while other tool is deployed: stows current tool, "Next Toolmode is Scalegun, next tool is (blank) MAYBE 
                 }
                 else
                 {
-                    _vanillaSwapper.UnequipTool();  //Swapper's UnequipTool method CALLS EquipToolMode!!!!  CHECK PATCH
+                    _vanillaSwapper.UnequipTool();  //Swapper's UnequipTool method calls EquipToolMode, for reference
                     if (_vanillaSwapper._nextToolMode != ToolMode.None)
                     {
                         ModHelper.Console.WriteLine($"_nextToolMode isn't ToolMode.None, instead it's {_vanillaSwapper._nextToolMode}");
@@ -201,36 +211,42 @@ namespace ScaleGun420
 
         public class ScaleGun420PatchClass
         {
-            //in ToolModeSwapper's Awake method, it gets each individual tool by name/type and stores them in its class fields.  This is a problem.  I can't add fields to existing things.
+           //FORCING EquipToolMode(Scalegun) TO RUN USING UNITYEXPLORER DOESN'T DO ANYTHING, NEVER TOUCHES MY PATCH.
 
             //Owl said i might not even have to patch ToolmodeSwapper.Update?  idk how not but
 
-            [HarmonyPrefix, HarmonyPatch(typeof(ToolModeSwapper), nameof(ToolModeSwapper.EquipToolMode))]
-            public static bool ToolModeSwapper_EquipToolMode_Prefix(ToolMode mode, ToolModeSwapper __instance)  //instance is for referencing the class currently performing the method you're patching 
+            [HarmonyPrefix, HarmonyPatch(typeof(ToolModeSwapper), nameof(ToolModeSwapper.EquipToolMode))]  //EquipToolMode IS THE BEAST THAT ISN'T WORKING.  UNITYEXPLORER CONFIRMS THIS.  _equippedTool IS NULL DESPITE ScalegunTool.IsEquipped RETURNING TRUE
+            private static bool ToolModeSwapper_EquipToolMode_Prefix(ToolMode mode, ToolModeSwapper __instance)  //instance is for referencing the class currently performing the method you're patching 
             {
-                ToolMode scalegunMode = Instance.SGToolmode;
-                if (mode != scalegunMode) { return true; }
-
-                PlayerTool playerTool = Instance._theGunToolClass;
-                Instance.ModHelper.Console.WriteLine("Reached EquipToolMode prefix at least!");
+                ScaleGun420.Instance.ModHelper.Console.WriteLine($"Patch accessed at least,");
+                ToolMode scalegunMode = ScaleGun420.Instance.SGToolmode;
+                ScaleGun420.Instance.ModHelper.Console.WriteLine($"Local ToolMode scalegunMode {scalegunMode} should match this string: {ScaleGun420.Instance.SGToolmode}");
+                if (mode != scalegunMode)
+                {
+                    ScaleGun420.Instance.ModHelper.Console.WriteLine("Hit EquipToolMode Prefix (yay!)  it says that the 'mode' var in EquipToolMode(mode) doesn't match the local scalegunMode var (defined as Instance.SGToolmode)",MessageType.Message);  //STILL NOT REACHING THE PREFIX
+                    return true;
+                }
+                
+               // PlayerTool playerTool = ScaleGun420.Instance._theGunToolClass;
+              //  ScaleGun420.Instance.ModHelper.Console.WriteLine("Reached EquipToolMode prefix at least!");
 
                 //vv copied from the end of the normal EquipToolMode vv
 
-                if (__instance._equippedTool != playerTool)  //if the ToolModeSwapper's currently-equipped tool isn't the newly-set playerTool,
-                {
-                    if (__instance._equippedTool != null)    //and isn't null
-                    {
-                        __instance._equippedTool.UnequipTool();   //unequip the equipped tool,
-                        __instance._nextToolMode = mode;     //set the Instance.SGToolmode mode as ToolModeSwapper's _nextToolMode,
-                        __instance._nextTool = playerTool;        //THIS IS HOW MIMICKUPDATE GETS ITS _nextTOOL AND WITHOUT THE PATCH FUNCTIONING NOTHING WILL HAPPEN
-                        __instance._isSwitchingToolMode = true;
-                        return false;                                         //if it's in a prefix that returns Bool, you have to have "return false" not just "return"
-                    }
-                    playerTool.EquipTool();                                        ////CHECK ScalegunTool.EquipTool(); FIRST
-                    __instance._equippedTool = playerTool;
-                    __instance._currentToolMode = mode;
-                    __instance._nextToolMode = ToolMode.None;
-                }
+                //if (__instance._equippedTool != playerTool)  //if the ToolModeSwapper's currently-equipped tool isn't the newly-set playerTool,
+                //{
+                //    if (__instance._equippedTool != null)    //and isn't null
+                //    {
+                //        __instance._equippedTool.UnequipTool();   //unequip the equipped tool,
+               //         __instance._nextToolMode = mode;     //set the Instance.SGToolmode mode as ToolModeSwapper's _nextToolMode,  THIS PATCH'S BASE-GAME COUNTERPART ISN'T 
+               //         __instance._nextTool = playerTool;        //THIS IS HOW MIMICKUPDATE GETS ITS _nextTOOL AND WITHOUT THE PATCH FUNCTIONING NOTHING WILL HAPPEN
+               //         __instance._isSwitchingToolMode = true;
+               //         return false;                                         //if it's in a prefix that returns Bool, you have to have "return false" not just "return"
+               //     }
+                 //   playerTool.EquipTool();                                        ////CHECK ScalegunTool.EquipTool(); FIRST
+                 //   __instance._equippedTool = playerTool;
+                //    __instance._currentToolMode = mode;
+                //    __instance._nextToolMode = ToolMode.None;
+               // }
                 return false;
             }
 

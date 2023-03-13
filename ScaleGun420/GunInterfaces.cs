@@ -9,6 +9,6 @@ namespace ScaleGun420
 {
     internal class GunInterfaces
     {
-        protected GameObject _selectedGameObject;
+
     }
 }
