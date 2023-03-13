@@ -208,7 +208,7 @@ namespace ScaleGun420
 
 
 
-
+        [HarmonyPatch]  //NEVER FORGET THIS AGAIN YOU NUMBSKULL
         public class ScaleGun420PatchClass
         {
            //FORCING EquipToolMode(Scalegun) TO RUN USING UNITYEXPLORER DOESN'T DO ANYTHING, NEVER TOUCHES MY PATCH.
