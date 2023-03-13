@@ -12,27 +12,30 @@ using UnityEngine;
 
 namespace ScaleGun420
 {
-    //JUST COPY EVERYTHING OTHER TOOLS DO, EVEN IF THE METHODS ARE EMPTY.  CARGO CULT CODEBASE
+    //JUST COPY EVERYTHING OTHER TOOLS DO, EVEN IF THE METHODS ARE EMPTY.  CARGO CULT CODEBASE //Update: my power grows
     public class ScalegunTool : PlayerTool
     {
         private Transform _scalegunToolTransform; //used by Awake
         public GameObject _staffProp;
-        public GameObject _staffGameobject; //make some debug keybinds to toggle the object active/inactive.  Should be ez
+        public GameObject _sgToolGameobject; //make some debug keybinds to toggle the object active/inactive.  Should be ez
 
 
-        private void Awake()         //IS AWAKE EVEN BEING CALLED?
+        private void Awake() //Happens naturally at the end of ScaleGun420, when its _sg
         {
-            this._scalegunToolTransform = base.transform;  //removed an if
+            this._scalegunToolTransform = base.transform;  //removed an if //update: check if necessary
 
             RenderNomaiStaff();
             StealOtherToolTransforms();  //NOT THE CULPRIT
-            _staffProp.SetActive(false);      //UNNECESSARY????    //Idk brop, NomaiTranslatorProp SetsActive(false) on Awake
+
+            _sgToolGameobject = ScaleGun420.Instance._sgToolGameobject;
+            _sgToolGameobject.SetActive(true); //CURRENT EXPERIMENT //4got 2 assign object //OK so is this already part of the Awake method?  we'll find out if i ever disarble it
+            _staffProp.SetActive(false);      //UNNECESSARY????    //Idk brop, NomaiTranslatorProp SetsActive(false) on Awake //Update: moved to AFTER the main object gets activated
         }
  
         public override void Start()
         {
             base.Start();
-            base.enabled = true;  //UNNECESSARY?
+
         }
 
 
@@ -41,6 +44,7 @@ namespace ScaleGun420
             LoadStaff();
             _staffProp = Instantiate(GameObject.Find("BrittleHollow_Body/Sector_BH/Sector_NorthHemisphere/Sector_NorthPole/Sector_HangingCity" +
                 "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff"), ScaleGun420.Instance._sgToolGameobject.transform);
+
             _staffProp.transform.localPosition = new Vector3(0.5496f, -1.11f, -0.119f);
             _staffProp.transform.localEulerAngles = new Vector3(343.8753f, 200.2473f, 345.2718f);
             var streamingRenderMeshHandle = _staffProp.GetComponentInChildren<StreamingRenderMeshHandle>();
@@ -69,7 +73,7 @@ namespace ScaleGun420
             bool hasEquipAnimation = (this._stowTransform != null && this._holdTransform != null);
             ScaleGun420.Instance.ModHelper.Console.WriteLine($"Reminder: HasEquipAnimation returned {hasEquipAnimation} and will continue to do so until you sort this out");
             return base.HasEquipAnimation();
-        }
+        }    
         public override bool AllowEquipAnimation()
         {
             return base.AllowEquipAnimation();
@@ -81,7 +85,7 @@ namespace ScaleGun420
             ScaleGun420.Instance.ModHelper.Console.WriteLine($"called ScalegunTool.EquipTool");
             base.EquipTool();
 
-            //base.enabled = true;  ALREADY PART OF base.EquipTool
+
             // this._isEquipped = true;
             if (this._staffProp)
             {
@@ -126,7 +130,7 @@ namespace ScaleGun420
             {
                 if (!PlayerState.AtFlightConsole())        //borrowed from Signalscope.  Idk why different tool props have their OnEnable & OnDisable methods as different access levels
                 {   
-                    ScaleGun420.Instance._sgToolGameobject.SetActive(true);  //NEITHER NECESSARY NOR KOSHER, SIGNALSCOPE DOESN'T DO THIS AND NEITHER SHOULD I //FUCK YOU
+               // ScaleGun420.Instance._sgToolGameobject.SetActive(true);  //OBJECT ISN'T STARTING ACTIVE EITHER WAY, ADDRESS THIS
                     _staffProp.SetActive(true);    //idk idk idk
                     ScaleGun420.Instance.ModHelper.Console.WriteLine("Called ScalegunTool.OnEnable.  Set _staffProp to 'active' (ALLEGEDLY)"); //MESSAGE RECEIVED ON WORLD LOADED, HMM
                 }

@@ -83,16 +83,17 @@ namespace ScaleGun420
         {
             _sgToolGameobject = new GameObject("ScalegunObjectChildOfPlayerBody");    //IS THIS REDUNDANT?
             if (_sgToolGameobject != null)
-            { ModHelper.Console.WriteLine("Spawned empty GameObject"); }
+            { ModHelper.Console.WriteLine($"Spawned {_sgToolGameobject}"); }
 
             _sgToolGameobject.transform.rotation = Locator.GetPlayerTransform().transform.rotation;
             _sgToolGameobject.transform.position = Locator.GetPlayerTransform().transform.position;
             _sgToolGameobject.transform.parent = Locator.GetPlayerBody().transform;
-            _theGunToolClass = _sgToolGameobject.AddComponent<ScalegunTool>();
+            _theGunToolClass = _sgToolGameobject.AddComponent<ScalegunTool>();  //ScalegunTool's Awake method should run, defining its local _sgToolGameobject as ScaleGun420's _sgToolGameobject.  america's ass or whatever idc about marvel but sometimes they say funny things
+            //IF ANYTHING IS WRONG, HANDLE IT IN ScalegunTool's AWAKE METHOD
 
-            _sgToolGameobject.SetActive(false);
-            _theGunToolClass.enabled = true;
-            _theGunToolClass._staffProp.SetActive(true);
+            //_sgToolGameobject.SetActive(false);  //should be handled by the Tool's Awake method
+            //_theGunToolClass.enabled = true; //FIND OUT IF NECESSARY NEXT BUILD
+            //_theGunToolClass._staffProp.SetActive(false);   //probs redundant
 
         }
         public override void Configure(IModConfig config)
