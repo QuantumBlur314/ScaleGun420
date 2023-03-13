@@ -16,7 +16,7 @@ using UnityEngine.SocialPlatforms;
 using static UnityEngine.EventSystems.StandaloneInputModule;
 
 namespace ScaleGun420
-{
+{   
     public class ScaleGun420 : ModBehaviour
     {
         public static List<OWRigidbody> _gunGrowQueue = new(8);//establishes my own _growQueue (with blackjack, and hookers)
