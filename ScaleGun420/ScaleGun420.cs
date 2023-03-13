@@ -16,7 +16,7 @@ using UnityEngine.SocialPlatforms;
 using static UnityEngine.EventSystems.StandaloneInputModule;
 
 namespace ScaleGun420
-{   
+{
     public class ScaleGun420 : ModBehaviour
     {
         public static List<OWRigidbody> _gunGrowQueue = new(8);//establishes my own _growQueue (with blackjack, and hookers)
@@ -55,14 +55,11 @@ namespace ScaleGun420
         {
             Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly());
             Instance = this;
-
         }
         private void Start()
         {
             sceneLoaded = false;
-
             SGToolmode = EnumUtils.Create<ToolMode>("Scalegun");  //Enum doesn't get created&destroyed over and over, it's a one-time thing anyway, don't have to put it on sceneload, also don't put the number.  does that itself.
-            //ALLEGEDLY adds "Scalegun" to the ToolMode enum.  Access it by calling SGToolmode
 
             LoadManager.OnCompleteSceneLoad += (scene, loadScene) =>
             {
@@ -70,14 +67,13 @@ namespace ScaleGun420
                 ModHelper.Events.Unity.FireOnNextUpdate(
     () =>
     {
-        ScalegunInit();      //
+        ScalegunInit();
         sceneLoaded = true;     //MimicSwapperUpdate can start running now
         _vanillaSwapper = Locator.GetToolModeSwapper();    //Should establish _vanillaSwapper as the game's current ToolModeSwapper for future reference
     }
     );
             };
         }
-
 
         private void ScalegunInit()
         {
@@ -90,12 +86,8 @@ namespace ScaleGun420
             _sgToolGameobject.transform.parent = Locator.GetPlayerBody().transform;
             _theGunToolClass = _sgToolGameobject.AddComponent<ScalegunTool>();  //ScalegunTool's Awake method should run, defining its local _sgToolGameobject as ScaleGun420's _sgToolGameobject.  america's ass or whatever idc about marvel but sometimes they say funny things
             //IF ANYTHING IS WRONG, HANDLE IT IN ScalegunTool's AWAKE METHOD
-
-            //_sgToolGameobject.SetActive(false);  //should be handled by the Tool's Awake method
-            //_theGunToolClass.enabled = true; //FIND OUT IF NECESSARY NEXT BUILD
-            //_theGunToolClass._staffProp.SetActive(false);   //probs redundant
-
         }
+
         public override void Configure(IModConfig config)
 
         //InputLibrary USES ENUMS, FOOD FOR THOTS
@@ -125,7 +117,6 @@ namespace ScaleGun420
             }
         }
 
-
         //ToolModeSwapper Mimickry:
         public void Update()       //UNITY EXPLORER REVEALS ALL THE ScalegunTool's methods work fine and even animate well.  IsEquipped returns true.  Something is failing to pull its strings and read its info.
         {
@@ -139,15 +130,13 @@ namespace ScaleGun420
                 RightBubbon = Keyboard.current[Right].wasPressedThisFrame;
                 toggleGunKey = Keyboard.current[GunToggle].wasPressedThisFrame;
             }
-           // EyesDrillHoles();
-            if (sceneLoaded)
-            {    if (Keyboard.current[Down].isPressed)
-                {
 
-                    _vanillaSwapper.EquipToolMode(SGToolmode);
-                    ModHelper.Console.WriteLine($"PRESSED IT {SGToolmode} AGH AGH NIGHTMARE NIGHTMARE");
-                    //Locator.GetPlayerBody().GetComponent<OWAudioSource>().PlayOneShot(global::AudioType.AlarmChime_RW, Locator.GetAlarmSequenceController()._chimeIndex, 1f);
-                }
+            if (sceneLoaded)
+            {
+                if (Keyboard.current[Down].isPressed)
+                { ModHelper.Console.WriteLine($"PRESSED IT {SGToolmode} AGH AGH NIGHTMARE NIGHTMARE"); }
+                //Locator.GetPlayerBody().GetComponent<OWAudioSource>().PlayOneShot(global::AudioType.AlarmChime_RW, Locator.GetAlarmSequenceController()._chimeIndex, 1f);
+
                 if (_vanillaSwapper._equippedTool == _theGunToolClass) { ModHelper.Console.WriteLine("But for just a moment, _theGunTool was equipped.  This fills you with determination."); }
                 MimickSwapperUpdate();
 
@@ -177,20 +166,20 @@ namespace ScaleGun420
                     ModHelper.Console.WriteLine($"Mimick Ln164: _equippedTool {_vanillaSwapper._equippedTool} wasn't null, so ran _equippedTool's special PlayerTool EquipTool() method");
 
                 }
-                ModHelper.Console.WriteLine($"Mimick Ln171: updated _currentToolMode {_vanillaSwapper._currentToolMode} using _nextToolMode {_vanillaSwapper._nextToolMode},",MessageType.Info );
+                ModHelper.Console.WriteLine($"Mimick Ln171: updated _currentToolMode {_vanillaSwapper._currentToolMode} using _nextToolMode {_vanillaSwapper._nextToolMode},", MessageType.Info);
                 _vanillaSwapper._currentToolMode = _vanillaSwapper._nextToolMode;    //This also runs successfully
                 _vanillaSwapper._nextToolMode = ToolMode.None;
                 _vanillaSwapper._isSwitchingToolMode = false;
             }
 
             if (SmallBubbon) { ModHelper.Console.WriteLine($"_equippedTool is {_vanillaSwapper._equippedTool}"); }
-            if (UpBubbon) { ModHelper.Console.WriteLine($"_nextTool is {_vanillaSwapper._nextTool}"); } 
+            if (UpBubbon) { ModHelper.Console.WriteLine($"_nextTool is {_vanillaSwapper._nextTool}"); }
 
             if (toggleGunKey)          //_nextToolMode BECOMES SGToolMode for a SPLIT SECOND then becomes NONE, BUT _nextTOOL NEVER GETS CALLED AT ALL, WHAT ASSIGNS _nextToolMode?
             {
 
-                
-                if (_vanillaSwapper._currentToolMode != SGToolmode)    
+
+                if (_vanillaSwapper._currentToolMode != SGToolmode)
                 {
                     _vanillaSwapper.EquipToolMode(SGToolmode);
                     ModHelper.Console.WriteLine($"Current toolmode: {_vanillaSwapper.GetToolMode()}.  Should be {SGToolmode}. Next toolmode is {_vanillaSwapper._nextToolMode} next tool is {_vanillaSwapper._nextTool}");  //When hitting H while other tool is deployed: stows current tool, "Next Toolmode is Scalegun, next tool is (blank) MAYBE 
@@ -212,7 +201,7 @@ namespace ScaleGun420
         [HarmonyPatch]  //NEVER FORGET THIS AGAIN YOU NUMBSKULL
         public class ScaleGun420PatchClass
         {
-           //FORCING EquipToolMode(Scalegun) TO RUN USING UNITYEXPLORER DOESN'T DO ANYTHING, NEVER TOUCHES MY PATCH.
+            //FORCING EquipToolMode(Scalegun) TO RUN USING UNITYEXPLORER DOESN'T DO ANYTHING, NEVER TOUCHES MY PATCH.
 
             //Owl said i might not even have to patch ToolmodeSwapper.Update?  idk how not but
 
@@ -224,14 +213,14 @@ namespace ScaleGun420
                 ScaleGun420.Instance.ModHelper.Console.WriteLine($"Local ToolMode scalegunMode {scalegunMode} should match this string: {ScaleGun420.Instance.SGToolmode}");
                 if (mode != scalegunMode)
                 {
-                    ScaleGun420.Instance.ModHelper.Console.WriteLine("Hit EquipToolMode Prefix (yay!)  it says that the 'mode' var in EquipToolMode(mode) doesn't match the local scalegunMode var (defined as Instance.SGToolmode)",MessageType.Message);  //STILL NOT REACHING THE PREFIX
+                    ScaleGun420.Instance.ModHelper.Console.WriteLine("Hit EquipToolMode Prefix (yay!)  it says that the 'mode' var in EquipToolMode(mode) doesn't match the local scalegunMode var (defined as Instance.SGToolmode)", MessageType.Message);  //STILL NOT REACHING THE PREFIX
                     return true;
                 }
-                
+
                 PlayerTool playerTool = ScaleGun420.Instance._theGunToolClass;
                 ScaleGun420.Instance.ModHelper.Console.WriteLine("Reached EquipToolMode prefix at least!");
 
-              //vv copied from the end of the normal EquipToolMode vv
+                //vv copied from the end of the normal EquipToolMode vv
 
                 if (__instance._equippedTool != playerTool)  //if the ToolModeSwapper's currently-equipped tool isn't the newly-set playerTool,
                 {

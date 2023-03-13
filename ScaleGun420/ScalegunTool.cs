@@ -35,9 +35,7 @@ namespace ScaleGun420
         public override void Start()
         {
             base.Start();
-
         }
-
 
         public void RenderNomaiStaff()
         {
@@ -96,11 +94,8 @@ namespace ScaleGun420
         public override void UnequipTool()          //CALLED BY ToolModeSwapper.EquipToolMode(ToolMode toolMode), which is itself called by ToolModeSwapper.Update
         {
             ScaleGun420.Instance.ModHelper.Console.WriteLine($"called UnequipTool");
-            base.UnequipTool();         //nothing's being called   
-
-            base.enabled = false;         //changed from "true" to "false" idk why tho //base.UnequipTool SETS _isPuttingAway TO TRUE, THEN PlayerTool.Update APPLIES THE STOWTRANSFORMS THEN SETS base.enabled = false ONCE DONE ANIMATING
-            //if (this._staffProp)
-           // { this._staffProp.SetActive(false); } //NEED TO WAIT FOR PUT-AWAY ANIM TO FINISH
+            base.UnequipTool(); 
+         //base.UnequipTool SETS _isPuttingAway TO TRUE, THEN PlayerTool.Update APPLIES THE STOWTRANSFORMS THEN SETS base.enabled = false ONCE DONE ANIMATING
         }
 
 
