@@ -151,26 +151,7 @@ namespace ScaleGun420
             //BUT ToolModeSwapper.IsInToolMode returns FALSE when asked if "none" is true while _currentToolMode is ANYTHING?  SOMETHING I'M DOING IS SETTING _currentToolMode to "None" AND THE GAME'S MERCIFULLY IGNORING ME.
             //CHECK BASELINE
             //this model of the first part of ToolModeSwapper's Update method seems to be triggered when UNEQUIPPING one tool 
-            if (_vanillaSwapper._isSwitchingToolMode && !_vanillaSwapper._equippedTool.IsEquipped())  //This should be my own special update that only runs to equip/unequip the Scalegun
-            {
-                ModHelper.Console.WriteLine($"Mimick Ln154: Triggered when _equippedTool {_vanillaSwapper._equippedTool} returned false on PlayerTool-class IsEquipped method");
 
-                _vanillaSwapper._equippedTool = _vanillaSwapper._nextTool;  //Scalegun isn't getting from _nextToolMode to _nextTool, somewhere between those two/in that translation, 
-                ModHelper.Console.WriteLine($"Mimick Ln157: Set _equippedTool to {_vanillaSwapper._equippedTool} from _nextTool {_vanillaSwapper._nextTool}, which was obvs assigned by vanilla ToolModeSwapper.EquipToolMode Lns251/252 since my patch has been silent ");  //triggers when stowing, but not equipping, a vanilla tool (aka equipping ToolMode.None) idk why
-
-                _vanillaSwapper._nextTool = null;
-
-                if (_vanillaSwapper._equippedTool != null)
-                {
-                    _vanillaSwapper._equippedTool.EquipTool();
-                    ModHelper.Console.WriteLine($"Mimick Ln164: _equippedTool {_vanillaSwapper._equippedTool} wasn't null, so ran _equippedTool's special PlayerTool EquipTool() method");
-
-                }
-                ModHelper.Console.WriteLine($"Mimick Ln171: updated _currentToolMode {_vanillaSwapper._currentToolMode} using _nextToolMode {_vanillaSwapper._nextToolMode},", MessageType.Info);
-                _vanillaSwapper._currentToolMode = _vanillaSwapper._nextToolMode;    //This also runs successfully
-                _vanillaSwapper._nextToolMode = ToolMode.None;
-                _vanillaSwapper._isSwitchingToolMode = false;
-            }
 
             if (SmallBubbon) { ModHelper.Console.WriteLine($"_equippedTool is {_vanillaSwapper._equippedTool}"); }
             if (UpBubbon) { ModHelper.Console.WriteLine($"_nextTool is {_vanillaSwapper._nextTool}"); }
