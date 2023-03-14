@@ -17,10 +17,11 @@ using static UnityEngine.EventSystems.StandaloneInputModule;
 
 namespace ScaleGun420
 {
-    public class ScaleGun420 : ModBehaviour
+    public class ScaleGun420Modbehavior : ModBehaviour
     {
         public static List<OWRigidbody> _gunGrowQueue = new(8);//establishes my own _growQueue (with blackjack, and hookers)
         public OWRigidbody _gunGrowingBody;
+
         public float _gunNextGrowCheckTime;
         public Key Big;                                                 //Grows all OWRigidbodies on _VanishBlacklist to normal size
         public bool BigBubbon;
@@ -35,22 +36,22 @@ namespace ScaleGun420
         public Key Right;
         public bool RightBubbon;
 
-        public bool sceneLoaded;                   //MimickSwapperUpdate uses this to determine when to start running
+        private bool sceneLoaded;                   //MimickSwapperUpdate uses this to determine when to start running
         //public GameObject _lookingAt;
         //public GameObject _recentTargetObject;
 
-        public ToolModeSwapper _vanillaSwapper;
+        private ToolModeSwapper _vanillaSwapper;
 
-        public GameObject _sgToolGameobject;  //This one should at least be active?  New Game Object starts disabled anyway for some reason
-        public ScalegunTool _theGunToolClass;
+        public GameObject _sgToolGameobject;  //MUST BE PUBLIC
+        private ScalegunTool _theGunToolClass;
 
-        public Key GunToggle;        //Idk if it'll be more or less work to prevent gun from working while in ship.  guess we'll find out
-        public bool toggleGunKey; //whether right-click & other scout-related actions reach the Scalegun instead
+        private Key GunToggle;        //Idk if it'll be more or less work to prevent gun from working while in ship.  guess we'll find out
+        private bool toggleGunKey; //whether right-click & other scout-related actions reach the Scalegun instead
 
         public ToolMode SGToolmode;
 
 
-        public static ScaleGun420 Instance;
+        public static ScaleGun420Modbehavior Instance;
         public void Awake()
         {
             Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly());
@@ -118,7 +119,7 @@ namespace ScaleGun420
         }
 
         //ToolModeSwapper Mimickry:
-        public void Update()       //UNITY EXPLORER REVEALS ALL THE ScalegunTool's methods work fine and even animate well.  IsEquipped returns true.  Something is failing to pull its strings and read its info.
+        private void Update()       //UNITY EXPLORER REVEALS ALL THE ScalegunTool's methods work fine and even animate well.  IsEquipped returns true.  Something is failing to pull its strings and read its info.
         {
             if (!OWInput.IsInputMode(InputMode.Menu))                //if the player isn't in the menu (RECOMMEND THIS TO BLOCKS MOD PERSON)
             {
@@ -130,27 +131,18 @@ namespace ScaleGun420
                 RightBubbon = Keyboard.current[Right].wasPressedThisFrame;
                 toggleGunKey = Keyboard.current[GunToggle].wasPressedThisFrame;
             }
-
             if (sceneLoaded)
             {
-                if (Keyboard.current[Down].isPressed)
-                { ModHelper.Console.WriteLine($"PRESSED IT {SGToolmode} AGH AGH NIGHTMARE NIGHTMARE"); }
-                //Locator.GetPlayerBody().GetComponent<OWAudioSource>().PlayOneShot(global::AudioType.AlarmChime_RW, Locator.GetAlarmSequenceController()._chimeIndex, 1f);
-
-                if (_vanillaSwapper._equippedTool == _theGunToolClass) { ModHelper.Console.WriteLine("But for just a moment, _theGunTool was equipped.  This fills you with determination."); }
                 MimickSwapperUpdate();
-
                 EyesDrillHoles();
-
             }
-
         }
-        public void MimickSwapperUpdate()
+
+        private void MimickSwapperUpdate()
         {
             //_currentToolMode WILL ALWAYS REGISTER AS "None" EVEN WHEN ALSO REGISTERING THE CURRENT TOOL.  THIS IS HOW THE BASE GAME DOES THINGS, DON'T QUESTION IT
             //BUT ToolModeSwapper.IsInToolMode returns FALSE when asked if "none" is true while _currentToolMode is ANYTHING?  SOMETHING I'M DOING IS SETTING _currentToolMode to "None" AND THE GAME'S MERCIFULLY IGNORING ME.
             //CHECK BASELINE
-            //this model of the first part of ToolModeSwapper's Update method seems to be triggered when UNEQUIPPING one tool 
 
 
             if (SmallBubbon) { ModHelper.Console.WriteLine($"_equippedTool is {_vanillaSwapper._equippedTool}"); }
@@ -158,10 +150,9 @@ namespace ScaleGun420
 
             if (toggleGunKey)          //_nextToolMode BECOMES SGToolMode for a SPLIT SECOND then becomes NONE, BUT _nextTOOL NEVER GETS CALLED AT ALL, WHAT ASSIGNS _nextToolMode?
             {
-
-
                 if (_vanillaSwapper._currentToolMode != SGToolmode)
-                {
+                {  //FOR SOME REASON H IS STILL ACTIVATING THE TOOL CLASS WHEN THE _sgToolGameObject IS INACTIVE, BUT DOESN'T DEACTIVATE IT ON SUBSEQUENT PRESSES.  IDK IF THIS IS ALSO HOW OTHER OBJECTS WORK.
+                   //UPDATE:  THE SIGNALSCOPE ALSO DOES THIS.  GUESS THAT'S JUST HOW THINGS ARE, NOT A BUG
                     _vanillaSwapper.EquipToolMode(SGToolmode);
                     ModHelper.Console.WriteLine($"Current toolmode: {_vanillaSwapper.GetToolMode()}.  Should be {SGToolmode}. Next toolmode is {_vanillaSwapper._nextToolMode} next tool is {_vanillaSwapper._nextTool}");  //When hitting H while other tool is deployed: stows current tool, "Next Toolmode is Scalegun, next tool is (blank) MAYBE 
                 }
@@ -178,30 +169,23 @@ namespace ScaleGun420
         }
 
 
-
         [HarmonyPatch]  //NEVER FORGET THIS AGAIN YOU NUMBSKULL
         public class ScaleGun420PatchClass
         {
-            //FORCING EquipToolMode(Scalegun) TO RUN USING UNITYEXPLORER DOESN'T DO ANYTHING, NEVER TOUCHES MY PATCH.
+            //Owl said i might not even have to patch ToolmodeSwapper.Update?  idk how not but //IT IS DONE, GLORY TO THE EYE.
 
-            //Owl said i might not even have to patch ToolmodeSwapper.Update?  idk how not but
-
-            [HarmonyPrefix, HarmonyPatch(typeof(ToolModeSwapper), nameof(ToolModeSwapper.EquipToolMode))]  //EquipToolMode IS THE BEAST THAT ISN'T WORKING.  UNITYEXPLORER CONFIRMS THIS.  _equippedTool IS NULL DESPITE ScalegunTool.IsEquipped RETURNING TRUE
+            [HarmonyPrefix, HarmonyPatch(typeof(ToolModeSwapper), nameof(ToolModeSwapper.EquipToolMode))]
             private static bool ToolModeSwapper_EquipToolMode_Prefix(ToolMode mode, ToolModeSwapper __instance)  //instance is for referencing the class currently performing the method you're patching 
             {
-                ScaleGun420.Instance.ModHelper.Console.WriteLine($"Patch accessed at least,");
-                ToolMode scalegunMode = ScaleGun420.Instance.SGToolmode;
-                ScaleGun420.Instance.ModHelper.Console.WriteLine($"Local ToolMode scalegunMode {scalegunMode} should match this string: {ScaleGun420.Instance.SGToolmode}");
+                ToolMode scalegunMode = ScaleGun420Modbehavior.Instance.SGToolmode;
                 if (mode != scalegunMode)
                 {
-                    ScaleGun420.Instance.ModHelper.Console.WriteLine("Hit EquipToolMode Prefix (yay!)  it says that the 'mode' var in EquipToolMode(mode) doesn't match the local scalegunMode var (defined as Instance.SGToolmode)", MessageType.Message);  //STILL NOT REACHING THE PREFIX
                     return true;
                 }
 
-                PlayerTool playerTool = ScaleGun420.Instance._theGunToolClass;
-                ScaleGun420.Instance.ModHelper.Console.WriteLine("Reached EquipToolMode prefix at least!");
+                PlayerTool playerTool = ScaleGun420Modbehavior.Instance._theGunToolClass;
 
-                //vv copied from the end of the normal EquipToolMode vv
+                //vv copied from the end of the normal EquipToolMode, HAS TO BE HERE SINCE THE PREFIX OVERRIDES BASE FUNCTIONALITY vv
 
                 if (__instance._equippedTool != playerTool)  //if the ToolModeSwapper's currently-equipped tool isn't the newly-set playerTool,
                 {

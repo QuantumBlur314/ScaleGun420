@@ -16,8 +16,8 @@ namespace ScaleGun420
     public class ScalegunTool : PlayerTool
     {
         private Transform _scalegunToolTransform; //used by Awake
-        public GameObject _staffProp;
-        public GameObject _sgToolGameobject; //make some debug keybinds to toggle the object active/inactive.  Should be ez
+        private GameObject _staffProp;
+        private GameObject _sgToolGameobject; //make some debug keybinds to toggle the object active/inactive.  Should be ez
 
 
         private void Awake() //Happens naturally at the end of ScaleGun420, when its _sg
@@ -27,7 +27,7 @@ namespace ScaleGun420
             RenderNomaiStaff();
             StealOtherToolTransforms();  //NOT THE CULPRIT
 
-            _sgToolGameobject = ScaleGun420.Instance._sgToolGameobject;
+            _sgToolGameobject = ScaleGun420Modbehavior.Instance._sgToolGameobject;
             _sgToolGameobject.SetActive(true); //CURRENT EXPERIMENT //4got 2 assign object //OK so is this already part of the Awake method?  we'll find out if i ever disarble it
             _staffProp.SetActive(false);      //UNNECESSARY????    //Idk brop, NomaiTranslatorProp SetsActive(false) on Awake //Update: moved to AFTER the main object gets activated
         }
@@ -37,11 +37,11 @@ namespace ScaleGun420
             base.Start();
         }
 
-        public void RenderNomaiStaff()
+        private void RenderNomaiStaff()
         {
             LoadStaff();
             _staffProp = Instantiate(GameObject.Find("BrittleHollow_Body/Sector_BH/Sector_NorthHemisphere/Sector_NorthPole/Sector_HangingCity" +
-                "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff"), ScaleGun420.Instance._sgToolGameobject.transform);
+                "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff"), ScaleGun420Modbehavior.Instance._sgToolGameobject.transform);
 
             _staffProp.transform.localPosition = new Vector3(0.5496f, -1.11f, -0.119f);
             _staffProp.transform.localEulerAngles = new Vector3(343.8753f, 200.2473f, 345.2718f);
@@ -53,23 +53,22 @@ namespace ScaleGun420
         {
             if (this._scalegunToolTransform != null)  //originally _launcherTransform
             {
-                var _foundProbeLauncher = Locator.GetPlayerBody().GetComponentInChildren<Signalscope>();  //_foundProbeLauncher can be any tool, but im not gonna change the local var name every goddamn time so
-                if (_foundProbeLauncher != null)    //for some reason, when other tools get deployed it does some messy stuff, idfk.
+                var _foundToolToStealTransformsFrom = Locator.GetPlayerBody().GetComponentInChildren<PlayerProbeLauncher>();  //
+                if (_foundToolToStealTransformsFrom != null)    //for some reason, when other tools get deployed it does some messy stuff, idfk.
 
-                    this._stowTransform = _foundProbeLauncher._stowTransform;
-                ScaleGun420.Instance.ModHelper.Console.WriteLine($"Successfully stole {_foundProbeLauncher._stowTransform.ToString()} from {_foundProbeLauncher}"); //The Transforms don't print into strings like this unfortunately
-                this._holdTransform = _foundProbeLauncher._holdTransform;
-                ScaleGun420.Instance.ModHelper.Console.WriteLine($"Successfully stole {_foundProbeLauncher._holdTransform} from {_foundProbeLauncher}");
-                this._moveSpring = _foundProbeLauncher._moveSpring;  //NONE OF THIS IS RESPONSIBLE FOR THE LOOP
+                    this._stowTransform = _foundToolToStealTransformsFrom._stowTransform;  //CONFIRMED THAT STUTTERING OCCURS SWAPPING BETWEEN ScaleGun AND WHATEVER TOOL IT STOLE ITS TRANSFORMS FROM
+                ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"Successfully stole {_foundToolToStealTransformsFrom._stowTransform} from {_foundToolToStealTransformsFrom}"); //The Transforms don't print into strings like this unfortunately
+                this._holdTransform = _foundToolToStealTransformsFrom._holdTransform;
+                ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"Successfully stole {_foundToolToStealTransformsFrom._holdTransform} from {_foundToolToStealTransformsFrom}");
+                this._moveSpring = _foundToolToStealTransformsFrom._moveSpring; 
             }
         }
-
 
         //THE TWO CONDITIONS NECESSARY FOR THE PlayerTool.Update METHOD TO RUN AT ALL
         public override bool HasEquipAnimation()            //RETURNS TRUE ONLY IF ScalegunTool._stowTransform && ScalegunTool._holdTransform AREN'T NULL; SET THESE!
         {
             bool hasEquipAnimation = (this._stowTransform != null && this._holdTransform != null);
-            ScaleGun420.Instance.ModHelper.Console.WriteLine($"Reminder: HasEquipAnimation returned {hasEquipAnimation} and will continue to do so until you sort this out");
+            ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"Reminder: something is spam-calling HasEquipAnimation.  returned {hasEquipAnimation} but also wtf");
             return base.HasEquipAnimation();
         }    
         public override bool AllowEquipAnimation()
@@ -80,20 +79,18 @@ namespace ScaleGun420
 
         public override void EquipTool()          // IS NEVER BEING CALLED FOR SOME REASON?????
         {
-            ScaleGun420.Instance.ModHelper.Console.WriteLine($"called ScalegunTool.EquipTool");
+            ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"called ScalegunTool.EquipTool");
             base.EquipTool();
-
-
             // this._isEquipped = true;
-            if (this._staffProp)
+            //if (this._staffProp)
             {
-                this._staffProp.SetActive(true);
+                //this._staffProp.SetActive(true);  //EXPERIMENT: DISABLING Ln88 AS OnDisable ALREADY RUNS _staffProp.SetActive(true)  //Experiment successful
             }
         }
 
         public override void UnequipTool()          //CALLED BY ToolModeSwapper.EquipToolMode(ToolMode toolMode), which is itself called by ToolModeSwapper.Update
         {
-            ScaleGun420.Instance.ModHelper.Console.WriteLine($"called UnequipTool");
+            ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"called UnequipTool");
             base.UnequipTool(); 
          //base.UnequipTool SETS _isPuttingAway TO TRUE, THEN PlayerTool.Update APPLIES THE STOWTRANSFORMS THEN SETS base.enabled = false ONCE DONE ANIMATING
         }
@@ -104,9 +101,9 @@ namespace ScaleGun420
             //  launcher.SetActiveProbe(this._activeProbe);
 
         
-        public override void Update()           //PlayerTool's default update handles deploy animations and nothing else.  I've confirmed it's running.
+        public override void Update()
         {
-            base.Update();        //DEPLOY ANIMS HANDLED BY PlayerTool.Update; Everything else here is for Scalegun functions
+            base.Update();        //PlayerTool's base Update method handles deploy/stow anims; Everything else here is for Scalegun functions
             if (!this._isEquipped || this._isPuttingAway)           //Only does additional stuff if ScalegunTool is equipped.  DISABLED ON A HUNCH  UPDATE HUNCH WAS WRONG, CARRY ON
             {
               return;
@@ -114,27 +111,20 @@ namespace ScaleGun420
         }
 
 
-        //REDUNDANT PlayerTool base. CLASS STUFF TO DEBUG WHATEVER'S BREAKING.  ONCE EVERYTHING WORKS, ALL THIS IS SAFE TO DELETE //UPDATE: ALL IRRELEVANT GARBAGE HAS BEEN CYCLED OUT
-
         // [[[  P R O P   S T U F F  ]]]
-
-
 
         private void OnEnable()
         {
             {
                 if (!PlayerState.AtFlightConsole())        //borrowed from Signalscope.  Idk why different tool props have their OnEnable & OnDisable methods as different access levels
                 {   
-               // ScaleGun420.Instance._sgToolGameobject.SetActive(true);  //OBJECT ISN'T STARTING ACTIVE EITHER WAY, ADDRESS THIS
-                    _staffProp.SetActive(true);    //idk idk idk
-                    ScaleGun420.Instance.ModHelper.Console.WriteLine("Called ScalegunTool.OnEnable.  Set _staffProp to 'active' (ALLEGEDLY)"); //MESSAGE RECEIVED ON WORLD LOADED, HMM
+                    _staffProp.SetActive(true);
                 }
             }
         }
-        private void OnDisable()      //private void per 
+        private void OnDisable()      
         {
-            _staffProp.SetActive(false); //NEW, DISABLED BELOW BECAUSE SUCKS AND BAD I THINK
-            //{ ScaleGun420.Instance._sgToolGameobject.SetActive(false); }
+            _staffProp.SetActive(false);
         }
 
 
