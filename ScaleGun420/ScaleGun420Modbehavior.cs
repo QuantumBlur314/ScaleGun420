@@ -43,7 +43,7 @@ namespace ScaleGun420
         private ToolModeSwapper _vanillaSwapper;
 
         public GameObject _sgToolGameobject;  //MUST BE PUBLIC
-        private ScalegunTool _theGunToolClass;
+        public ScalegunTool _theGunToolClass;
 
         private Key GunToggle;        //Idk if it'll be more or less work to prevent gun from working while in ship.  guess we'll find out
         private bool toggleGunKey; //whether right-click & other scout-related actions reach the Scalegun instead
@@ -68,7 +68,7 @@ namespace ScaleGun420
                 ModHelper.Events.Unity.FireOnNextUpdate(
     () =>
     {
-        ScalegunInit();
+        ScalegunInit();  //error?
         sceneLoaded = true;     //MimicSwapperUpdate can start running now
         _vanillaSwapper = Locator.GetToolModeSwapper();    //Should establish _vanillaSwapper as the game's current ToolModeSwapper for future reference
     }
@@ -76,18 +76,12 @@ namespace ScaleGun420
             };
         }
 
-        private void ScalegunInit()
-        {
-            _sgToolGameobject = new GameObject("ScalegunObjectChildOfPlayerBody");    //IS THIS REDUNDANT?
-            if (_sgToolGameobject != null)
-            { ModHelper.Console.WriteLine($"Spawned {_sgToolGameobject}"); }
-
-            _sgToolGameobject.transform.rotation = Locator.GetPlayerTransform().transform.rotation;
-            _sgToolGameobject.transform.position = Locator.GetPlayerTransform().transform.position;
-            _sgToolGameobject.transform.parent = Locator.GetPlayerBody().transform;
-            _theGunToolClass = _sgToolGameobject.AddComponent<ScalegunTool>();  //ScalegunTool's Awake method should run, defining its local _sgToolGameobject as ScaleGun420's _sgToolGameobject.  america's ass or whatever idc about marvel but sometimes they say funny things
-            //IF ANYTHING IS WRONG, HANDLE IT IN ScalegunTool's AWAKE METHOD
-        }
+        private void ScalegunInit()  
+        {  
+            _sgToolGameobject = Locator.GetPlayerTransform().CreateChild("SGToolGameObject");  //WORKS
+            if (_sgToolGameobject == null) { ModHelper.Console.WriteLine("_sgToolGameobject was null"); }  //NEVER NULL
+            _theGunToolClass = _sgToolGameobject.AddComponent<ScalegunTool>();  //031623 update: this has to happen here nvm //ScalegunTool's Awake method should run, defining its local _sgToolGameobject as ScaleGun420's _sgToolGameobject.  america's ass or whatever idc about marvel but sometimes they say funny things
+        } //error?  //031623: ScalegunTool is active
 
         public override void Configure(IModConfig config)
 
@@ -134,7 +128,7 @@ namespace ScaleGun420
             if (sceneLoaded)
             {
                 MimickSwapperUpdate();
-                EyesDrillHoles();
+                EyesDrillHoles();  //EYESDRILLHOLES DOES A NULLREF IF CALLED WITHOUT WEARING A SUIT (until you project it to the prop)
             }
         }
 
