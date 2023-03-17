@@ -16,7 +16,7 @@ namespace ScaleGun420
 
         //NomaiTranslatorProp only disables TranslatorGroup (the dingus housing all canvas, prop model, etc) near the end of NomaiTranslatorProp's Awake 
         private void Awake()
-        {   
+        {
             RenderNomaiStaff();
             //this._sgPropStaff.SetActive(false);  //UNNECESSARY I THINK, STAFF IS ALREADY PART OF _sgOwnPropGroupject
             //this._sgPropCanvas.enabled = false;
