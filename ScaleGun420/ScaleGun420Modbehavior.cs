@@ -85,6 +85,7 @@ namespace ScaleGun420
             _theGunToolClass._sgPropClass._sgOwnPropGroupject = _theGunToolClass._sgPropGroupject;  //031623_0741: prop-class Groupject will now awaken to a Tool-Class parent, instead of to a hollow one.  Assigns for internal refs.
             _theGunToolClass._sgPropClass.enabled = true;
             _theGunToolClass.enabled = true;
+            _sgToolGObj.SetActive(true);
         }
 
         public override void Configure(IModConfig config)

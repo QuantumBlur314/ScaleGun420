@@ -44,14 +44,14 @@ namespace ScaleGun420
 
         private void RenderNomaiStaff()
         {
-            LoadStaff();  //31623_0507: two lines down you'll notice the .Find() has an overload telling it which 
+            LoadStaff();  //31623_0507: two lines down you'll notice the .Find() has an overload telling it what to be the child of
             _sgPropStaff = Instantiate(GameObject.Find("BrittleHollow_Body/Sector_BH/Sector_NorthHemisphere/Sector_NorthPole/Sector_HangingCity" +
                 "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff"), _sgOwnPropGroupject.transform);
 
             _sgPropStaff.transform.localPosition = new Vector3(0.5496f, -1.11f, -0.119f);
             _sgPropStaff.transform.localEulerAngles = new Vector3(343.8753f, 200.2473f, 345.2718f);
             var streamingRenderMeshHandle = _sgPropStaff.GetComponentInChildren<StreamingRenderMeshHandle>();
-            streamingRenderMeshHandle.OnMeshUnloaded += LoadStaff;
+            streamingRenderMeshHandle.OnMeshUnloaded += LoadStaff;   //031623_2047: I think the Loadstaff might be getting called repeatedly or something, idk, performance is garbage when equipped
             void LoadStaff() { StreamingManager.LoadStreamingAssets("brittlehollow/meshes/props"); }
         }
     }
