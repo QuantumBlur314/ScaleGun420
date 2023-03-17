@@ -42,8 +42,8 @@ namespace ScaleGun420
 
         private ToolModeSwapper _vanillaSwapper;
 
-        public GameObject _sgToolGameobject;  //MUST BE PUBLIC
-        public ScalegunTool _theGunToolClass;
+        public GameObject _sgToolGObj;  //MUST BE PUBLIC
+        public ScalegunToolClass _theGunToolClass;
 
         private Key GunToggle;        //Idk if it'll be more or less work to prevent gun from working while in ship.  guess we'll find out
         private bool toggleGunKey; //whether right-click & other scout-related actions reach the Scalegun instead
@@ -68,7 +68,7 @@ namespace ScaleGun420
                 ModHelper.Events.Unity.FireOnNextUpdate(
     () =>
     {
-        ScalegunInit();  //error?
+        GOSetup();
         sceneLoaded = true;     //MimicSwapperUpdate can start running now
         _vanillaSwapper = Locator.GetToolModeSwapper();    //Should establish _vanillaSwapper as the game's current ToolModeSwapper for future reference
     }
@@ -76,12 +76,16 @@ namespace ScaleGun420
             };
         }
 
-        private void ScalegunInit()  
-        {  
-            _sgToolGameobject = Locator.GetPlayerTransform().CreateChild("SGToolGameObject");  //WORKS
-            if (_sgToolGameobject == null) { ModHelper.Console.WriteLine("_sgToolGameobject was null"); }  //NEVER NULL
-            _theGunToolClass = _sgToolGameobject.AddComponent<ScalegunTool>();  //031623 update: this has to happen here nvm //ScalegunTool's Awake method should run, defining its local _sgToolGameobject as ScaleGun420's _sgToolGameobject.  america's ass or whatever idc about marvel but sometimes they say funny things
-        } //error?  //031623: ScalegunTool is active
+        private void GOSetup()  //does all the object spawning/hierarchies that the base game's creators probably handled better in unity.  idfk.  Does things in such 
+        {
+            _sgToolGObj = Locator.GetPlayerTransform().CreateChild("SgToolGO_husk", false);  //031623_0653: spawns an inactive empty SGToolGO as a child of the player.
+            _theGunToolClass = _sgToolGObj.AddComponent<ScalegunToolClass>();  //hopefully the host _sgToolGObj's inactivity prevents its new ScalegunTool pilot from waking up, or it'll reach for ScalegunPropClass too early
+            _theGunToolClass._sgPropGroupject = _sgToolGObj.GivesBirthTo("SgPropGroupject_husk", false);  //ScalegunTool class declares a Gameobject called _sgPropGroupject.  This spawns & designates it at once.
+            _theGunToolClass._sgPropClass = _theGunToolClass._sgPropGroupject.AddComponent<ScalegunPropClass>(); //ScalegunTool declares a PropClass; hopefully not 2late to attach & designate it to the _sgPropGroupject.
+            _theGunToolClass._sgPropClass._sgOwnPropGroupject = _theGunToolClass._sgPropGroupject;  //031623_0741: prop-class Groupject will now awaken to a Tool-Class parent, instead of to a hollow one.  Assigns for internal refs.
+            _theGunToolClass._sgPropClass.enabled = true;
+            _theGunToolClass.enabled = true;
+        }
 
         public override void Configure(IModConfig config)
 
