@@ -30,7 +30,7 @@ namespace ScaleGun420
         {
             base.enabled = true;
             //this._sgPropCanvas.enabled = true;
-            _sgPropStaff.SetActive(true);
+            _sgOwnPropGroupject.SetActive(true);  //reference
         }
         public void OnUnequipTool() //done
         { base.enabled = false; }

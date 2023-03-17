@@ -16,9 +16,7 @@ namespace ScaleGun420
     public class ScalegunToolClass : PlayerTool
     {
         private Transform _sgToolClassTransform; //reference to current attached GO's transform; used by Awake
-       
         public GameObject _sgPropGroupject; //has to be public so ScalegunProp Awake can reference it and assign itself
-
         public ScalegunPropClass _sgPropClass;
 
 
@@ -40,7 +38,7 @@ namespace ScaleGun420
 
         private void StealOtherToolTransforms()
         {
-            if (_sgToolClassTransform == null)  //originally launcherTransform.  The fact this is firing successfully suggests _scalegunToolTransform isn't, in fact, null, so presumably neither is the GO
+            if (_sgToolClassTransform != null)  //originally launcherTransform.  The fact this is firing successfully suggests _scalegunToolTransform isn't, in fact, null, so presumably neither is the GO
             {
                 var _foundToolToStealTransformsFrom = Locator.GetPlayerBody().GetComponentInChildren<Signalscope>();  //
                 if (_foundToolToStealTransformsFrom != null)    //for some reason, when other tools get deployed it does some messy stuff, idfk.
