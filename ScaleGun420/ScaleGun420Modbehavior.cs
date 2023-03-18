@@ -41,7 +41,7 @@ namespace ScaleGun420
         //public GameObject _lookingAt;
         //public GameObject _recentTargetObject;
 
-        private ToolModeSwapper _vanillaSwapper;
+        public ToolModeSwapper _vanillaSwapper;
 
         public GameObject _sgToolGObj;  //MUST BE PUBLIC
         public ScalegunToolClass _theGunToolClass;
@@ -139,7 +139,7 @@ namespace ScaleGun420
             if (sceneLoaded)
             {
                 MimickSwapperUpdate();
-                EyesDrillHoles();  //EYESDRILLHOLES DOES A NULLREF IF CALLED WITHOUT WEARING A SUIT (until you project it to the prop)
+                //ScalegunPropClass.EyesDrillHoles();  //EYESDRILLHOLES DOES A NULLREF IF CALLED WITHOUT WEARING A SUIT (until you project it to the prop)
             }
         }
 

@@ -1,4 +1,5 @@
-﻿using Steamworks;
+﻿using OWML.ModHelper.Events;
+using Steamworks;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -56,17 +57,48 @@ namespace ScaleGun420
         public static GameObject InstantiatePrefab(this GameObject parentGO, string streamingAssetsBath, string prefabBath, bool spawnsActive, Vector3 localPosition = default, Vector3 localEulerAngles = default)
         {
             LoadPrefab();
-            GameObject newPrefab = UnityEngine.Object.Instantiate(GameObject.Find(prefabBath), parentGO.transform);
+            GameObject newPrefab = ScaleGun420Modbehavior.Instantiate(GameObject.Find(prefabBath), parentGO.transform);
 
             newPrefab.transform.localPosition = localPosition;
             newPrefab.transform.localEulerAngles = localEulerAngles;
             var streamingRenderMeshHandle = newPrefab.GetComponentInChildren<StreamingRenderMeshHandle>();
             streamingRenderMeshHandle.OnMeshUnloaded += LoadPrefab;   //031623_2047: I think the Loadstaff might be getting called repeatedly or something, idk, performance is garbage when equipped
-            void LoadPrefab() { StreamingManager.LoadStreamingAssets(streamingAssetsBath); }
+            void LoadPrefab() { if (streamingAssetsBath != null) { StreamingManager.LoadStreamingAssets(streamingAssetsBath); } }
             newPrefab.SetActive(spawnsActive);
             return newPrefab;
         }
 
+
+
+        //  private static T InstaPrefabAnyType<T>(this Transform parentTransform, string streamingAssetsBath, string prefabBath, bool spawnsActive, Vector3 localPosition = default, Vector3 localEulerAngles = default)
+        // where T : UnityEngine.Component
+        // {
+
+        //  LoadPrefab();
+        //  T newPrefab = ScaleGun420Modbehavior.Instantiate(UnityEngine.Component.Find(prefabBath), parentTransform);
+
+        // newPrefab.transform.localPosition = localPosition;
+        // newPrefab.transform.localEulerAngles = localEulerAngles;
+        // var streamingRenderMeshHandle = newPrefab.GetComponentInChildren<StreamingRenderMeshHandle>();
+        // streamingRenderMeshHandle.OnMeshUnloaded += LoadPrefab;   //031623_2047: I think the Loadstaff might be getting called repeatedly or something, idk, performance is garbage when equipped
+        // void LoadPrefab()
+        //{ if (streamingAssetsBath != null) { StreamingManager.LoadStreamingAssets(streamingAssetsBath); } }
+        //newPrefab.SetActiveOnAwake(spawnsActive);
+        //return newPrefab;
+
+        // }
+
+        public static T GetChildComponentByName<T>(this Transform parent, string name) where T : UnityEngine.Component    //shoutout to markroth8 on Feb 22, 2020 on the unity forums for this
+        {
+            foreach (T component in parent.GetComponentsInChildren<T>(true))
+            {
+                if (component.gameObject.name == name)
+                {
+                    return component;
+                }
+            }
+            return null;
+        }
 
 
     }

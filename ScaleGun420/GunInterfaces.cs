@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace ScaleGun420
 {
-    internal class GunInterfaces
+    internal class GunInterfaces: ShipNotificationDisplay
     {
 
     }
