@@ -16,7 +16,7 @@ namespace ScaleGun420
     public class ScalegunToolClass : PlayerTool
     {
         private Transform _sgToolClassTransform; //reference to current attached GO's transform; used by Awake
-        public GameObject _sgPropGroupject; //has to be public so ScalegunProp Awake can reference it and assign itself
+        public GameObject _sgPropSoupject; //has to be public so ScalegunProp Awake can reference it and assign itself
         public ScalegunPropClass _sgPropClass;
 
 
@@ -107,7 +107,7 @@ namespace ScaleGun420
             {
                 if (!PlayerState.AtFlightConsole())        //borrowed from Signalscope.  Idk why different tool props have their OnEnable & OnDisable methods as different access levels
                 {
-                    _sgPropGroupject.SetActive(true);  //TEST Ln114: disabled because NomaiTranslator doesn't override this at all //update: THIS ISN'T AN OVERRIDE, PlayerTool DOESN'T HAVE AN OnEnable BY DEFAULT
+                    _sgPropSoupject.SetActive(true);  //TEST Ln114: disabled because NomaiTranslator doesn't override this at all //update: THIS ISN'T AN OVERRIDE, PlayerTool DOESN'T HAVE AN OnEnable BY DEFAULT
                 }
             }
         }

@@ -7,6 +7,8 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngineInternal;
+
 
 namespace ScaleGun420
 {
@@ -38,13 +40,6 @@ namespace ScaleGun420
         //lots of these can be handled by just AddComponent<>() WHICH IS, ITSELF, A GENERIC BTW
 
 
-        public static TypeOfThingus<T> Birthed(this TypeOFThingus parentComponent, string thingName)
-        {
-            TypeOfThingus childComponent = new TypeOfThingus(thingName);
-            Transform parentTransform = parentComponent.GetComponent<Transform>();
-            childComponent.transform.SetParent(parentTransform);
-        }
-
 
         //VIO'S BETTER CreateChild:  (also inadvertently led to Idiot teaching Vio about extensions, I FINALLY KNEW ABOUT SOMETHING BEFORE VIO DID {arbitrarily, because Xen told me about extensions})
         //"Vector3 localPosition = default" sets the child to parent's 0,0,0 by default, tweak if you want, BUT DON'T HAVE TO.  Those "=" and "defaults" in the parentheses set default if you don't need them custom when calling
@@ -57,6 +52,19 @@ namespace ScaleGun420
             childObj.transform.localScale = scaleMultiplier * Vector3.one;
             childObj.SetActive(spawnsActive);
             return childObj;
+        }
+        public static GameObject InstantiatePrefab(this GameObject parentGO, string streamingAssetsBath, string prefabBath, bool spawnsActive, Vector3 localPosition = default, Vector3 localEulerAngles = default)
+        {
+            LoadPrefab();
+            GameObject newPrefab = UnityEngine.Object.Instantiate(GameObject.Find(prefabBath), parentGO.transform);
+
+            newPrefab.transform.localPosition = localPosition;
+            newPrefab.transform.localEulerAngles = localEulerAngles;
+            var streamingRenderMeshHandle = newPrefab.GetComponentInChildren<StreamingRenderMeshHandle>();
+            streamingRenderMeshHandle.OnMeshUnloaded += LoadPrefab;   //031623_2047: I think the Loadstaff might be getting called repeatedly or something, idk, performance is garbage when equipped
+            void LoadPrefab() { StreamingManager.LoadStreamingAssets(streamingAssetsBath); }
+            newPrefab.SetActive(spawnsActive);
+            return newPrefab;
         }
 
 

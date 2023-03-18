@@ -8,6 +8,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Tessellation;
 using UnityEngine;
 using UnityEngine.Events;
@@ -80,14 +81,18 @@ namespace ScaleGun420
         {
             _sgToolGObj = Locator.GetPlayerTransform().CreateChild("SgToolGO_husk", false);  //031623_0653: spawns an inactive empty SGToolGO as a child of the player.
             _theGunToolClass = _sgToolGObj.AddComponent<ScalegunToolClass>();  //hopefully the host _sgToolGObj's inactivity prevents its new ScalegunTool pilot from waking up, or it'll reach for ScalegunPropClass too early
-            _theGunToolClass._sgPropGroupject = _sgToolGObj.GivesBirthTo("SgPropGroupject_husk", false);  //ScalegunTool class declares a Gameobject called _sgPropGroupject.  This spawns & designates it at once.
-            _theGunToolClass._sgPropClass = _theGunToolClass._sgPropGroupject.AddComponent<ScalegunPropClass>(); //ScalegunTool declares a PropClass; hopefully not 2late to attach & designate it to the _sgPropGroupject.
-            _theGunToolClass._sgPropClass._sgOwnPropGroupject = _theGunToolClass._sgPropGroupject;  //031623_0741: prop-class Groupject will now awaken to a Tool-Class parent, instead of to a hollow one.  Assigns for internal refs.
+            _theGunToolClass._sgPropSoupject = _sgToolGObj.InstantiatePrefab("brittlehollow/meshes/props", "BrittleHollow_Body/Sector_BH/Sector_NorthHemisphere/Sector_NorthPole/Sector_HangingCity" +
+                            "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff", false, new Vector3(0.5496f, -1.11f, -0.119f), new Vector3(343.8753f, 200.2473f, 345.2718f));  //ScalegunTool class declares a Gameobject called _sgPropGroupject.  This spawns & designates it at once.
+            _theGunToolClass._sgPropClass = _theGunToolClass._sgPropSoupject.AddComponent<ScalegunPropClass>(); //ScalegunTool declares a PropClass; hopefully not 2late to attach & designate it to the _sgPropGroupject.
+            _theGunToolClass._sgPropClass._sgOwnPropGroupject = _theGunToolClass._sgPropSoupject;  //031623_0741: prop-class Groupject will now awaken to a Tool-Class parent, instead of to a hollow one.  Assigns for internal refs.
+
             _theGunToolClass.enabled = true; //031623_2102: Put this here in hopes of addressing a nullref (don't think 
             _theGunToolClass._sgPropClass.enabled = true;
 
             _sgToolGObj.SetActive(true);
         }
+
+
 
         public override void Configure(IModConfig config)
 

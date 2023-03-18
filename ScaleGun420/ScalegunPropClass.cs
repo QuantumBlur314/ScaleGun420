@@ -21,7 +21,7 @@ namespace ScaleGun420
         
         private void Awake()
         {
-            RenderNomaiStaff();
+            //RenderNomaiStaff();  031723_1956: Disabled in hopes I can remove a middleman
             RenderScreen();
             this._sgOwnPropGroupject.SetActive(false);  //what NomaiTranslatorProp does, but better-labeled.  TranslatorProp sets its whole parent propgroup inactive at end of its Awake (the parts of it relevant to me) 
         }
@@ -51,7 +51,7 @@ namespace ScaleGun420
 
 
         private void RenderNomaiStaff()
-        {
+        {   
             LoadStaff();  //31623_0507: two lines down you'll notice the .Find() has an overload telling it what to be the child of
             _sgPropStaff = Instantiate(GameObject.Find("BrittleHollow_Body/Sector_BH/Sector_NorthHemisphere/Sector_NorthPole/Sector_HangingCity" +
                 "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff"), _sgOwnPropGroupject.transform);
