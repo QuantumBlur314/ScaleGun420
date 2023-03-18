@@ -20,7 +20,7 @@ namespace ScaleGun420
         public ScalegunPropClass _sgPropClass;
 
 
-        private void Awake()  //Happens at end of 
+        private void Awake()  
         {
  //GetComponentInChildren doesn't search for inactive objects by default, needs to be set to (true) to find inactive stuff
             _sgPropClass = GetComponentInChildren<ScalegunPropClass>(true);  //Setting it to (true) worked ok fine idk whatever

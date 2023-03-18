@@ -1,10 +1,12 @@
-﻿using System;
+﻿using Steamworks;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace ScaleGun420
 {
@@ -32,17 +34,15 @@ namespace ScaleGun420
             return childObj;
         }
 
-        public static Canvas SpawnChildCanvasAtParent(this GameObject parentGO, Vector3 localPositionHaha = default, Vector3 localEulerAnglesHaha = default, float scaleMultiplier = 1)
+
+        //lots of these can be handled by just AddComponent<>() WHICH IS, ITSELF, A GENERIC BTW
+
+
+        public static TypeOfThingus<T> Birthed(this TypeOFThingus parentComponent, string thingName)
         {
-            Canvas childObj = new();
-
-            Transform parentTransform = parentGO.GetComponent<Transform>();
-            childObj.transform.SetParent(parentTransform);
-
-            childObj.transform.localPosition = localPositionHaha;  //DO NOT COPY THE localANYTHING FROM THE PARENT BTW, it will "add up"
-            childObj.transform.localEulerAngles = localEulerAnglesHaha;
-            childObj.transform.localScale = scaleMultiplier * Vector3.one;
-            return childObj;
+            TypeOfThingus childComponent = new TypeOfThingus(thingName);
+            Transform parentTransform = parentComponent.GetComponent<Transform>();
+            childComponent.transform.SetParent(parentTransform);
         }
 
 
@@ -61,6 +61,6 @@ namespace ScaleGun420
 
 
 
-
     }
 }
+
