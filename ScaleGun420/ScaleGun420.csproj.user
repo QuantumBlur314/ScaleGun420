@@ -1,5 +1,5 @@
 ﻿<Project>
   <PropertyGroup>
-    <OutputPath>$(AppData)\OuterWildsModManager\OWML\Mods\QuantumBlur314.ScaleGun420</OutputPath>
+    <OutputPath>C:\Users\rtboo_000\AppData\Roaming\OuterWildsModManager\OWML\Mods\QuantumBlur314.ScaleGun420</OutputPath>
   </PropertyGroup>
 </Project>

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OWML.ModHelper;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,9 +9,10 @@ using UnityEngine.UI;
 using UnityEngine.UIElements;
 
 
-namespace ScaleGun420
+
+namespace ScaleGun420   //CURRENTLY, B DOESN'T WORK ON THE FIRST EQUIP, ONLY WORKS AFTER SUBSEQUENT EQUIPS, NO IDEA WHY
 {
-    public class ScalegunPropClass : MonoBehaviour
+    public class ScalegunPropClass : MonoBehaviour  
     {
         public Canvas _sgPropCanvas;
         public GameObject _sgpCanvObj;
@@ -20,12 +22,13 @@ namespace ScaleGun420
         private RectTransform _mainTextRecTra;
         public GameObject _sgOwnPropGroupject;  //TranslatorProp never had to GetComponent() or whatever to define its internal _translatorProp Gameobject, so presumably, neither do I.
 
+
         //NomaiTranslatorProp only disables TranslatorGroup (the dingus housing all canvas, prop model, etc) near the end of NomaiTranslatorProp's Awake 
 
         private void Awake()
         {
             SpawnAdditionalLasses();
-
+            this._sgPropCanvas.enabled = false; //031823_0614: doing this since TranslatorProp did it but it wasn't here yet //update: nope //031823_1524: Sudden unexpected nullref?
             this._sgOwnPropGroupject.SetActive(false);  //what NomaiTranslatorProp does, but better-labeled.  TranslatorProp sets its whole parent propgroup inactive at end of its Awake (the parts of it relevant to me) 
         }
 
@@ -33,14 +36,18 @@ namespace ScaleGun420
         {
             _sgpCanvObj = Instantiate(GameObject.Find("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas"), _sgOwnPropGroupject.transform);
             
-            _sgpCanvObj.transform.localEulerAngles = new Vector3(45f, 180f, 0f);
-            _sgpCanvObj.transform.localPosition = new Vector3(0.4f, 1.85f, 0.05f);
+            _sgpCanvObj.transform.localEulerAngles = new Vector3(25f, 160f, 350f);
+            _sgpCanvObj.transform.localPosition = new Vector3(0.15f, 1.75f, 0.05f);
             _sgpCanvObj.transform.localScale = new Vector3(0.0003f, 0.0003f, 0.0003f);
-            _sgPropCanvas = base.transform.GetComponentInChildren<Canvas>(true);
+            _sgpCanvObj.SetActive(true);  //031823_0616: set this to false, maybe?  //edit: nope that just made the canvas inactive (of course it did)
+            _sgPropCanvas = base.transform.GetComponentInChildren<Canvas>(true);  //031823_0627: GETTING RID OF THE (true) MAYBE?
+
+            _mainTextRecTra = base.transform.GetComponentInChildren<RectTransform>(true); //031823_0523: swapped to before _sgpTextFieldMain gets defined, idk why
+            _mainTextRecTra.pivot = new Vector2(1f, 0.5f);
 
             _sgpTextFieldMain = _sgpCanvObj.transform.GetChildComponentByName<Text>("TranslatorText").GetComponent<Text>();   //THIS IS ALL YOU NEED TO SPAWN NEW LASSES YOU DINGUS
+            _sgpTextFieldMain.enabled = true;  //031823_0608: setting to false doesn't fix the thing, and just leaves it disabled.
 
-            _mainTextRecTra = base.transform.GetComponentInChildren<RectTransform>(true);
         }
 
         private void Start()
@@ -52,12 +59,14 @@ namespace ScaleGun420
 
         public void EyesDrillHoles()          //GameObjects have a SetActive method, the menu uses this, maybe it's single-target?  maybe I don't have to use my own thingus?
         {
-            if (ScaleGun420Modbehavior.Instance.BigBubbon && Locator.GetPlayerCamera() != null && ScaleGun420Modbehavior.Instance._vanillaSwapper.IsInToolMode(ScaleGun420Modbehavior.Instance.SGToolmode))
+            if (ScaleGun420Modbehavior.Instance.BigBubbon && Locator.GetPlayerCamera() != null && ScaleGun420Modbehavior.Instance._vanillaSwapper.IsInToolMode(ScaleGun420Modbehavior.Instance.SGToolmode))   //031823_1505: Changed a bunch of stuff to __instance for cleanliness; may or may not bork things //031823_1525: Okay so apparently that made it start nullreffing? //REBUILDING IS FAILING, THANKS MICROSOFT.NET FRAMEWORK BUG
             {
+                ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"ScalegunPropClass Ln063: successfully ran EyesDrillHoles, nothing wrong here");
                 Vector3 fwd = Locator.GetPlayerCamera().transform.forward;  //fwd is a Vector-3 that transforms forward relative to the playercamera
 
                 Physics.Raycast(Locator.GetPlayerCamera().transform.position, fwd, out RaycastHit hit, 50000, OWLayerMask.physicalMask);
                 var retrievedRootObject = hit.collider.transform.GetPath();
+                if (retrievedRootObject == null) { ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"Prop Ln069(nice): retrievedRootObject is null! why"); }
                 _sgpTextFieldMain.text = $"{retrievedRootObject}";
             }
         }
@@ -65,8 +74,6 @@ namespace ScaleGun420
         public void OnEquipTool()   //done
         {
             base.enabled = true;
-            _sgpTextFieldMain.text = "AAAAAUAGH AUGH UGH AUGH AAAAHHHHHHHHHHH AHGH AGH HGHAH H GHERUHEOREOFUEAVOIEJ DAIFOREHNOESRGVEFHGS UOGVH OBSUI OIUHJ ESOE GCOIRE OUIESR?UMCOSERIOSMOVSER?RMJ";
-
             this._sgPropCanvas.enabled = true;
             _sgOwnPropGroupject.SetActive(true);  //reference
 
@@ -76,7 +83,7 @@ namespace ScaleGun420
 
         public void OnFinishUnequipAnimation()  //called by Tool's OnDisable, just like bart just like bart just like bart just like bart just like bart just like bart jut like bart just like bart just lik ebart just line bart just koll bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart
         {
-            //this._sgPropCanvas.enabled = false;
+            this._sgPropCanvas.enabled = false; //031823_0611: Enabled this code, didn't fix anything, but it's what the translator prop does.
             _sgOwnPropGroupject.SetActive(false);
         }
 

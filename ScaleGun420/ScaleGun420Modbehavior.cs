@@ -86,7 +86,7 @@ namespace ScaleGun420
             _theGunToolClass._sgPropClass = _theGunToolClass._sgPropSoupject.AddComponent<ScalegunPropClass>(); //ScalegunTool declares a PropClass; hopefully not 2late to attach & designate it to the _sgPropGroupject.
             _theGunToolClass._sgPropClass._sgOwnPropGroupject = _theGunToolClass._sgPropSoupject;  //031623_0741: prop-class Groupject will now awaken to a Tool-Class parent, instead of to a hollow one.  Assigns for internal refs.
 
-            _theGunToolClass.enabled = true; //031623_2102: Put this here in hopes of addressing a nullref (don't think 
+            _theGunToolClass.enabled = true; //031823_0622: put back after the other one in hopes of addressing a first-time-equip bug  UPDATE: THAT DID NOTHING EITHER
             _theGunToolClass._sgPropClass.enabled = true;
 
             _sgToolGObj.SetActive(true);

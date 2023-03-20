@@ -24,8 +24,7 @@ namespace ScaleGun420
         {
  //GetComponentInChildren doesn't search for inactive objects by default, needs to be set to (true) to find inactive stuff
             _sgPropClass = GetComponentInChildren<ScalegunPropClass>(true);  //Setting it to (true) worked ok fine idk whatever
-            if (_sgPropClass == null)
-            { ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine("ScalegunToolClass's Awake() method failed to assign _sgPropClass"); }
+
             if (!this._sgToolClassTransform)
             { this._sgToolClassTransform = base.transform; }  //ProbeLauncher does this
             StealOtherToolTransforms();
@@ -50,7 +49,7 @@ namespace ScaleGun420
                 ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"Successfully stole {_foundToolToStealTransformsFrom._stowTransform} from {_foundToolToStealTransformsFrom}"); //The Transforms don't print into strings like this unfortunately
                 _holdTransform = _foundToolToStealTransformsFrom._holdTransform;
                 ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"Successfully stole {_foundToolToStealTransformsFrom._holdTransform} from {_foundToolToStealTransformsFrom}");
-                _moveSpring = _foundToolToStealTransformsFrom._moveSpring;
+                _moveSpring = _foundToolToStealTransformsFrom._moveSpring;  //REMEMBER TO DIG UP WHATEVER FORMAT _moveSpring USES AND MAKE YOUR OWN
             }
         }
 
@@ -65,7 +64,7 @@ namespace ScaleGun420
         }
 
 
-        public override void EquipTool()          // IS NEVER BEING CALLED FOR SOME REASON?????
+        public override void EquipTool()
         {
             ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"called ScalegunTool.EquipTool");
             base.EquipTool();
@@ -107,7 +106,7 @@ namespace ScaleGun420
             {
                 if (!PlayerState.AtFlightConsole())        //borrowed from Signalscope.  Idk why different tool props have their OnEnable & OnDisable methods as different access levels
                 {
-                    _sgPropSoupject.SetActive(true);  //TEST Ln114: disabled because NomaiTranslator doesn't override this at all //update: THIS ISN'T AN OVERRIDE, PlayerTool DOESN'T HAVE AN OnEnable BY DEFAULT
+                    _sgPropSoupject.SetActive(true);  //TEST Ln114: disabled because NomaiTranslator doesn't override this at all //update: THIS ISN'T AN OVERRIDE, PlayerTool DOESN'T HAVE AN OnEnable BY DEFAULT// 031823_0637: disabling since it wasn't in the holy scriptures of NomaiTranslator, idfk anymore
                 }
             }
         }

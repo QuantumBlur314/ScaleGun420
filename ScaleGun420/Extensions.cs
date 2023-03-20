@@ -18,7 +18,8 @@ namespace ScaleGun420
         public static string GetPath(this Transform current)    //Xen says New Horizons uses this.  It has to be in a static class, so that's why it's in Extensions
         {
             if (current.parent == null) return current.name;
-            return current.parent.GetPath() + "/" + current.name; //literally just digs until it hits bedrock.  Let player manually scroll back up somehow
+            ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"{current}");
+            return current.parent.GetPath() + "/" + current.name; //burrows UP
         }
 
         //myCoolCreateChildMethod.cs mangled and mingled with Vio's
