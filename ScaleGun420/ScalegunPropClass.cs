@@ -10,7 +10,7 @@ using UnityEngine.UIElements;
 
 
 
-namespace ScaleGun420   //CURRENTLY, B DOESN'T WORK ON THE FIRST EQUIP, ONLY WORKS AFTER SUBSEQUENT EQUIPS, NO IDEA WHY
+namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQUIP, ONLY WORKS AFTER SUBSEQUENT EQUIPS, NO IDEA WHY, GOOD LUCK FIGURING IT OUT
 {
     public class ScalegunPropClass : MonoBehaviour  
     {
@@ -40,7 +40,7 @@ namespace ScaleGun420   //CURRENTLY, B DOESN'T WORK ON THE FIRST EQUIP, ONLY WOR
             _sgpCanvObj.transform.localPosition = new Vector3(0.15f, 1.75f, 0.05f);
             _sgpCanvObj.transform.localScale = new Vector3(0.0003f, 0.0003f, 0.0003f);
             _sgpCanvObj.SetActive(true);  //031823_0616: set this to false, maybe?  //edit: nope that just made the canvas inactive (of course it did)
-            _sgPropCanvas = base.transform.GetComponentInChildren<Canvas>(true);  //031823_0627: GETTING RID OF THE (true) MAYBE?
+            _sgPropCanvas = base.transform.GetComponentInChildren<Canvas>(true);  //031823_0627: GETTING RID OF THE (true) MAYBE?   //031923_1831: never found out whether that would work because VS broke
 
             _mainTextRecTra = base.transform.GetComponentInChildren<RectTransform>(true); //031823_0523: swapped to before _sgpTextFieldMain gets defined, idk why
             _mainTextRecTra.pivot = new Vector2(1f, 0.5f);
@@ -57,7 +57,7 @@ namespace ScaleGun420   //CURRENTLY, B DOESN'T WORK ON THE FIRST EQUIP, ONLY WOR
         private void Update()
         { EyesDrillHoles(); }
 
-        public void EyesDrillHoles()          //GameObjects have a SetActive method, the menu uses this, maybe it's single-target?  maybe I don't have to use my own thingus?
+        public void EyesDrillHoles()
         {
             if (ScaleGun420Modbehavior.Instance.BigBubbon && Locator.GetPlayerCamera() != null && ScaleGun420Modbehavior.Instance._vanillaSwapper.IsInToolMode(ScaleGun420Modbehavior.Instance.SGToolmode))   //031823_1505: Changed a bunch of stuff to __instance for cleanliness; may or may not bork things //031823_1525: Okay so apparently that made it start nullreffing? //REBUILDING IS FAILING, THANKS MICROSOFT.NET FRAMEWORK BUG
             {
@@ -71,14 +71,14 @@ namespace ScaleGun420   //CURRENTLY, B DOESN'T WORK ON THE FIRST EQUIP, ONLY WOR
             }
         }
 
-        public void OnEquipTool()   //done
+        public void OnEquipTool()   //done & working
         {
             base.enabled = true;
             this._sgPropCanvas.enabled = true;
-            _sgOwnPropGroupject.SetActive(true);  //reference
+            _sgOwnPropGroupject.SetActive(true);
 
         }
-        public void OnUnequipTool() //done
+        public void OnUnequipTool() //done & working
         { base.enabled = false; }
 
         public void OnFinishUnequipAnimation()  //called by Tool's OnDisable, just like bart just like bart just like bart just like bart just like bart just like bart jut like bart just like bart just lik ebart just line bart just koll bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart
@@ -88,6 +88,8 @@ namespace ScaleGun420   //CURRENTLY, B DOESN'T WORK ON THE FIRST EQUIP, ONLY WOR
         }
 
 
+
+        //  vv  NO LONGER IN USE HERE  vv , INSTEAD CALLED DURING THE MAIN MODBEHAVIOR CLASS DURING GOSetup USING THE InstantiatePrefab EXTENSION; THIS IS JUST HERE FOR REFERENCE
         private void RenderNomaiStaff()
         {
             LoadStaff();  //31623_0507: two lines down you'll notice the .Find() has an overload telling it what to be the child of
@@ -97,7 +99,7 @@ namespace ScaleGun420   //CURRENTLY, B DOESN'T WORK ON THE FIRST EQUIP, ONLY WOR
             _sgPropStaff.transform.localPosition = new Vector3(0.5496f, -1.11f, -0.119f);
             _sgPropStaff.transform.localEulerAngles = new Vector3(343.8753f, 200.2473f, 345.2718f);
             var streamingRenderMeshHandle = _sgPropStaff.GetComponentInChildren<StreamingRenderMeshHandle>();
-            streamingRenderMeshHandle.OnMeshUnloaded += LoadStaff;   //031623_2047: I think the Loadstaff might be getting called repeatedly or something, idk, performance is garbage when equipped
+            streamingRenderMeshHandle.OnMeshUnloaded += LoadStaff;   //031623_2047: I think the Loadstaff might be getting called repeatedly or something, idk, performance is garbage when equipped //031923_1836: Issue resolved last I checked
             void LoadStaff() { StreamingManager.LoadStreamingAssets("brittlehollow/meshes/props"); }
         }
 

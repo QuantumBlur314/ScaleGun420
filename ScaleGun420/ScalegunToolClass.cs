@@ -12,7 +12,7 @@ using UnityEngine;
 
 namespace ScaleGun420
 {
-    //JUST COPY EVERYTHING OTHER TOOLS DO, EVEN IF THE METHODS ARE EMPTY.  CARGO CULT CODEBASE //Update: my power grows
+    //JUST COPY EVERYTHING OTHER TOOLS DO, EVEN IF THE METHODS ARE EMPTY.  CARGO CULT CODEBASE //Update: my power grows  //031923_1845: UPDATE: hubris
     public class ScalegunToolClass : PlayerTool
     {
         private Transform _sgToolClassTransform; //reference to current attached GO's transform; used by Awake
@@ -30,8 +30,6 @@ namespace ScaleGun420
             StealOtherToolTransforms();
         }
 
-        //_sgToolGameobject.SetActive(true); //CURRENT EXPERIMENT: DISABLING 34 AS PART OF GAMEOBJECT PHASEOUT
-        //_staffProp.SetActive(false);      //PUT THIS IN ScalegunProp.Awake
 
         public override void Start() 
         {
@@ -40,28 +38,19 @@ namespace ScaleGun420
 
         private void StealOtherToolTransforms()
         {
-            if (_sgToolClassTransform != null)  //originally launcherTransform.  The fact this is firing successfully suggests _scalegunToolTransform isn't, in fact, null, so presumably neither is the GO
+            if (_sgToolClassTransform != null)  //originally launcherTransform
             {
                 var _foundToolToStealTransformsFrom = Locator.GetPlayerBody().GetComponentInChildren<Signalscope>();  //
-                if (_foundToolToStealTransformsFrom != null)    //for some reason, when other tools get deployed it does some messy stuff, idfk.
+                if (_foundToolToStealTransformsFrom != null)
                     //VIO CONFIRMED THIS IS A BAD IDEA
                     _stowTransform = _foundToolToStealTransformsFrom._stowTransform;  //CONFIRMED THAT STUTTERING OCCURS SWAPPING BETWEEN ScaleGun AND WHATEVER TOOL IT STOLE ITS TRANSFORMS FROM
                 ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"Successfully stole {_foundToolToStealTransformsFrom._stowTransform} from {_foundToolToStealTransformsFrom}"); //The Transforms don't print into strings like this unfortunately
                 _holdTransform = _foundToolToStealTransformsFrom._holdTransform;
                 ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"Successfully stole {_foundToolToStealTransformsFrom._holdTransform} from {_foundToolToStealTransformsFrom}");
-                _moveSpring = _foundToolToStealTransformsFrom._moveSpring;  //REMEMBER TO DIG UP WHATEVER FORMAT _moveSpring USES AND MAKE YOUR OWN
+                _moveSpring = _foundToolToStealTransformsFrom._moveSpring;  //REMEMBER TO DIG UP WHATEVER FORMAT _moveSpring USES AND MAKE YOUR OWN so it stops fighting the tool it stole from.
             }
         }
 
-        //THE TWO CONDITIONS NECESSARY FOR THE PlayerTool.Update METHOD TO RUN AT ALL
-        public override bool HasEquipAnimation()   //The if() in PlayerTool.Update checks HasEquipAnimation, meaning it calls it.  Meaning it's supposed to be running repeatedly. meaning the spam is intentional.  cry about it.
-        {
-            return base.HasEquipAnimation();
-        }
-        public override bool AllowEquipAnimation()
-        {
-            return base.AllowEquipAnimation();
-        }
 
 
         public override void EquipTool()
@@ -71,9 +60,6 @@ namespace ScaleGun420
             this._sgPropClass.OnEquipTool(); //Following in the footsteps of Translator/TranslatorPRop
                                              // this._isEquipped = true;
                                              //if (this._staffProp)
-            {
-                //this._staffProp.SetActive(true);  //EXPERIMENT: DISABLING Ln88 AS OnDisable ALREADY RUNS _staffProp.SetActive(true)  //Experiment successful
-            }
         }
 
         public override void UnequipTool()          //CALLED BY ToolModeSwapper.EquipToolMode(ToolMode toolMode), which is itself called by ToolModeSwapper.Update
@@ -82,12 +68,6 @@ namespace ScaleGun420
             this._sgPropClass.OnUnequipTool();
             //base.UnequipTool SETS _isPuttingAway TO TRUE, THEN PlayerTool.Update APPLIES THE STOWTRANSFORMS THEN SETS base.enabled = false ONCE DONE ANIMATING
         }
-
-
-        //if (this._shareActiveProbes && launcher.SharesActiveProbes() && this. != null)  //References GunInterface
-        //{
-        //  launcher.SetActiveProbe(this._activeProbe);
-
 
         public override void Update()
         {
@@ -106,11 +86,11 @@ namespace ScaleGun420
             {
                 if (!PlayerState.AtFlightConsole())        //borrowed from Signalscope.  Idk why different tool props have their OnEnable & OnDisable methods as different access levels
                 {
-                    _sgPropSoupject.SetActive(true);  //TEST Ln114: disabled because NomaiTranslator doesn't override this at all //update: THIS ISN'T AN OVERRIDE, PlayerTool DOESN'T HAVE AN OnEnable BY DEFAULT// 031823_0637: disabling since it wasn't in the holy scriptures of NomaiTranslator, idfk anymore
+                    _sgPropSoupject.SetActive(true);  //TEST Ln114: disabled because NomaiTranslator doesn't override this at all //update: THIS ISN'T AN OVERRIDE, PlayerTool DOESN'T HAVE AN OnEnable BY DEFAULT// 031823_0637: disabling since it wasn't in the holy scriptures of NomaiTranslator, idfk anymore// 031923_1848: Previous entry may have been caused by the VS breakage and unrelated to code function
                 }
             }
         }
-        private void OnDisable()
+        private void OnDisable() //RUNS _sgPropClass.OnFinishUnequipAnimation, which runs _sgOwnPropGroupject.SetActive(false)
         {
             _sgPropClass.OnFinishUnequipAnimation();//031623_2054: Error?  nullref with set_enabled?  _sgPropClass undefined?
         }
