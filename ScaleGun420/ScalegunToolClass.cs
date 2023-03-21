@@ -25,7 +25,7 @@ namespace ScaleGun420
  //GetComponentInChildren doesn't search for inactive objects by default, needs to be set to (true) to find inactive stuff
             _sgPropClass = GetComponentInChildren<ScalegunPropClass>(true);  //Setting it to (true) worked ok fine idk whatever
 
-            if (!this._sgToolClassTransform)
+            if (!_sgToolClassTransform)
             { this._sgToolClassTransform = base.transform; }  //ProbeLauncher does this
             StealOtherToolTransforms();
         }
@@ -33,7 +33,7 @@ namespace ScaleGun420
 
         public override void Start() 
         {
-            base.Start(); //disables tool by default, even Translator main.  ////031623_2059: error???
+            base.Start(); //disables tool by default, even Translator main. 
         }
 
         private void StealOtherToolTransforms()

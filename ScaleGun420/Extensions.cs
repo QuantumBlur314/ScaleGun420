@@ -18,7 +18,7 @@ namespace ScaleGun420
         public static string GetPath(this Transform current)    //Xen says New Horizons uses this.  It has to be in a static class, so that's why it's in Extensions
         {
             if (current.parent == null) return current.name;
-            ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"{current}");
+            //ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"{current}");  
             return current.parent.GetPath() + "/" + current.name; //burrows UP
         }
 
