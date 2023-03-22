@@ -16,7 +16,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
     {
         public Canvas _sgPropCanvas;
         public GameObject _sgpCanvObj;
-        public GameObject _sgPropStaff;
+
         public GameObject _sgPropScreen;
         public Text _sgpTextFieldMain;
         private bool updateHasBegun = false;
@@ -32,7 +32,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             //_sgOwnPropGroupject = ScaleGun420Modbehavior.Instance._ //Might have to define it here.  How do I break the chains?
             this._sgPropCanvas.enabled = false; //031823_0614: doing this since TranslatorProp did it but it wasn't here yet //update: nope //031823_1524: Sudden unexpected nullref?
             this._sgOwnPropGroupject.SetActive(false);  //what NomaiTranslatorProp does, but better-labeled.  TranslatorProp sets its whole parent propgroup inactive at end of its Awake (the parts of it relevant to me) 
-            ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"ScalegunPropClass.Awake() ran SpawnAdditionalLasses, then set _sgPropCanvas to {_sgPropCanvas.enabled} (should be false) and _sgOwnPropGroupject to {_sgOwnPropGroupject.activeSelf} (should be false)");
+            TheLogGoober.WriteLine($"ScalegunPropClass.Awake() ran SpawnAdditionalLasses, then set _sgPropCanvas to {_sgPropCanvas.enabled} (should be false) and _sgOwnPropGroupject to {_sgOwnPropGroupject.activeSelf} (should be false)");
         }
 
         private void SpawnAdditionalLasses()
@@ -42,7 +42,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             _sgpCanvObj.transform.localEulerAngles = new Vector3(25f, 160f, 350f);
             _sgpCanvObj.transform.localPosition = new Vector3(0.15f, 1.75f, 0.05f);
             _sgpCanvObj.transform.localScale = new Vector3(0.0003f, 0.0003f, 0.0003f);
-            _sgpCanvObj.SetActive(true);  //031823_0616: set this to false, maybe?  //edit: nope that just made the canvas inactive (of course it did)
+            _sgpCanvObj.SetActive(true);  //031823_0616: This is a definite "true" moment (don't change)
             _sgPropCanvas = base.transform.GetComponentInChildren<Canvas>(true);  //031823_0627: GETTING RID OF THE (true) MAYBE?   //031923_1831: never found out whether that would work because VS broke
 
             _mainTextRecTra = base.transform.GetComponentInChildren<RectTransform>(true); //031823_0523: swapped to before _sgpTextFieldMain gets defined, idk why
@@ -50,14 +50,14 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
 
             _sgpTextFieldMain = _sgpCanvObj.transform.GetChildComponentByName<Text>("TranslatorText").GetComponent<Text>();   //THIS IS ALL YOU NEED TO SPAWN NEW LASSES YOU DINGUS
             _sgpTextFieldMain.enabled = true;  //031823_0608: setting to false doesn't fix the thing, and just leaves it disabled.
-          
+
 
         }
 
         private void Start()
         {
             base.enabled = false;
-            ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine("");
+            TheLogGoober.WriteLine("");
         }  // Just like TranslatorProp without all the BS
 
 
@@ -89,11 +89,11 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
 
         public void OnEquipTool()   //done & working  //032123_1550: forcing this method made the staff start working, meaning something in the ToolClass isn't enabling
         {
-            base.enabled = true;
-
+            base.enabled = true;  //just like translatorprop, 
+            this._sgPropCanvas.enabled = true; //032123_1605: if putting this down here fixes it, i swear... //032123_1613: I was building to the wrong directory.  now i have it working, no bugs.  the world may never know
             _sgOwnPropGroupject.SetActive(true);  //032123_1535: not set to instance of an object? 
 
-            this._sgPropCanvas.enabled = true; //032123_1605: if putting this down here fixes it, i swear... //032123_1613: I was building to the wrong directory.  now i have it working, no bugs.  the world may never know
+
 
 
         }
@@ -109,18 +109,6 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
 
 
         //  vv  NO LONGER IN USE HERE  vv , INSTEAD CALLED DURING THE MAIN MODBEHAVIOR CLASS DURING GOSetup USING THE InstantiatePrefab EXTENSION; THIS IS JUST HERE FOR REFERENCE
-        private void RenderNomaiStaff()
-        {
-            LoadStaff();  //31623_0507: two lines down you'll notice the .Find() has an overload telling it what to be the child of
-            _sgPropStaff = Instantiate(GameObject.Find("BrittleHollow_Body/Sector_BH/Sector_NorthHemisphere/Sector_NorthPole/Sector_HangingCity" +
-                "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff"), _sgOwnPropGroupject.transform); //032123_1625: probably shouldn't set _sgOwnPropGroupject twice.  _sgPropStaff and _sgOwnPropGroupject end up synonymous
-
-            _sgPropStaff.transform.localPosition = new Vector3(0.5496f, -1.11f, -0.119f);
-            _sgPropStaff.transform.localEulerAngles = new Vector3(343.8753f, 200.2473f, 345.2718f);
-            var streamingRenderMeshHandle = _sgPropStaff.GetComponentInChildren<StreamingRenderMeshHandle>();
-            streamingRenderMeshHandle.OnMeshUnloaded += LoadStaff;   //031623_2047: I think the Loadstaff might be getting called repeatedly or something, idk, performance is garbage when equipped //031923_1836: Issue resolved last I checked
-            void LoadStaff() { StreamingManager.LoadStreamingAssets("brittlehollow/meshes/props"); }
-        }
 
     }
 }

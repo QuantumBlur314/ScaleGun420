@@ -44,9 +44,9 @@ namespace ScaleGun420
                 if (_foundToolToStealTransformsFrom != null)
                     //VIO CONFIRMED THIS IS A BAD IDEA
                     _stowTransform = _foundToolToStealTransformsFrom._stowTransform;  //CONFIRMED THAT STUTTERING OCCURS SWAPPING BETWEEN ScaleGun AND WHATEVER TOOL IT STOLE ITS TRANSFORMS FROM
-                ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"Successfully stole {_foundToolToStealTransformsFrom._stowTransform} from {_foundToolToStealTransformsFrom}"); //The Transforms don't print into strings like this unfortunately
+                TheLogGoober.WriteLine($"Successfully stole {_foundToolToStealTransformsFrom._stowTransform} from {_foundToolToStealTransformsFrom}"); //The Transforms don't print into strings like this unfortunately
                 _holdTransform = _foundToolToStealTransformsFrom._holdTransform;
-                ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"Successfully stole {_foundToolToStealTransformsFrom._holdTransform} from {_foundToolToStealTransformsFrom}");
+                TheLogGoober.WriteLine($"Successfully stole {_foundToolToStealTransformsFrom._holdTransform} from {_foundToolToStealTransformsFrom}");
                 _moveSpring = _foundToolToStealTransformsFrom._moveSpring;  //REMEMBER TO DIG UP WHATEVER FORMAT _moveSpring USES AND MAKE YOUR OWN so it stops fighting the tool it stole from.
             }
         }
@@ -55,7 +55,7 @@ namespace ScaleGun420
 
         public override void EquipTool()
         {
-            ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"called ScalegunTool.EquipTool");
+            TheLogGoober.WriteLine($"called ScalegunTool.EquipTool");
             base.EquipTool();
             this._sgPropClass.OnEquipTool(); //Following in the footsteps of Translator/TranslatorPRop
                                              // this._isEquipped = true;

@@ -87,10 +87,10 @@ namespace ScaleGun420
             _theGunToolClass._sgPropClass = _theGunToolClass._sgPropSoupject.AddComponent<ScalegunPropClass>(); //ScalegunTool declares a PropClass; hopefully not 2late to attach & designate it to the _sgPropGroupject.
             _theGunToolClass._sgPropClass._sgOwnPropGroupject = _theGunToolClass._sgPropSoupject;  //031623_0741: prop-class Groupject will now awaken to a Tool-Class parent, instead of to a hollow one.  Assigns for internal refs.
 
-            ModHelper.Console.WriteLine($"Main class GOSetup() set _theGunToolClass._sgPropClass._sgOwnPropGroupject to {_theGunToolClass._sgPropClass._sgOwnPropGroupject} (shouldn't be null)");
-
+            //TheLogGoober.WriteLine($"Main class GOSetup() set _theGunToolClass._sgPropClass._sgOwnPropGroupject to {_theGunToolClass._sgPropClass._sgOwnPropGroupject} (shouldn't be null)");
+            _theGunToolClass._sgPropClass.enabled = true; //032123_1746: moved this above "_theGunToolClass.Enabled = true".  love leapfrog
             _theGunToolClass.enabled = true; //031823_0622: put back after the other one in hopes of addressing a first-time-equip bug  UPDATE: THAT DID NOTHING EITHER
-            _theGunToolClass._sgPropClass.enabled = true;
+
 
             _sgToolGObj.SetActive(true);
         }
@@ -142,7 +142,7 @@ namespace ScaleGun420
             if (sceneLoaded)
             {
                 MimickSwapperUpdate();
-                //ScalegunPropClass.EyesDrillHoles();  //EYESDRILLHOLES DOES A NULLREF IF CALLED WITHOUT WEARING A SUIT (until you project it to the prop)
+               //EYESDRILLHOLES DOES A NULLREF IF CALLED WITHOUT WEARING A SUIT (until you project it to the prop)
             }
         }
 
@@ -162,14 +162,14 @@ namespace ScaleGun420
                 {  //FOR SOME REASON H IS STILL ACTIVATING THE TOOL CLASS WHEN THE _sgToolGameObject IS INACTIVE, BUT DOESN'T DEACTIVATE IT ON SUBSEQUENT PRESSES.  IDK IF THIS IS ALSO HOW OTHER OBJECTS WORK.
                    //UPDATE:  THE SIGNALSCOPE ALSO DOES THIS.  GUESS THAT'S JUST HOW THINGS ARE, NOT A BUG
                     _vanillaSwapper.EquipToolMode(SGToolmode);
-                    //ModHelper.Console.WriteLine($"Current toolmode: {_vanillaSwapper.GetToolMode()}.  Should be {SGToolmode}. Next toolmode is {_vanillaSwapper._nextToolMode} next tool is {_vanillaSwapper._nextTool}");  //When hitting H while other tool is deployed: stows current tool, "Next Toolmode is Scalegun, next tool is (blank) MAYBE 
+                    TheLogGoober.WriteLine($"MimickSwaperUpdate: Current toolmode: {_vanillaSwapper.GetToolMode()}.  Should be {SGToolmode}. Next toolmode is {_vanillaSwapper._nextToolMode} next tool is {_vanillaSwapper._nextTool}");  //When hitting H while other tool is deployed: stows current tool, "Next Toolmode is Scalegun, next tool is (blank) MAYBE 
                 }
                 else
                 {
                     _vanillaSwapper.UnequipTool();  //Swapper's UnequipTool method calls EquipToolMode, for reference
                     if (_vanillaSwapper._nextToolMode != ToolMode.None)
                     {
-                        ModHelper.Console.WriteLine($"_nextToolMode isn't ToolMode.None, instead it's {_vanillaSwapper._nextToolMode}");
+                        TheLogGoober.WriteLine($"_nextToolMode isn't ToolMode.None, instead it's {_vanillaSwapper._nextToolMode}");
                     }
                 }
 
