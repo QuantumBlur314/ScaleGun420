@@ -16,26 +16,27 @@ namespace ScaleGun420
     public class ScalegunToolClass : PlayerTool
     {
         private Transform _sgToolClassTransform; //reference to current attached GO's transform; used by Awake
-        //public GameObject _sgPropSoupject; //has to be public so ScalegunProp Awake can reference it and assign itself  //032123_1915: NomaiTranslator doesn't have a single gameobject in its class.
+
         public ScalegunPropClass _sgPropClass;
+        private GunInterfaces _sgToolTrmnl;
 
 
-        private void Awake()  
+        private void Awake()
         {
             //GetComponentInChildren doesn't search for inactive objects by default, needs to be set to (true) to find inactive stuff
 
-            
+            _sgToolTrmnl = GetComponentInChildren<GunInterfaces>(true);
             _sgPropClass = GetComponentInChildren<ScalegunPropClass>(true);  //Setting it to (true) worked ok fine idk whatever
 
             if (!_sgToolClassTransform)
             { this._sgToolClassTransform = base.transform; }  //ProbeLauncher does this
-            
+
 
             StealOtherToolTransforms();
         }
 
 
-        public override void Start() 
+        public override void Start()
         {
             base.Start(); //disables tool by default, even Translator main. 
         }
@@ -80,6 +81,21 @@ namespace ScaleGun420
             {
                 return;
             }
+            EyesDrillHoles();
+
+        }
+
+        public void EyesDrillHoles()
+        {
+            if (OWInput.IsNewlyPressed(InputLibrary.toolActionPrimary) && Locator.GetPlayerCamera() != null && ScaleGun420Modbehavior.Instance._vanillaSwapper.IsInToolMode(ScaleGun420Modbehavior.Instance.SGToolmode))   //031823_1505: Changed a bunch of stuff to __instance for cleanliness; may or may not bork things //031823_1525: Okay so apparently that made it start nullreffing? //REBUILDING IS FAILING, THANKS MICROSOFT.NET FRAMEWORK BUG
+            {
+                Vector3 fwd = Locator.GetPlayerCamera().transform.forward;  //fwd is a Vector-3 that transforms forward relative to the playercamera
+
+                Physics.Raycast(Locator.GetPlayerCamera().transform.position, fwd, out RaycastHit hit, 50000, OWLayerMask.physicalMask);
+                var retrievedRootObject = hit.collider.transform.GetPath();
+                _sgToolTrmnl.Intake(retrievedRootObject);
+            }
+
         }
 
 
@@ -90,7 +106,7 @@ namespace ScaleGun420
             {
                 if (!PlayerState.AtFlightConsole())        //borrowed from Signalscope.  Idk why different tool props have their OnEnable & OnDisable methods as different access levels
                 {
-                    //_sgPropSoupject.SetActive(true);  //TEST Ln114: disabled because NomaiTranslator doesn't override this at all //update: THIS ISN'T AN OVERRIDE, PlayerTool DOESN'T HAVE AN OnEnable BY DEFAULT// 031823_0637: disabling since it wasn't in the holy scriptures of NomaiTranslator, idfk anymore// 032123_1917: Disabling because NomaiTranslatorProp doesn't even define a gameobject.
+                    _sgPropClass.enabled = true;  //TEST Ln114: disabled because NomaiTranslator doesn't override this at all //update: THIS ISN'T AN OVERRIDE, PlayerTool DOESN'T HAVE AN OnEnable BY DEFAULT// 031823_0637: disabling since it wasn't in the holy scriptures of NomaiTranslator, idfk anymore// 032123_1917: Disabling because NomaiTranslatorProp doesn't even define a gameobject.
                 }
             }
         }

@@ -16,9 +16,8 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
     {
         public Canvas _sgPropCanvas;
         public GameObject _sgpCanvObj;
-
         public GameObject _sgPropScreen;
-        public Text _sgpTextFieldMain;
+        public Text _sgpTextVictimParent;
         private bool updateHasBegun = false;
         private RectTransform _mainTextRecTra;
         public GameObject _sgPropGOSelf;  //TranslatorProp never had to GetComponent() or whatever to define its internal _translatorProp Gameobject, so presumably, neither do I.
@@ -40,20 +39,21 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             
 
 
+            //copy vertical layout separately 
 
-            _sgpCanvObj = Instantiate(GameObject.Find("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas"), _sgPropGOSelf.transform);
+            _sgpCanvObj = Instantiate(GameObject.Find("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas"), _sgPropGOSelf.transform);
 
             _sgpCanvObj.transform.localEulerAngles = new Vector3(25f, 160f, 350f);
             _sgpCanvObj.transform.localPosition = new Vector3(0.15f, 1.75f, 0.05f);
-            _sgpCanvObj.transform.localScale = new Vector3(0.0003f, 0.0003f, 0.0003f);
+            _sgpCanvObj.transform.localScale = new Vector3(0.003f, 0.003f, 0.003f);
             _sgpCanvObj.SetActive(true);  //031823_0616: This is a definite "true" moment (don't change)
             _sgPropCanvas = base.transform.GetComponentInChildren<Canvas>(true);  //031823_0627: GETTING RID OF THE (true) MAYBE?   //031923_1831: never found out whether that would work because VS broke
 
             _mainTextRecTra = base.transform.GetComponentInChildren<RectTransform>(true); //031823_0523: swapped to before _sgpTextFieldMain gets defined, idk why
             _mainTextRecTra.pivot = new Vector2(1f, 0.5f);
 
-            _sgpTextFieldMain = _sgpCanvObj.transform.GetChildComponentByName<Text>("TranslatorText").GetComponent<Text>();   //THIS IS ALL YOU NEED TO SPAWN NEW LASSES YOU DINGUS
-            _sgpTextFieldMain.enabled = true;  //031823_0608: setting to false doesn't fix the thing, and just leaves it disabled.
+            _sgpTextVictimParent = _sgpCanvObj.transform.GetChildComponentByName<Text>("PageNumberText").GetComponent<Text>();   //THIS IS ALL YOU NEED TO SPAWN NEW LASSES YOU DINGUS
+            _sgpTextVictimParent.enabled = true;  //031823_0608: setting to false doesn't fix the thing, and just leaves it disabled.
 
 
         }
@@ -71,22 +71,6 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             {
                 updateHasBegun = true;
                 TheLogGoober.WriteLine($"set updateHasBegun to {updateHasBegun} (true)");
-            }
-            EyesDrillHoles();
-
-        }
-
-        public void EyesDrillHoles()
-        {
-            if (ScaleGun420Modbehavior.Instance.BigBubbon && Locator.GetPlayerCamera() != null && ScaleGun420Modbehavior.Instance._vanillaSwapper.IsInToolMode(ScaleGun420Modbehavior.Instance.SGToolmode))   //031823_1505: Changed a bunch of stuff to __instance for cleanliness; may or may not bork things //031823_1525: Okay so apparently that made it start nullreffing? //REBUILDING IS FAILING, THANKS MICROSOFT.NET FRAMEWORK BUG
-            {
-                ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"ScalegunPropClass Ln063: successfully ran EyesDrillHoles, nothing wrong here");
-                Vector3 fwd = Locator.GetPlayerCamera().transform.forward;  //fwd is a Vector-3 that transforms forward relative to the playercamera
-
-                Physics.Raycast(Locator.GetPlayerCamera().transform.position, fwd, out RaycastHit hit, 50000, OWLayerMask.physicalMask);
-                var retrievedRootObject = hit.collider.transform.GetPath();
-                if (retrievedRootObject == null) { ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"Prop Ln069(nice): retrievedRootObject is null! why"); }
-                _sgpTextFieldMain.text = $"{retrievedRootObject}";
             }
         }
 
