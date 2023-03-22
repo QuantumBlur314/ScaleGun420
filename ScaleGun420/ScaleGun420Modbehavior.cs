@@ -45,6 +45,7 @@ namespace ScaleGun420
 
         public GameObject _sgToolGObj;  //MUST BE PUBLIC
         public ScalegunToolClass _theGunToolClass;
+        public ScalegunPropClass _sgPropClassMain;
 
         private Key GunToggle;        //Idk if it'll be more or less work to prevent gun from working while in ship.  guess we'll find out
         private bool toggleGunKey; //whether right-click & other scout-related actions reach the Scalegun instead
@@ -79,18 +80,27 @@ namespace ScaleGun420
 
         private void GOSetup()  //does all the object spawning/hierarchies that the base game's creators probably handled better in unity.  idfk.  Does things in such 
         {
-            _sgToolGObj = Locator.GetPlayerTransform().CreateChild("SgToolGO_husk", false);  //031623_0653: spawns an inactive empty SGToolGO as a child of the player.
-
+            _sgToolGObj = Locator.GetPlayerTransform().CreateChild("SgToolGObj_husk", false);  //031623_0653: spawns an inactive empty SGToolGO as a child of the player.
             _theGunToolClass = _sgToolGObj.AddComponent<ScalegunToolClass>();  //hopefully the host _sgToolGObj's inactivity prevents its new ScalegunTool pilot from waking up, or it'll reach for ScalegunPropClass too early
-            _theGunToolClass._sgPropSoupject = _sgToolGObj.InstantiatePrefab("brittlehollow/meshes/props", "BrittleHollow_Body/Sector_BH/Sector_NorthHemisphere/Sector_NorthPole/Sector_HangingCity" +
-                            "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff", false, new Vector3(0.5496f, -1.11f, -0.119f), new Vector3(343.8753f, 200.2473f, 345.2718f));  //ScalegunTool class declares a Gameobject called _sgPropGroupject.  This spawns & designates it at once.
-            _theGunToolClass._sgPropClass = _theGunToolClass._sgPropSoupject.AddComponent<ScalegunPropClass>(); //ScalegunTool declares a PropClass; hopefully not 2late to attach & designate it to the _sgPropGroupject.
-            _theGunToolClass._sgPropClass._sgOwnPropGroupject = _theGunToolClass._sgPropSoupject;  //031623_0741: prop-class Groupject will now awaken to a Tool-Class parent, instead of to a hollow one.  Assigns for internal refs.
+
+            _sgPropClassMain = _sgToolGObj.AddComponent<ScalegunPropClass>(); //ScalegunTool declares a PropClass; hopefully not 2late to attach & designate it to the _sgPropGroupject.
+            _sgPropClassMain._sgPropGOSelf = _theGunToolClass.transform.InstantiatePrefab("brittlehollow/meshes/props", "BrittleHollow_Body/Sector_BH/Sector_NorthHemisphere/Sector_NorthPole/Sector_HangingCity" +
+                            "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff", false, new Vector3(0.5496f, -1.11f, -0.119f), new Vector3(343.8753f, 200.2473f, 345.2718f));
+
+            //
+
+            //_theGunToolClass._sgPropSoupject = _sgToolGObj.InstantiatePrefab("brittlehollow/meshes/props", "BrittleHollow_Body/Sector_BH/Sector_NorthHemisphere/Sector_NorthPole/Sector_HangingCity" +
+            //"/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff", false, new Vector3(0.5496f, -1.11f, -0.119f), new Vector3(343.8753f, 200.2473f, 345.2718f));
+
+            //ScalegunTool class declares a Gameobject called _sgPropGroupject.  This spawns & designates it at once.
+
+            //  vv  TRY DEFINING THIS ELSEWHERE  vv
+            //_theGunToolClass._sgPropClass._sgOwnPropGroupject = _theGunToolClass._sgPropSoupject;  //031623_0741: prop-class Groupject will now awaken to a Tool-Class parent, instead of to a hollow one.  Assigns for internal refs. //032123_1834: This is stupid, multiple classes can exist on a GameObject.  Why did i nest them like this
 
             //TheLogGoober.WriteLine($"Main class GOSetup() set _theGunToolClass._sgPropClass._sgOwnPropGroupject to {_theGunToolClass._sgPropClass._sgOwnPropGroupject} (shouldn't be null)");
-            _theGunToolClass._sgPropClass.enabled = true; //032123_1746: moved this above "_theGunToolClass.Enabled = true".  love leapfrog
-            _theGunToolClass.enabled = true; //031823_0622: put back after the other one in hopes of addressing a first-time-equip bug  UPDATE: THAT DID NOTHING EITHER
 
+            _theGunToolClass.enabled = true; //031823_0622: put back after the other one in hopes of addressing a first-time-equip bug  UPDATE: THAT DID NOTHING EITHER
+            //_theGunToolClass._sgPropClass.enabled = true; //032123_1746: moved this above "_theGunToolClass.Enabled = true".  love leapfrog //032123_1927: Disabled because of a nullref, doubt it
 
             _sgToolGObj.SetActive(true);
         }
@@ -142,7 +152,7 @@ namespace ScaleGun420
             if (sceneLoaded)
             {
                 MimickSwapperUpdate();
-               //EYESDRILLHOLES DOES A NULLREF IF CALLED WITHOUT WEARING A SUIT (until you project it to the prop)
+                //EYESDRILLHOLES DOES A NULLREF IF CALLED WITHOUT WEARING A SUIT (until you project it to the prop)
             }
         }
 

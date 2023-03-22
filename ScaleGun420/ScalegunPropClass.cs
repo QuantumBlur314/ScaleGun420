@@ -21,7 +21,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         public Text _sgpTextFieldMain;
         private bool updateHasBegun = false;
         private RectTransform _mainTextRecTra;
-        public GameObject _sgOwnPropGroupject;  //TranslatorProp never had to GetComponent() or whatever to define its internal _translatorProp Gameobject, so presumably, neither do I.
+        public GameObject _sgPropGOSelf;  //TranslatorProp never had to GetComponent() or whatever to define its internal _translatorProp Gameobject, so presumably, neither do I.
 
 
         //NomaiTranslatorProp only disables TranslatorGroup (the dingus housing all canvas, prop model, etc) near the end of NomaiTranslatorProp's Awake 
@@ -31,13 +31,17 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             SpawnAdditionalLasses();
             //_sgOwnPropGroupject = ScaleGun420Modbehavior.Instance._ //Might have to define it here.  How do I break the chains?
             this._sgPropCanvas.enabled = false; //031823_0614: doing this since TranslatorProp did it but it wasn't here yet //update: nope //031823_1524: Sudden unexpected nullref?
-            this._sgOwnPropGroupject.SetActive(false);  //what NomaiTranslatorProp does, but better-labeled.  TranslatorProp sets its whole parent propgroup inactive at end of its Awake (the parts of it relevant to me) 
-            TheLogGoober.WriteLine($"ScalegunPropClass.Awake() ran SpawnAdditionalLasses, then set _sgPropCanvas to {_sgPropCanvas.enabled} (should be false) and _sgOwnPropGroupject to {_sgOwnPropGroupject.activeSelf} (should be false)");
+            this._sgPropGOSelf.SetActive(false);  //what NomaiTranslatorProp does, but better-labeled.  TranslatorProp sets its whole parent propgroup inactive at end of its Awake (the parts of it relevant to me) 
+            TheLogGoober.WriteLine($"ScalegunPropClass.Awake() ran SpawnAdditionalLasses, then set _sgPropCanvas to {_sgPropCanvas.enabled} (should be false) and _sgOwnPropGroupject to {_sgPropGOSelf.activeSelf} (should be false)");
         }
 
         private void SpawnAdditionalLasses()
         {
-            _sgpCanvObj = Instantiate(GameObject.Find("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas"), _sgOwnPropGroupject.transform);
+            
+
+
+
+            _sgpCanvObj = Instantiate(GameObject.Find("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas"), _sgPropGOSelf.transform);
 
             _sgpCanvObj.transform.localEulerAngles = new Vector3(25f, 160f, 350f);
             _sgpCanvObj.transform.localPosition = new Vector3(0.15f, 1.75f, 0.05f);
@@ -57,7 +61,6 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         private void Start()
         {
             base.enabled = false;
-            TheLogGoober.WriteLine("");
         }  // Just like TranslatorProp without all the BS
 
 
@@ -91,7 +94,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         {
             base.enabled = true;  //just like translatorprop, 
             this._sgPropCanvas.enabled = true; //032123_1605: if putting this down here fixes it, i swear... //032123_1613: I was building to the wrong directory.  now i have it working, no bugs.  the world may never know
-            _sgOwnPropGroupject.SetActive(true);  //032123_1535: not set to instance of an object? 
+            _sgPropGOSelf.SetActive(true);  //032123_1535: not set to instance of an object? 
 
 
 
@@ -103,7 +106,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         public void OnFinishUnequipAnimation()  //called by Tool's OnDisable, just like bart just like bart just like bart just like bart just like bart just like bart jut like bart just like bart just lik ebart just line bart just koll bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart
         {
             this._sgPropCanvas.enabled = false; //031823_0611: Enabled this code, didn't fix anything, but it's what the translator prop does.  //032123_1543: disabled this code again, and if it starts working again then I think the canvas is getting called early //reenabling
-            _sgOwnPropGroupject.SetActive(false);
+            _sgPropGOSelf.SetActive(false);
         }
 
 

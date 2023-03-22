@@ -55,10 +55,10 @@ namespace ScaleGun420
             childObj.SetActive(spawnsActive);
             return childObj;
         }
-        public static GameObject InstantiatePrefab(this GameObject parentGO, string streamingAssetsBath, string prefabBath, bool spawnsActive, Vector3 localPosition = default, Vector3 localEulerAngles = default)
+        public static GameObject InstantiatePrefab(this Transform parentTransform, string streamingAssetsBath, string prefabBath, bool spawnsActive, Vector3 localPosition = default, Vector3 localEulerAngles = default)
         {
             LoadPrefab();
-            GameObject newPrefab = ScaleGun420Modbehavior.Instantiate(GameObject.Find(prefabBath), parentGO.transform);
+            GameObject newPrefab = ScaleGun420Modbehavior.Instantiate(GameObject.Find(prefabBath), parentTransform);
 
             newPrefab.transform.localPosition = localPosition;
             newPrefab.transform.localEulerAngles = localEulerAngles;
