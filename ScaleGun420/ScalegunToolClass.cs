@@ -2,6 +2,7 @@
 using JetBrains.Annotations;
 using OWML.ModHelper;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -22,13 +23,14 @@ namespace ScaleGun420
         private List<GameObject> _currentObjChildren;
         private bool _atBedrock;
         private bool _atSky;
-        private bool _objAlreadySelected;
+        private bool _isInEditMode = false;
         private bool _targetHasSiblings;
         private GameObject _theParentOfTarget;
         private GameObject _selectedObject;
         private GameObject _priorSelObject;
         private GameObject _topSibling;
         private GameObject _bottomSibling;
+        private ScaleGun420Modbehavior __instance;
 
 
         private void Awake()
@@ -57,9 +59,9 @@ namespace ScaleGun420
                 if (_foundToolToStealTransformsFrom != null)
                     //VIO CONFIRMED THIS IS A BAD IDEA
                     _stowTransform = _foundToolToStealTransformsFrom._stowTransform;  //CONFIRMED THAT STUTTERING OCCURS SWAPPING BETWEEN ScaleGun AND WHATEVER TOOL IT STOLE ITS TRANSFORMS FROM
-                TheLogGoober.WriteLine($"Successfully stole {_foundToolToStealTransformsFrom._stowTransform} from {_foundToolToStealTransformsFrom}"); //The Transforms don't print into strings like this unfortunately
+                LogGoob.WriteLine($"Successfully stole {_foundToolToStealTransformsFrom._stowTransform} from {_foundToolToStealTransformsFrom}"); //The Transforms don't print into strings like this unfortunately
                 _holdTransform = _foundToolToStealTransformsFrom._holdTransform;
-                TheLogGoober.WriteLine($"Successfully stole {_foundToolToStealTransformsFrom._holdTransform} from {_foundToolToStealTransformsFrom}");
+                LogGoob.WriteLine($"Successfully stole {_foundToolToStealTransformsFrom._holdTransform} from {_foundToolToStealTransformsFrom}");
                 _moveSpring = _foundToolToStealTransformsFrom._moveSpring;  //REMEMBER TO DIG UP WHATEVER FORMAT _moveSpring USES AND MAKE YOUR OWN so it stops fighting the tool it stole from.
             }
         }
@@ -68,7 +70,7 @@ namespace ScaleGun420
 
         public override void EquipTool()
         {
-            TheLogGoober.WriteLine($"called ScalegunTool.EquipTool");
+            LogGoob.WriteLine($"called ScalegunTool.EquipTool");
             base.EquipTool();
             this._sgPropClass.OnEquipTool(); //Following in the footsteps of Translator/TranslatorPRop
         }
@@ -87,39 +89,56 @@ namespace ScaleGun420
             {
                 return;
             }
-            EyesDrillHoles();
+            if (ScaleGun420Modbehavior.Instance._vanillaSwapper.IsInToolMode(ScaleGun420Modbehavior.Instance.SGToolmode))
+            {
+                if (OWInput.IsNewlyPressed(InputLibrary.toolActionPrimary) && _isInEditMode == false)   //031823_1505: Changed a bunch of stuff to __instance for cleanliness; may or may not bork things //031823_1525: Okay so apparently that made it start nullreffing? //REBUILDING IS FAILING, THANKS MICROSOFT.NET FRAMEWORK BUG
+                {
+                    EyesDrillHoles();
+                }
 
+                if (__instance.UpBubbon)
+                { ScrollSiblingList(1); }
+                else if (__instance.DownBubbon)
+                { ScrollSiblingList(-1); }
+            }
+        }
+
+        public void ScrollSiblingList(int increment = 1)
+        {
+            {
+                var myItem = _currentLayerSiblings[(increment + 1) % _currentLayerSiblings.Count];  //0323_1519: Idiot says this will always wrap around the list using "modulo" and Corby says to use .Count since .Count() will return Linq which is "stinky"
+            
+            }
         }
 
 
         public void EyesDrillHoles()
         {
-            if (OWInput.IsNewlyPressed(InputLibrary.toolActionPrimary) && Locator.GetPlayerCamera() != null && ScaleGun420Modbehavior.Instance._vanillaSwapper.IsInToolMode(ScaleGun420Modbehavior.Instance.SGToolmode))   //031823_1505: Changed a bunch of stuff to __instance for cleanliness; may or may not bork things //031823_1525: Okay so apparently that made it start nullreffing? //REBUILDING IS FAILING, THANKS MICROSOFT.NET FRAMEWORK BUG
             {
                 Vector3 fwd = Locator.GetPlayerCamera().transform.forward;  //fwd is a Vector-3 that transforms forward relative to the playercamera
 
                 Physics.Raycast(Locator.GetPlayerCamera().transform.position, fwd, out RaycastHit hit, 50000, OWLayerMask.physicalMask);
                 var retrievedRootObject = hit.collider.gameObject;
-                Intake(retrievedRootObject);
-            }
 
+                if (_selectedObject != null && retrievedRootObject == _selectedObject)
+                { return; }
+
+                _priorSelObject = _selectedObject;
+                _selectedObject = retrievedRootObject;
+                var siblingIndex = _selectedObject.transform.GetSiblingIndex();
+
+                ProcessScreen();
+            }
         }
 
         private void Intake(GameObject seenColliderToCpu)  //Processes initial target found by ScalegunToolClass.EyesDrillHoles
         {
-            if (seenColliderToCpu == _selectedObject)
-            { return; }
-            else if (_priorSelObject == null && _selectedObject != null)
-            {
-                _priorSelObject = _selectedObject;
-                _selectedObject = seenColliderToCpu;
-            }
-            else if (_priorSelObject == null && _selectedObject == null)
-            { _selectedObject = seenColliderToCpu; }
-            ProcessScreen();
+
         }
         private void ProcessScreen()
-        { _sgPropClass.SubmitGOs(_selectedObject); }
+        {
+            _sgPropClass.UpdateScreenText(_selectedObject);
+        }
 
 
         public void ClearTerminal()
@@ -129,7 +148,7 @@ namespace ScaleGun420
             _topSibling = null;
             _bottomSibling = null;
             _theParentOfTarget = null;
-            _sgPropClass.SubmitGOs(null);
+            _sgPropClass.UpdateScreenText();
 
         }
         public void StopEditing()

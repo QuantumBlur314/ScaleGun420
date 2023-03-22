@@ -18,6 +18,12 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         public GameObject _sgpCanvObj;
         public GameObject _sgPropScreen;
         public Text _sgpParentOfTarget;
+        public Text _sgpCurrentSelection;
+        private GameObject _theParentOfTarget;
+        private GameObject _selectedObject;
+        private GameObject _priorSelObject;
+        private GameObject _topSibling;
+        private GameObject _bottomSibling;
         private bool updateHasBegun = false;
         private RectTransform _mainTextRecTra;
         public GameObject _sgPropGOSelf;  //TranslatorProp never had to GetComponent() or whatever to define its internal _translatorProp Gameobject, so presumably, neither do I.
@@ -51,7 +57,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
 
             _mainTextRecTra = base.transform.GetComponentInChildren<RectTransform>(true); //031823_0523: swapped to before _sgpTextFieldMain gets defined, idk why
             _mainTextRecTra.pivot = new Vector2(1f, 0.5f);
-
+            _sgpCurrentSelection = _sgpCanvObj.transform.GetChildComponentByName<Text>("");
             _sgpParentOfTarget = _sgpCanvObj.transform.GetChildComponentByName<Text>("PageNumberText").GetComponent<Text>();   //THIS IS ALL YOU NEED TO SPAWN NEW LASSES YOU DINGUS
 
             _sgpParentOfTarget.enabled = true;  //031823_0608: setting to false doesn't fix the thing, and just leaves it disabled.
@@ -70,7 +76,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             if (updateHasBegun == false)
             {
                 updateHasBegun = true;
-                TheLogGoober.WriteLine($"set updateHasBegun to {updateHasBegun} (true)");
+                LogGoob.WriteLine($"set updateHasBegun to {updateHasBegun} (true)");
             }
         }
 
@@ -92,13 +98,18 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             _sgPropGOSelf.SetActive(false);
         }
 
-        public void SubmitGOs(GameObject currentObject)
+        public void UpdateScreenText(GameObject currentObject = null)
         {
-            _sgpParentOfTarget.text = currentObject.transform.parent.ToString();
+            if (currentObject == null)
+            { _sgpParentOfTarget.text = "None"; }
+            else
+            {
+                _sgpParentOfTarget.text = currentObject.transform.parent.ToString();
+            }
         }
         public void UpdateVertArray()
         { }
-        
+
 
         //  vv  NO LONGER IN USE HERE  vv , INSTEAD CALLED DURING THE MAIN MODBEHAVIOR CLASS DURING GOSetup USING THE InstantiatePrefab EXTENSION; THIS IS JUST HERE FOR REFERENCE
 

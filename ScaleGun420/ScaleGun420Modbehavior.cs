@@ -163,7 +163,7 @@ namespace ScaleGun420
                     _vanillaSwapper.UnequipTool();  //Swapper's UnequipTool method calls EquipToolMode, for reference
                     if (_vanillaSwapper._nextToolMode != ToolMode.None)
                     {
-                        TheLogGoober.WriteLine($"_nextToolMode isn't ToolMode.None, instead it's {_vanillaSwapper._nextToolMode}");
+                        LogGoob.WriteLine($"_nextToolMode isn't ToolMode.None, instead it's {_vanillaSwapper._nextToolMode}");
                     }
                 }
 
