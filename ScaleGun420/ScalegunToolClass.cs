@@ -16,16 +16,24 @@ namespace ScaleGun420
     public class ScalegunToolClass : PlayerTool
     {
         private Transform _sgToolClassTransform; //reference to current attached GO's transform; used by Awake
-
         public ScalegunPropClass _sgPropClass;
-        private GunInterfaces _sgToolTrmnl;
+
+        private List<GameObject> _currentLayerSiblings;
+        private List<GameObject> _currentObjChildren;
+        private bool _atBedrock;
+        private bool _atSky;
+        private bool _objAlreadySelected;
+        private bool _targetHasSiblings;
+        private GameObject _theParentOfTarget;
+        private GameObject _selectedObject;
+        private GameObject _priorSelObject;
+        private GameObject _topSibling;
+        private GameObject _bottomSibling;
 
 
         private void Awake()
         {
             //GetComponentInChildren doesn't search for inactive objects by default, needs to be set to (true) to find inactive stuff
-
-            _sgToolTrmnl = GetComponentInChildren<GunInterfaces>(true);
             _sgPropClass = GetComponentInChildren<ScalegunPropClass>(true);  //Setting it to (true) worked ok fine idk whatever
 
             if (!_sgToolClassTransform)
@@ -63,8 +71,6 @@ namespace ScaleGun420
             TheLogGoober.WriteLine($"called ScalegunTool.EquipTool");
             base.EquipTool();
             this._sgPropClass.OnEquipTool(); //Following in the footsteps of Translator/TranslatorPRop
-                                             // this._isEquipped = true;
-                                             //if (this._staffProp)
         }
 
         public override void UnequipTool()          //CALLED BY ToolModeSwapper.EquipToolMode(ToolMode toolMode), which is itself called by ToolModeSwapper.Update
@@ -85,6 +91,7 @@ namespace ScaleGun420
 
         }
 
+
         public void EyesDrillHoles()
         {
             if (OWInput.IsNewlyPressed(InputLibrary.toolActionPrimary) && Locator.GetPlayerCamera() != null && ScaleGun420Modbehavior.Instance._vanillaSwapper.IsInToolMode(ScaleGun420Modbehavior.Instance.SGToolmode))   //031823_1505: Changed a bunch of stuff to __instance for cleanliness; may or may not bork things //031823_1525: Okay so apparently that made it start nullreffing? //REBUILDING IS FAILING, THANKS MICROSOFT.NET FRAMEWORK BUG
@@ -92,11 +99,42 @@ namespace ScaleGun420
                 Vector3 fwd = Locator.GetPlayerCamera().transform.forward;  //fwd is a Vector-3 that transforms forward relative to the playercamera
 
                 Physics.Raycast(Locator.GetPlayerCamera().transform.position, fwd, out RaycastHit hit, 50000, OWLayerMask.physicalMask);
-                var retrievedRootObject = hit.collider.transform.GetPath();
-                _sgToolTrmnl.Intake(retrievedRootObject);
+                var retrievedRootObject = hit.collider.gameObject;
+                Intake(retrievedRootObject);
             }
 
         }
+
+        private void Intake(GameObject seenColliderToCpu)  //Processes initial target found by ScalegunToolClass.EyesDrillHoles
+        {
+            if (seenColliderToCpu == _selectedObject)
+            { return; }
+            else if (_priorSelObject == null && _selectedObject != null)
+            {
+                _priorSelObject = _selectedObject;
+                _selectedObject = seenColliderToCpu;
+            }
+            else if (_priorSelObject == null && _selectedObject == null)
+            { _selectedObject = seenColliderToCpu; }
+            ProcessScreen();
+        }
+        private void ProcessScreen()
+        { _sgPropClass.SubmitGOs(_selectedObject); }
+
+
+        public void ClearTerminal()
+        {
+            StopEditing();
+            _selectedObject = null;
+            _topSibling = null;
+            _bottomSibling = null;
+            _theParentOfTarget = null;
+            _sgPropClass.SubmitGOs(null);
+
+        }
+        public void StopEditing()
+        { }
+
 
 
         // [[[  P R O P   S T U F F  ]]]

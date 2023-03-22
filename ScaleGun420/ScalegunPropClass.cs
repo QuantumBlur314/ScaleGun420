@@ -17,7 +17,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         public Canvas _sgPropCanvas;
         public GameObject _sgpCanvObj;
         public GameObject _sgPropScreen;
-        public Text _sgpTextVictimParent;
+        public Text _sgpParentOfTarget;
         private bool updateHasBegun = false;
         private RectTransform _mainTextRecTra;
         public GameObject _sgPropGOSelf;  //TranslatorProp never had to GetComponent() or whatever to define its internal _translatorProp Gameobject, so presumably, neither do I.
@@ -28,33 +28,34 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         private void Awake()   //032123_1602: Everything except _sgOwnPropGroupject starts null when you first wake up.  this seems ill-advised unless it's a side-effect of my current bigger issue
         {
             SpawnAdditionalLasses();
+
             //_sgOwnPropGroupject = ScaleGun420Modbehavior.Instance._ //Might have to define it here.  How do I break the chains?
             this._sgPropCanvas.enabled = false; //031823_0614: doing this since TranslatorProp did it but it wasn't here yet //update: nope //031823_1524: Sudden unexpected nullref?
             this._sgPropGOSelf.SetActive(false);  //what NomaiTranslatorProp does, but better-labeled.  TranslatorProp sets its whole parent propgroup inactive at end of its Awake (the parts of it relevant to me) 
-            TheLogGoober.WriteLine($"ScalegunPropClass.Awake() ran SpawnAdditionalLasses, then set _sgPropCanvas to {_sgPropCanvas.enabled} (should be false) and _sgOwnPropGroupject to {_sgPropGOSelf.activeSelf} (should be false)");
         }
 
         private void SpawnAdditionalLasses()
         {
-            
+
 
 
             //copy vertical layout separately 
 
-            _sgpCanvObj = Instantiate(GameObject.Find("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas"), _sgPropGOSelf.transform);
+            _sgpCanvObj = Instantiate(GameObject.Find("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas"), _sgPropGOSelf.transform);
 
             _sgpCanvObj.transform.localEulerAngles = new Vector3(25f, 160f, 350f);
             _sgpCanvObj.transform.localPosition = new Vector3(0.15f, 1.75f, 0.05f);
-            _sgpCanvObj.transform.localScale = new Vector3(0.003f, 0.003f, 0.003f);
+            _sgpCanvObj.transform.localScale = new Vector3(0.0003f, 0.0003f, 0.0003f);
             _sgpCanvObj.SetActive(true);  //031823_0616: This is a definite "true" moment (don't change)
             _sgPropCanvas = base.transform.GetComponentInChildren<Canvas>(true);  //031823_0627: GETTING RID OF THE (true) MAYBE?   //031923_1831: never found out whether that would work because VS broke
 
             _mainTextRecTra = base.transform.GetComponentInChildren<RectTransform>(true); //031823_0523: swapped to before _sgpTextFieldMain gets defined, idk why
             _mainTextRecTra.pivot = new Vector2(1f, 0.5f);
 
-            _sgpTextVictimParent = _sgpCanvObj.transform.GetChildComponentByName<Text>("PageNumberText").GetComponent<Text>();   //THIS IS ALL YOU NEED TO SPAWN NEW LASSES YOU DINGUS
-            _sgpTextVictimParent.enabled = true;  //031823_0608: setting to false doesn't fix the thing, and just leaves it disabled.
+            _sgpParentOfTarget = _sgpCanvObj.transform.GetChildComponentByName<Text>("PageNumberText").GetComponent<Text>();   //THIS IS ALL YOU NEED TO SPAWN NEW LASSES YOU DINGUS
 
+            _sgpParentOfTarget.enabled = true;  //031823_0608: setting to false doesn't fix the thing, and just leaves it disabled.
+            _sgpParentOfTarget.rectTransform.sizeDelta = new Vector2(1000, 35);
 
         }
 
@@ -66,7 +67,6 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
 
         private void Update()  //If update isn't running after the first equip, what else is broken?  //032123_1648: Confirmed update isn't running on first equip.
         {
-
             if (updateHasBegun == false)
             {
                 updateHasBegun = true;
@@ -79,13 +79,12 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             base.enabled = true;  //just like translatorprop, 
             this._sgPropCanvas.enabled = true; //032123_1605: if putting this down here fixes it, i swear... //032123_1613: I was building to the wrong directory.  now i have it working, no bugs.  the world may never know
             _sgPropGOSelf.SetActive(true);  //032123_1535: not set to instance of an object? 
-
-
-
-
         }
         public void OnUnequipTool() //done & working
-        { base.enabled = false; }
+        {
+            GetComponentInChildren<ScalegunToolClass>().ClearTerminal();
+            base.enabled = false;
+        }
 
         public void OnFinishUnequipAnimation()  //called by Tool's OnDisable, just like bart just like bart just like bart just like bart just like bart just like bart jut like bart just like bart just lik ebart just line bart just koll bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart
         {
@@ -93,7 +92,13 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             _sgPropGOSelf.SetActive(false);
         }
 
-
+        public void SubmitGOs(GameObject currentObject)
+        {
+            _sgpParentOfTarget.text = currentObject.transform.parent.ToString();
+        }
+        public void UpdateVertArray()
+        { }
+        
 
         //  vv  NO LONGER IN USE HERE  vv , INSTEAD CALLED DURING THE MAIN MODBEHAVIOR CLASS DURING GOSetup USING THE InstantiatePrefab EXTENSION; THIS IS JUST HERE FOR REFERENCE
 

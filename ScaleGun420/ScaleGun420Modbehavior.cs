@@ -86,7 +86,7 @@ namespace ScaleGun420
             _sgPropClassMain = _sgToolGObj.AddComponent<ScalegunPropClass>(); //ScalegunTool declares a PropClass; hopefully not 2late to attach & designate it to the _sgPropGroupject.
             _sgPropClassMain._sgPropGOSelf = _theGunToolClass.transform.InstantiatePrefab("brittlehollow/meshes/props", "BrittleHollow_Body/Sector_BH/Sector_NorthHemisphere/Sector_NorthPole/Sector_HangingCity" +
                             "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff", false, new Vector3(0.5496f, -1.11f, -0.119f), new Vector3(343.8753f, 200.2473f, 345.2718f));
-            _sgToolGObj.AddComponent<GunInterfaces>();
+
             _theGunToolClass.enabled = true; //031823_0622: put back after the other one in hopes of addressing a first-time-equip bug  UPDATE: THAT DID NOTHING EITHER            
 
             _sgToolGObj.SetActive(true);
