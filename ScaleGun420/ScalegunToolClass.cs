@@ -10,6 +10,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using static ScaleGun420.ScaleGun420Modbehavior;  //What the cool kids are doin
 
 namespace ScaleGun420
 {
@@ -19,19 +20,17 @@ namespace ScaleGun420
         private Transform _sgToolClassTransform; //reference to current attached GO's transform; used by Awake
         public ScalegunPropClass _sgPropClass;
 
-        private List<GameObject> _currentLayerSiblings;
+        public static List<GameObject> _selObjSiblings;
         private List<GameObject> _currentObjChildren;
         private bool _atBedrock;
         private bool _atSky;
         private bool _isInEditMode = false;
         private bool _targetHasSiblings;
-        private GameObject _theParentOfTarget;
-        private GameObject _selectedObject;
-        private GameObject _priorSelObject;
+        private GameObject _parentOfSelection;
+        public static GameObject _selectedObject; 
+        public static GameObject _previousSelection;  //not used here, but ScalegunPropClass will use it to fill in adjacent UI fields without having to recalculate, //032323_1938: Actually this should probably be defined by the PropClass
         private GameObject _topSibling;
         private GameObject _bottomSibling;
-        private ScaleGun420Modbehavior __instance;
-
 
         private void Awake()
         {
@@ -85,59 +84,85 @@ namespace ScaleGun420
         public override void Update()
         {
             base.Update();        //PlayerTool's base Update method handles deploy/stow anims; Everything else here is for Scalegun functions
+
+
             if (!this._isEquipped || this._isPuttingAway)           //Only does additional stuff if ScalegunTool is equipped.  DISABLED ON A HUNCH  UPDATE HUNCH WAS WRONG, CARRY ON
             {
                 return;
             }
-            if (ScaleGun420Modbehavior.Instance._vanillaSwapper.IsInToolMode(ScaleGun420Modbehavior.Instance.SGToolmode))
+            if (ScaleGun420Modbehavior.Instance._vanillaSwapper.IsInToolMode(ScaleGun420Modbehavior.Instance.SGToolmode) && OWInput.IsInputMode(InputMode.Character))
             {
-                if (OWInput.IsNewlyPressed(InputLibrary.toolActionPrimary) && _isInEditMode == false)   //031823_1505: Changed a bunch of stuff to __instance for cleanliness; may or may not bork things //031823_1525: Okay so apparently that made it start nullreffing? //REBUILDING IS FAILING, THANKS MICROSOFT.NET FRAMEWORK BUG
+                if (OWInput.IsNewlyPressed(InputLibrary.toolActionPrimary) && !_isInEditMode)   //031823_1505: Changed a bunch of stuff to __instance for cleanliness; may or may not bork things //031823_1525: Okay so apparently that made it start nullreffing? //REBUILDING IS FAILING, THANKS MICROSOFT.NET FRAMEWORK BUG
                 {
                     EyesDrillHoles();
                 }
 
-                if (__instance.UpBubbon)
-                { ScrollSiblingList(1); }
-                else if (__instance.DownBubbon)
-                { ScrollSiblingList(-1); }
+                if (_selObjSiblings != null && _selObjSiblings.Count > 1)
+                {
+                    if (UpBubbon)            //032223_1747: nullref???  //032323_1753: Setting the Bubbon bools static in Modbehavior lets me not need to do .Instance (with help from the Using: above)
+                    {
+                        ScrollSiblingList(1);
+                        _sgPropClass.UpdateScreenText();
+                        //_sgPropClass.OnScrollUpSiblings();
+
+                        
+                    }
+                    else if (DownBubbon)
+                    {
+                        ScrollSiblingList(-1);
+                        _sgPropClass.UpdateScreenText();
+                    
+                    }
+                }
+
+                //var siblingIndex = _selectedObject.transform.GetSiblingIndex();
+               // var list = _selectedObject.transform.parent.GetChild(siblingIndex);
+               // _sgPropClass.UpdateScreenText(_selectedObject, siblingIndex);
             }
         }
+
+
+
+
 
         public void ScrollSiblingList(int increment = 1)
         {
+            if (_selObjSiblings.Count <= 1) //Update already checks this but idk
+            { return; }
+
+            _previousSelection = _selectedObject;   //how do i account for the list changing without having to rerun GetSiblings?  idk
+
+            var myItem = _selObjSiblings[(increment + 1) % _selObjSiblings.Count];  //0323_1519: Idiot says this will always wrap around the list using "modulo" and Corby says to use .Count since .Count() will return Linq which is "stinky"
+            _selectedObject = myItem;
+        }
+
+
+
+        private void EyesDrillHoles()
+        {
+            Vector3 fwd = Locator.GetPlayerCamera().transform.forward;  //fwd is a Vector-3 that transforms forward relative to the playercamera
+
+            Physics.Raycast(Locator.GetPlayerCamera().transform.position, fwd, out RaycastHit hit, 50000, OWLayerMask.physicalMask);
+            var retrievedRootObject = hit.collider.gameObject.transform.parent.gameObject;
+
+            if (_selectedObject != null && retrievedRootObject == _selectedObject)
+            { return; }
+
+            _previousSelection = _selectedObject;
+            _selectedObject = retrievedRootObject;
+
+            _selObjSiblings = _selectedObject.GetSiblings();
+            _sgPropClass.UpdateScreenText();
+        }
+
+
+        public void CycleIntoSelectQueue(GameObject newSelection)
+        {
+            if (newSelection == _previousSelection)
             {
-                var myItem = _currentLayerSiblings[(increment + 1) % _currentLayerSiblings.Count];  //0323_1519: Idiot says this will always wrap around the list using "modulo" and Corby says to use .Count since .Count() will return Linq which is "stinky"
-            
+                Instance.ModHelper.Console.WriteLine($"{newSelection} is already _previousSelection, this should never happen");
+                return;
             }
-        }
-
-
-        public void EyesDrillHoles()
-        {
-            {
-                Vector3 fwd = Locator.GetPlayerCamera().transform.forward;  //fwd is a Vector-3 that transforms forward relative to the playercamera
-
-                Physics.Raycast(Locator.GetPlayerCamera().transform.position, fwd, out RaycastHit hit, 50000, OWLayerMask.physicalMask);
-                var retrievedRootObject = hit.collider.gameObject;
-
-                if (_selectedObject != null && retrievedRootObject == _selectedObject)
-                { return; }
-
-                _priorSelObject = _selectedObject;
-                _selectedObject = retrievedRootObject;
-                var siblingIndex = _selectedObject.transform.GetSiblingIndex();
-
-                ProcessScreen();
-            }
-        }
-
-        private void Intake(GameObject seenColliderToCpu)  //Processes initial target found by ScalegunToolClass.EyesDrillHoles
-        {
-
-        }
-        private void ProcessScreen()
-        {
-            _sgPropClass.UpdateScreenText(_selectedObject);
         }
 
 
@@ -147,7 +172,7 @@ namespace ScaleGun420
             _selectedObject = null;
             _topSibling = null;
             _bottomSibling = null;
-            _theParentOfTarget = null;
+            _parentOfSelection = null;
             _sgPropClass.UpdateScreenText();
 
         }

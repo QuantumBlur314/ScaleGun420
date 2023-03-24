@@ -88,7 +88,8 @@ namespace ScaleGun420
         //return newPrefab;
 
         // }
-
+        
+        
         public static T GetChildComponentByName<T>(this Transform parent, string name) where T : UnityEngine.Component    //shoutout to markroth8 on Feb 22, 2020 on the unity forums for this
         {
             foreach (T component in parent.GetComponentsInChildren<T>(true))
@@ -101,6 +102,31 @@ namespace ScaleGun420
             return null;
         }
 
+        public static List<GameObject> GetSiblings(this GameObject gameObject) //If you wanted to put this in another class, you'd get rid of the "this"
+        {
+            var siblings = new List<GameObject>();
+            foreach (Transform sister in gameObject.transform.parent)
+            {
+                siblings.Add(sister.gameObject);
+            }
+            return siblings;
+        }
+
+        public static List<GameObject> GetAllChildren(this GameObject parent) //thanks to Corby and Idiot 
+        {
+            var children = new List<GameObject>();
+            foreach (Transform child in parent.transform)
+            {
+                children.Add(child.gameObject);
+            }
+            return children;
+        }
+
+        //Corby says Linq is cleaner but less readable; Learn about arrays from this, but do not learn from the Linq
+        public static GameObject[] GetAllChildrenButLinqAndArrayInstead(this GameObject parent) //the [] tell code that it will be an array.
+        {
+            return parent.transform.Cast<Transform>().Select(child => child.gameObject).ToArray();
+        }
 
     }
 }

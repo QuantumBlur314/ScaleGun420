@@ -25,17 +25,17 @@ namespace ScaleGun420
 
         public float _gunNextGrowCheckTime;
         public Key Big;                                                 //Grows all OWRigidbodies on _VanishBlacklist to normal size
-        public bool BigBubbon;
+        public static bool BigBubbon;
         public Key Small;
-        public bool SmallBubbon;
+        public static bool SmallBubbon;
         public Key Up;
-        public bool UpBubbon;
+        public static bool UpBubbon;
         public Key Down;
-        public bool DownBubbon;
+        public static bool DownBubbon;
         public Key Left;
-        public bool LeftBubbon;
+        public static bool LeftBubbon;
         public Key Right;
-        public bool RightBubbon;
+        public static bool RightBubbon;
 
         private bool sceneLoaded;                   //MimickSwapperUpdate uses this to determine when to start running
         //public GameObject _lookingAt;
