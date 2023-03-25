@@ -10,10 +10,10 @@
 
     "Menu Navigation": { "type": "separator" },
 
-    "Up a layer (default: UpArrow)": "UpArrow",
-    "Down a layer (default: DownArrow)": "DownArrow",
-    "Left in layer (default: LeftArrow)": "LeftArrow",
-    "Right in layer (default: RightArrow)":  "RightArrow"
+    "Up a sibling (default: UpArrow)": "UpArrow",
+    "Down a sibling (default: DownArrow)": "DownArrow",
+    "To parent (default: LeftArrow)": "LeftArrow",
+    "To childs (default: RightArrow)":  "RightArrow"
 
   }
 }

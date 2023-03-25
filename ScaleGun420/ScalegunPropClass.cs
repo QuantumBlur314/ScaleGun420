@@ -18,13 +18,13 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         public Canvas _sgPropCanvas;
         public GameObject _sgpCanvObj;
         public GameObject _sgPropScreen;
-        public Text _sgpTxtParentOfTarget;
-        public Text _sgpTxtTopSib;
-        public Text _sgpTxtSelObj;
-        public Text _sgpTxtBtmSib;
+        private Text _sgpTxtParentOfTarget;
+        private Text _sgpTxtTopSib;
+        private Text _sgpTxtSelObj;
+        private Text _sgpTxtBtmSib;
         private GameObject _sgpParOfSel;
-        //private GameObject _sgpSelObj;
-        private GameObject _priorSelObject;
+        //private GameObject _sgpSelObj
+        private GameObject _sgpCurrentSelObj;
         private GameObject _sgpTopSibling;
         private GameObject _sgpBottomSibling;
         private bool updateHasBegun = false;
@@ -44,7 +44,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             this._sgPropGOSelf.SetActive(false);  //what NomaiTranslatorProp does, but better-labeled.  TranslatorProp sets its whole parent propgroup inactive at end of its Awake (the parts of it relevant to me) 
         }
 
-        private void SpawnAdditionalLasses()
+        public void SpawnAdditionalLasses()
         {
 
 
@@ -52,6 +52,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             //copy vertical layout separately 
 
             _sgpCanvObj = Instantiate(GameObject.Find("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas"), _sgPropGOSelf.transform);
+            _sgpCanvObj.name = "ScaleGunCanvas";
 
             _sgpCanvObj.transform.localEulerAngles = new Vector3(25f, 160f, 350f);
             _sgpCanvObj.transform.localPosition = new Vector3(0.15f, 1.75f, 0.05f);
@@ -59,23 +60,24 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             _sgpCanvObj.SetActive(true);  //031823_0616: This is a definite "true" moment (don't change)
             _sgPropCanvas = base.transform.GetComponentInChildren<Canvas>(true);  //031823_0627: GETTING RID OF THE (true) MAYBE?   //031923_1831: never found out whether that would work because VS broke
 
+
+
             _mainTextRecTra = base.transform.GetComponentInChildren<RectTransform>(true); //031823_0523: swapped to before _sgpTextFieldMain gets defined, idk why
             _mainTextRecTra.pivot = new Vector2(1f, 0.5f);
 
-
-
             _sgpTxtSelObj = _sgpCanvObj.transform.GetChildComponentByName<Text>("TranslatorText").GetComponent<Text>();
             _sgpTxtSelObj.name = "SelectedObject";
-            _sgpTxtSelObj.rectTransform.localPosition = new Vector2(1220, 260);
+            _sgpTxtSelObj.rectTransform.localPosition = new Vector2(1100, 260);
             _sgpTxtSelObj.rectTransform.localScale = new Vector3(0.85f, 0.85f, 0.85f);
             _sgpTxtSelObj.alignment = TextAnchor.MiddleCenter;
-
-            var textSizeDelta = new Vector2(1300, 35);
+            var horizontalOverflow = HorizontalWrapMode.Overflow;
+            var textSizeDelta = new Vector2(1400, 35);
 
             _sgpTxtParentOfTarget = _sgpCanvObj.transform.GetChildComponentByName<Text>("PageNumberText").GetComponent<Text>();   //THIS IS ALL YOU NEED TO SPAWN NEW LASSES YOU DINGUS
             _sgpTxtParentOfTarget.name = "ParentOfSelectedObject";
             _sgpTxtParentOfTarget.rectTransform.localPosition = new Vector2(-1680, 245);
             _sgpTxtParentOfTarget.rectTransform.sizeDelta = textSizeDelta;
+            _sgpTxtParentOfTarget.horizontalOverflow = horizontalOverflow;
 
             float siblingAlignment = -835;
 
@@ -85,6 +87,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
 
             _sgpTxtTopSib.rectTransform.localPosition = new Vector2(siblingAlignment, 140);
             _sgpTxtTopSib.rectTransform.sizeDelta = textSizeDelta;
+            _sgpTxtTopSib.horizontalOverflow = horizontalOverflow;
 
 
             _sgpBottomSibling = Instantiate(GameObject.Find("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas/PageNumberText"), _sgpCanvObj.transform);
@@ -93,7 +96,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
 
             _sgpTxtBtmSib.rectTransform.localPosition = new Vector2(siblingAlignment, 0);
             _sgpTxtBtmSib.rectTransform.sizeDelta = textSizeDelta;
-
+            _sgpTxtBtmSib.horizontalOverflow = horizontalOverflow;
 
             _sgpTxtParentOfTarget.enabled = true;  //031823_0608: setting to false doesn't fix the thing, and just leaves it disabled.
 
@@ -126,17 +129,29 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             GetComponentInChildren<ScalegunToolClass>().ClearTerminal();
             base.enabled = false;
         }
-        public void OnScrollToParent()
+        public void OnToParent()
         { }
 
-        public void OnScrollToChildren()
+        public void OnToChilds()
         { }
 
-        public void OnScrollDownSiblings()
-        { }
+        public void OnDownSiblings()
+        {
+            var currentIndex = _selectedObject.transform.GetSiblingIndex();
 
-        public void OnScrollUpSiblings()
-        { }
+            _sgpTxtTopSib.text = $"{_previousSelection},{_previousSelection.transform.GetSiblingIndex()}";
+            _sgpTxtSelObj.text = $"{_selectedObject},{_selObjIndex}";
+            _sgpTxtBtmSib.text = $"{GetSiblingAt(-1)}, {GetSiblingAt(-1).transform.GetSiblingIndex()}";
+        }
+
+        public void OnUpSiblings()
+        {
+            var currentIndex = _selectedObject.transform.GetSiblingIndex();
+
+            _sgpTxtTopSib.text = $"{GetSiblingAt(1)}, {GetSiblingAt(1).transform.GetSiblingIndex()}";
+            _sgpTxtSelObj.text = $"{_selectedObject}, {_selObjIndex}";
+            _sgpTxtBtmSib.text = $"{_previousSelection}, {_previousSelection.transform.GetSiblingIndex()}";
+        }
 
         public void OnFinishUnequipAnimation()  //called by Tool's OnDisable, just like bart just like bart just like bart just like bart just like bart just like bart jut like bart just like bart just lik ebart just line bart just koll bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart
         {
@@ -159,12 +174,16 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         public void UpdateScreenText()
         {
             if (_selectedObject == null)
-            { _sgpTxtParentOfTarget.text = "None"; }   //this is wack
+            {
+                foreach (Text textobject in _sgpCanvObj.GetComponentsInChildren<Text>())
+                { textobject.text = "None"; }
+            }   //this is wack
             else
             {
+                _sgpTxtTopSib.text = $"{GetSiblingAt(1)}, {GetSiblingAt(1).transform.GetSiblingIndex()}";
                 _sgpTxtSelObj.text = _selectedObject.ToString();
+                _sgpTxtBtmSib.text = $"{GetSiblingAt(-1)}, {GetSiblingAt(-1).transform.GetSiblingIndex()}";
                 _sgpTxtParentOfTarget.text = _selectedObject.transform.parent.ToString();  //this will be redundant once the Prop.OnScroll methods are finished
-
             }
         }
         public void UpdateVertArray()

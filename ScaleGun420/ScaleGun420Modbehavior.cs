@@ -29,13 +29,13 @@ namespace ScaleGun420
         public Key Small;
         public static bool SmallBubbon;
         public Key Up;
-        public static bool UpBubbon;
+        public static bool UpSibling;
         public Key Down;
-        public static bool DownBubbon;
+        public static bool DownSibling;
         public Key Left;
-        public static bool LeftBubbon;
+        public static bool ToParent;
         public Key Right;
-        public static bool RightBubbon;
+        public static bool ToChilds;
 
         private bool sceneLoaded;                   //MimickSwapperUpdate uses this to determine when to start running
         //public GameObject _lookingAt;
@@ -99,10 +99,10 @@ namespace ScaleGun420
             Big = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Big Your Ball"));
             Small = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Small Your Ball"));
 
-            Up = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Up a layer (default: UpArrow)"));
-            Down = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Down a layer (default: DownArrow)"));
-            Left = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Left in layer (default: LeftArrow)"));
-            Right = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Right in layer (default: RightArrow)"));
+            Up = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Up a sibling (default: UpArrow)"));
+            Down = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Down a sibling (default: DownArrow)"));
+            Left = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("To parent (default: LeftArrow)"));
+            Right = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("To childs (default: RightArrow)"));
             GunToggle = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Equip Scalegun"));
         }
 
@@ -128,10 +128,10 @@ namespace ScaleGun420
             {
                 BigBubbon = Keyboard.current[Big].wasPressedThisFrame;
                 SmallBubbon = Keyboard.current[Small].wasPressedThisFrame;
-                UpBubbon = Keyboard.current[Up].wasPressedThisFrame;
-                DownBubbon = Keyboard.current[Down].wasPressedThisFrame;   //THANKS TO Raoul1808 for the tip on where to find the notification stuff!
-                LeftBubbon = Keyboard.current[Left].wasPressedThisFrame;
-                RightBubbon = Keyboard.current[Right].wasPressedThisFrame;
+                UpSibling = Keyboard.current[Up].wasPressedThisFrame;
+                DownSibling = Keyboard.current[Down].wasPressedThisFrame;   //THANKS TO Raoul1808 for the tip on where to find the notification stuff!
+                ToParent = Keyboard.current[Left].wasPressedThisFrame;
+                ToChilds = Keyboard.current[Right].wasPressedThisFrame;
                 toggleGunKey = Keyboard.current[GunToggle].wasPressedThisFrame;
             }
             if (sceneLoaded)
