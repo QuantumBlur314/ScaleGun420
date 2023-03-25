@@ -25,8 +25,8 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         private GameObject _sgpParOfSel;
         //private GameObject _sgpSelObj
         private GameObject _sgpCurrentSelObj;
-        private GameObject _sgpTopSibling;
-        private GameObject _sgpBottomSibling;
+        public GameObject _sgpTopSibling;
+        public GameObject _sgpBottomSibling;
         private bool updateHasBegun = false;
         private bool _prevSelectionToField; //whether to grab ScalegunToolClass._previousSelection to fill a child/parent field, rather than having to dig again; may work better as method, idk
         private RectTransform _mainTextRecTra;
@@ -139,7 +139,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         {
             var currentIndex = _selectedObject.transform.GetSiblingIndex();
 
-            _sgpTxtTopSib.text = $"{_previousSelection},{_previousSelection.transform.GetSiblingIndex()}";
+            _sgpTxtTopSib.text = $"{_previousSelection},prevsel";
             _sgpTxtSelObj.text = $"{_selectedObject},{_selObjIndex}";
             _sgpTxtBtmSib.text = $"{GetSiblingAt(-1)}, {GetSiblingAt(-1).transform.GetSiblingIndex()}";
         }
@@ -150,7 +150,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
 
             _sgpTxtTopSib.text = $"{GetSiblingAt(1)}, {GetSiblingAt(1).transform.GetSiblingIndex()}";
             _sgpTxtSelObj.text = $"{_selectedObject}, {_selObjIndex}";
-            _sgpTxtBtmSib.text = $"{_previousSelection}, {_previousSelection.transform.GetSiblingIndex()}";
+            _sgpTxtBtmSib.text = $"{_previousSelection}, prevsel";
         }
 
         public void OnFinishUnequipAnimation()  //called by Tool's OnDisable, just like bart just like bart just like bart just like bart just like bart just like bart jut like bart just like bart just lik ebart just line bart just koll bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart
@@ -177,7 +177,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             {
                 foreach (Text textobject in _sgpCanvObj.GetComponentsInChildren<Text>())
                 { textobject.text = "None"; }
-            }   //this is wack
+            } //this is wack
             else
             {
                 _sgpTxtTopSib.text = $"{GetSiblingAt(1)}, {GetSiblingAt(1).transform.GetSiblingIndex()}";
@@ -186,8 +186,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
                 _sgpTxtParentOfTarget.text = _selectedObject.transform.parent.ToString();  //this will be redundant once the Prop.OnScroll methods are finished
             }
         }
-        public void UpdateVertArray()
-        { }
+
 
 
         //  vv  NO LONGER IN USE HERE  vv , INSTEAD CALLED DURING THE MAIN MODBEHAVIOR CLASS DURING GOSetup USING THE InstantiatePrefab EXTENSION; THIS IS JUST HERE FOR REFERENCE

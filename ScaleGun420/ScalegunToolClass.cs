@@ -30,8 +30,7 @@ namespace ScaleGun420
         public static GameObject _selectedObject;
         public static int _selObjIndex = 1;
         public static GameObject _previousSelection;  //not used here, but ScalegunPropClass will use it to fill in adjacent UI fields without having to recalculate, //032323_1938: Actually this should probably be defined by the PropClass
-        private GameObject _topSibling;
-        private GameObject _bottomSibling;
+
 
         private void Awake()
         {
@@ -110,19 +109,13 @@ namespace ScaleGun420
                 {
                     if (UpSibling)            //032223_1747: nullref???  //032323_1753: Setting the Bubbon bools static in Modbehavior lets me not need to do .Instance (with help from the Using: above)
                     {
-                        _previousSelection = _selectedObject; //how do i account for the list changing without having to rerun GetSiblings?  idk
-                        var newSelection = GetSiblingAt(1);  //0323_1519: Idiot says this will always wrap around the list using "modulo" and Corby says to use .Count since .Count() will return Linq which is "stinky"
-                        _selObjIndex = newSelection.transform.GetSiblingIndex();
-                        _selectedObject = newSelection;
+                        ScrollSiblings(1);
 
                         _sgPropClass.OnUpSiblings();
                     }
                     else if (DownSibling)
                     {
-                        _previousSelection = _selectedObject; //how do i account for the list changing without having to rerun GetSiblings?  idk
-                        var newSelection = GetSiblingAt(-1);  //0323_1519: Idiot says this will always wrap around the list using "modulo" and Corby says to use .Count since .Count() will return Linq which is "stinky"
-                        _selObjIndex = newSelection.transform.GetSiblingIndex();
-                        _selectedObject = newSelection;
+                        ScrollSiblings(-1);
 
                         _sgPropClass.OnDownSiblings();
                     }
@@ -139,51 +132,34 @@ namespace ScaleGun420
             var internalIndex = _selObjIndex;
             internalIndex += increment;
             internalIndex = ((internalIndex > listLength - 1) ? 0 : internalIndex);
-            internalIndex = ((internalIndex < 1) ? listLength - 1 : internalIndex);
+            internalIndex = ((internalIndex < 0) ? listLength - 1 : internalIndex);
             var foundObject = _selObjSiblings[internalIndex]; //these square brackets tell it to find the nth in the list, that's what these are
             return foundObject;
         }
 
-        public static GameObject GetSiblingAbove()
+        private void ScrollSiblings(int upOrDown)
         {
-
-            return _selObjSiblings[(_selObjIndex + 1) % _selObjSiblings.Count];
-        }
-        public static GameObject GetSiblingBelow()
-        {
-            return _selObjSiblings[(_selObjIndex - 1) % _selObjSiblings.Count];
-        }
-
-        public void PeruseUpSiblings()    //You need to actually store/read the current index, or else you're just atarting from the aottom
-        { //if (_selObjSiblings.Count <= 1) //Update already checks this but idk
-            _previousSelection = _selectedObject; //how do i account for the list changing without having to rerun GetSiblings?  idk
-            var newSelection = GetSiblingAbove();  //0323_1519: Idiot says this will always wrap around the list using "modulo" and Corby says to use .Count since .Count() will return Linq which is "stinky"
-            _selObjIndex = GetSiblingAbove().transform.GetSiblingIndex();
+            _previousSelection = _selectedObject;
+            var newSelection = GetSiblingAt(upOrDown);   //0323_1519: Idiot says this will always wrap around the list using "modulo" and Corby says to use .Count since .Count() will return Linq which is "stinky"
+            _selObjIndex = newSelection.transform.GetSiblingIndex();
             _selectedObject = newSelection;
         }
 
+
+
+
+      
         public static GameObject GetSiblingAboveWIZARD(int increment = 1)    //Stole this from Flater on StackOverflow, i have no idea what this is, I'm just copying runes that the smart wizards trust
         {
             int modulo = _selObjSiblings.Count;
             return _selObjSiblings[((++increment % modulo) + modulo) % modulo];
         }
 
-        public static GameObject GetSiblingBelowWIZARD(int increment = -1)
+        public static GameObject GetSiblingBelowWIZARD(int increment = 1)
         {
             int modulo = _selObjSiblings.Count;
             return _selObjSiblings[((--increment % modulo) + modulo) % modulo];
         }
-
-        public int Increment(int current, int mod)
-        {
-            return ((++current % mod) + mod) % mod;
-        }
-
-        public int Decrement(int current, int mod)
-        {
-            return ((--current % mod) + mod) % mod;
-        }
-
 
 
         private void EyesDrillHoles()
@@ -204,24 +180,13 @@ namespace ScaleGun420
             _sgPropClass.UpdateScreenText();
         }
 
-
-        public void CycleIntoSelectQueue(GameObject newSelection)
-        {
-            if (newSelection == _previousSelection)
-            {
-                Instance.ModHelper.Console.WriteLine($"{newSelection} is already _previousSelection, this should never happen");
-                return;
-            }
-        }
-
-
         public void ClearTerminal()
         {
             StopEditing();
             _selectedObject = null;
-            _topSibling = null;
-            _bottomSibling = null;
             _parentOfSelection = null;
+            _sgPropClass._sgpTopSibling = null;
+            _sgPropClass._sgpBottomSibling = null;
             _sgPropClass.UpdateScreenText();
 
         }
