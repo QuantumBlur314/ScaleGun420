@@ -18,7 +18,7 @@ namespace ScaleGun420
         public static string GetPath(this Transform current)    //Xen says New Horizons uses this.  It has to be in a static class, so that's why it's in Extensions
         {
             if (current.parent == null) return current.name;
-            ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"{current}");
+            //ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"{current}");  
             return current.parent.GetPath() + "/" + current.name; //burrows UP
         }
 
@@ -55,10 +55,10 @@ namespace ScaleGun420
             childObj.SetActive(spawnsActive);
             return childObj;
         }
-        public static GameObject InstantiatePrefab(this GameObject parentGO, string streamingAssetsBath, string prefabBath, bool spawnsActive, Vector3 localPosition = default, Vector3 localEulerAngles = default)
+        public static GameObject InstantiatePrefab(this Transform parentTransform, string streamingAssetsBath, string prefabBath, bool spawnsActive, Vector3 localPosition = default, Vector3 localEulerAngles = default)
         {
             LoadPrefab();
-            GameObject newPrefab = ScaleGun420Modbehavior.Instantiate(GameObject.Find(prefabBath), parentGO.transform);
+            GameObject newPrefab = ScaleGun420Modbehavior.Instantiate(GameObject.Find(prefabBath), parentTransform);
 
             newPrefab.transform.localPosition = localPosition;
             newPrefab.transform.localEulerAngles = localEulerAngles;
@@ -88,7 +88,8 @@ namespace ScaleGun420
         //return newPrefab;
 
         // }
-
+        
+        
         public static T GetChildComponentByName<T>(this Transform parent, string name) where T : UnityEngine.Component    //shoutout to markroth8 on Feb 22, 2020 on the unity forums for this
         {
             foreach (T component in parent.GetComponentsInChildren<T>(true))
@@ -101,6 +102,31 @@ namespace ScaleGun420
             return null;
         }
 
+        public static List<GameObject> GetSiblings(this GameObject gameObject) //If you wanted to put this in another class, you'd get rid of the "this"
+        {
+            var siblings = new List<GameObject>();
+            foreach (Transform sister in gameObject.transform.parent)
+            {
+                siblings.Add(sister.gameObject);
+            }
+            return siblings;
+        }
+
+        public static List<GameObject> GetAllChildren(this GameObject parent) //thanks to Corby and Idiot 
+        {
+            var children = new List<GameObject>();
+            foreach (Transform child in parent.transform)
+            {
+                children.Add(child.gameObject);
+            }
+            return children;
+        }
+
+        //Corby says Linq is cleaner but less readable; Learn about arrays from this, but do not learn from the Linq
+        public static GameObject[] GetAllChildrenButLinqAndArrayInstead(this GameObject parent) //the [] tell code that it will be an array.
+        {
+            return parent.transform.Cast<Transform>().Select(child => child.gameObject).ToArray();
+        }
 
     }
 }

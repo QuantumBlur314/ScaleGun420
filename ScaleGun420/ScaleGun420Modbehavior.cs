@@ -25,17 +25,17 @@ namespace ScaleGun420
 
         public float _gunNextGrowCheckTime;
         public Key Big;                                                 //Grows all OWRigidbodies on _VanishBlacklist to normal size
-        public bool BigBubbon;
+        public static bool BigBubbon;
         public Key Small;
-        public bool SmallBubbon;
+        public static bool SmallBubbon;
         public Key Up;
-        public bool UpBubbon;
+        public static bool UpSibling;
         public Key Down;
-        public bool DownBubbon;
+        public static bool DownSibling;
         public Key Left;
-        public bool LeftBubbon;
+        public static bool ToParent;
         public Key Right;
-        public bool RightBubbon;
+        public static bool ToChilds;
 
         private bool sceneLoaded;                   //MimickSwapperUpdate uses this to determine when to start running
         //public GameObject _lookingAt;
@@ -45,6 +45,7 @@ namespace ScaleGun420
 
         public GameObject _sgToolGObj;  //MUST BE PUBLIC
         public ScalegunToolClass _theGunToolClass;
+        public ScalegunPropClass _sgPropClassMain;
 
         private Key GunToggle;        //Idk if it'll be more or less work to prevent gun from working while in ship.  guess we'll find out
         private bool toggleGunKey; //whether right-click & other scout-related actions reach the Scalegun instead
@@ -79,20 +80,17 @@ namespace ScaleGun420
 
         private void GOSetup()  //does all the object spawning/hierarchies that the base game's creators probably handled better in unity.  idfk.  Does things in such 
         {
-            _sgToolGObj = Locator.GetPlayerTransform().CreateChild("SgToolGO_husk", false);  //031623_0653: spawns an inactive empty SGToolGO as a child of the player.
+            _sgToolGObj = Locator.GetPlayerTransform().CreateChild("SgToolGObj_husk", false);  //031623_0653: spawns an inactive empty SGToolGO as a child of the player.
             _theGunToolClass = _sgToolGObj.AddComponent<ScalegunToolClass>();  //hopefully the host _sgToolGObj's inactivity prevents its new ScalegunTool pilot from waking up, or it'll reach for ScalegunPropClass too early
-            _theGunToolClass._sgPropSoupject = _sgToolGObj.InstantiatePrefab("brittlehollow/meshes/props", "BrittleHollow_Body/Sector_BH/Sector_NorthHemisphere/Sector_NorthPole/Sector_HangingCity" +
-                            "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff", false, new Vector3(0.5496f, -1.11f, -0.119f), new Vector3(343.8753f, 200.2473f, 345.2718f));  //ScalegunTool class declares a Gameobject called _sgPropGroupject.  This spawns & designates it at once.
-            _theGunToolClass._sgPropClass = _theGunToolClass._sgPropSoupject.AddComponent<ScalegunPropClass>(); //ScalegunTool declares a PropClass; hopefully not 2late to attach & designate it to the _sgPropGroupject.
-            _theGunToolClass._sgPropClass._sgOwnPropGroupject = _theGunToolClass._sgPropSoupject;  //031623_0741: prop-class Groupject will now awaken to a Tool-Class parent, instead of to a hollow one.  Assigns for internal refs.
 
-            _theGunToolClass.enabled = true; //031823_0622: put back after the other one in hopes of addressing a first-time-equip bug  UPDATE: THAT DID NOTHING EITHER
-            _theGunToolClass._sgPropClass.enabled = true;
+            _sgPropClassMain = _sgToolGObj.AddComponent<ScalegunPropClass>(); //ScalegunTool declares a PropClass; hopefully not 2late to attach & designate it to the _sgPropGroupject.
+            _sgPropClassMain._sgPropGOSelf = _theGunToolClass.transform.InstantiatePrefab("brittlehollow/meshes/props", "BrittleHollow_Body/Sector_BH/Sector_NorthHemisphere/Sector_NorthPole/Sector_HangingCity" +
+                            "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff", false, new Vector3(0.5496f, -1.11f, -0.119f), new Vector3(343.8753f, 200.2473f, 345.2718f));
+
+            _theGunToolClass.enabled = true; //031823_0622: put back after the other one in hopes of addressing a first-time-equip bug  UPDATE: THAT DID NOTHING EITHER            
 
             _sgToolGObj.SetActive(true);
         }
-
-
 
         public override void Configure(IModConfig config)
 
@@ -101,10 +99,10 @@ namespace ScaleGun420
             Big = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Big Your Ball"));
             Small = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Small Your Ball"));
 
-            Up = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Up a layer (default: UpArrow)"));
-            Down = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Down a layer (default: DownArrow)"));
-            Left = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Left in layer (default: LeftArrow)"));
-            Right = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Right in layer (default: RightArrow)"));
+            Up = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Up a sibling (default: UpArrow)"));
+            Down = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Down a sibling (default: DownArrow)"));
+            Left = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("To parent (default: LeftArrow)"));
+            Right = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("To childs (default: RightArrow)"));
             GunToggle = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Equip Scalegun"));
         }
 
@@ -130,16 +128,16 @@ namespace ScaleGun420
             {
                 BigBubbon = Keyboard.current[Big].wasPressedThisFrame;
                 SmallBubbon = Keyboard.current[Small].wasPressedThisFrame;
-                UpBubbon = Keyboard.current[Up].wasPressedThisFrame;
-                DownBubbon = Keyboard.current[Down].wasPressedThisFrame;   //THANKS TO Raoul1808 for the tip on where to find the notification stuff!
-                LeftBubbon = Keyboard.current[Left].wasPressedThisFrame;
-                RightBubbon = Keyboard.current[Right].wasPressedThisFrame;
+                UpSibling = Keyboard.current[Up].wasPressedThisFrame;
+                DownSibling = Keyboard.current[Down].wasPressedThisFrame;   //THANKS TO Raoul1808 for the tip on where to find the notification stuff!
+                ToParent = Keyboard.current[Left].wasPressedThisFrame;
+                ToChilds = Keyboard.current[Right].wasPressedThisFrame;
                 toggleGunKey = Keyboard.current[GunToggle].wasPressedThisFrame;
             }
             if (sceneLoaded)
             {
                 MimickSwapperUpdate();
-                //ScalegunPropClass.EyesDrillHoles();  //EYESDRILLHOLES DOES A NULLREF IF CALLED WITHOUT WEARING A SUIT (until you project it to the prop)
+                //EYESDRILLHOLES DOES A NULLREF IF CALLED WITHOUT WEARING A SUIT (until you project it to the prop)
             }
         }
 
@@ -150,23 +148,22 @@ namespace ScaleGun420
             //CHECK BASELINE
 
 
-            if (SmallBubbon) { ModHelper.Console.WriteLine($"_equippedTool is {_vanillaSwapper._equippedTool}"); }
-            if (UpBubbon) { ModHelper.Console.WriteLine($"_nextTool is {_vanillaSwapper._nextTool}"); }
+            //if (SmallBubbon) { ModHelper.Console.WriteLine($"_equippedTool is {_vanillaSwapper._equippedTool}"); }
+            //if (UpBubbon) { ModHelper.Console.WriteLine($"_nextTool is {_vanillaSwapper._nextTool}"); }
 
-            if (toggleGunKey)          //_nextToolMode BECOMES SGToolMode for a SPLIT SECOND then becomes NONE, BUT _nextTOOL NEVER GETS CALLED AT ALL, WHAT ASSIGNS _nextToolMode?
+            if (toggleGunKey && OWInput.IsInputMode(InputMode.Character))          //_nextToolMode BECOMES SGToolMode for a SPLIT SECOND then becomes NONE, BUT _nextTOOL NEVER GETS CALLED AT ALL, WHAT ASSIGNS _nextToolMode?
             {
                 if (_vanillaSwapper._currentToolMode != SGToolmode)
                 {  //FOR SOME REASON H IS STILL ACTIVATING THE TOOL CLASS WHEN THE _sgToolGameObject IS INACTIVE, BUT DOESN'T DEACTIVATE IT ON SUBSEQUENT PRESSES.  IDK IF THIS IS ALSO HOW OTHER OBJECTS WORK.
                    //UPDATE:  THE SIGNALSCOPE ALSO DOES THIS.  GUESS THAT'S JUST HOW THINGS ARE, NOT A BUG
                     _vanillaSwapper.EquipToolMode(SGToolmode);
-                    ModHelper.Console.WriteLine($"Current toolmode: {_vanillaSwapper.GetToolMode()}.  Should be {SGToolmode}. Next toolmode is {_vanillaSwapper._nextToolMode} next tool is {_vanillaSwapper._nextTool}");  //When hitting H while other tool is deployed: stows current tool, "Next Toolmode is Scalegun, next tool is (blank) MAYBE 
                 }
                 else
                 {
                     _vanillaSwapper.UnequipTool();  //Swapper's UnequipTool method calls EquipToolMode, for reference
                     if (_vanillaSwapper._nextToolMode != ToolMode.None)
                     {
-                        ModHelper.Console.WriteLine($"_nextToolMode isn't ToolMode.None, instead it's {_vanillaSwapper._nextToolMode}");
+                        LogGoob.WriteLine($"_nextToolMode isn't ToolMode.None, instead it's {_vanillaSwapper._nextToolMode}");
                     }
                 }
 

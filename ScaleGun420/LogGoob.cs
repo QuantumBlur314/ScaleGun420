@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using UnityEngine;
 
 namespace ScaleGun420
 {
-    internal class GunInterfaces: ShipNotificationDisplay
+    public static class LogGoob
     {
+        public static void WriteLine(string msg) => ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine(msg);
 
     }
 }

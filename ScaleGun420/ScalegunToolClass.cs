@@ -2,6 +2,7 @@
 using JetBrains.Annotations;
 using OWML.ModHelper;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -9,6 +10,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using static ScaleGun420.ScaleGun420Modbehavior;  //What the cool kids are doin
 
 namespace ScaleGun420
 {
@@ -16,24 +18,37 @@ namespace ScaleGun420
     public class ScalegunToolClass : PlayerTool
     {
         private Transform _sgToolClassTransform; //reference to current attached GO's transform; used by Awake
-        public GameObject _sgPropSoupject; //has to be public so ScalegunProp Awake can reference it and assign itself
         public ScalegunPropClass _sgPropClass;
 
+        public static List<GameObject> _selObjSiblings;
+        private List<GameObject> _currentObjChildren;
+        private bool _isInEditMode = false;
+        private bool _cancelTimer = false;
+        private float _counter = 0;
+        private float _waitTime = 0;
+        private GameObject _parentOfSelection;
+        public static GameObject _selectedObject;
+        public static int _selObjIndex = 1;
+        public static GameObject _previousSelection;  //not used here, but ScalegunPropClass will use it to fill in adjacent UI fields without having to recalculate, //032323_1938: Actually this should probably be defined by the PropClass
 
-        private void Awake()  
+
+        private void Awake()
         {
- //GetComponentInChildren doesn't search for inactive objects by default, needs to be set to (true) to find inactive stuff
+            //GetComponentInChildren doesn't search for inactive objects by default, needs to be set to (true) to find inactive stuff
             _sgPropClass = GetComponentInChildren<ScalegunPropClass>(true);  //Setting it to (true) worked ok fine idk whatever
 
-            if (!this._sgToolClassTransform)
+            if (!_sgToolClassTransform)
             { this._sgToolClassTransform = base.transform; }  //ProbeLauncher does this
+
+
             StealOtherToolTransforms();
         }
 
 
-        public override void Start() 
+        public override void Start()
         {
-            base.Start(); //disables tool by default, even Translator main.  ////031623_2059: error???
+            base.Start(); //disables tool by default, even Translator main. 
+
         }
 
         private void StealOtherToolTransforms()
@@ -44,9 +59,9 @@ namespace ScaleGun420
                 if (_foundToolToStealTransformsFrom != null)
                     //VIO CONFIRMED THIS IS A BAD IDEA
                     _stowTransform = _foundToolToStealTransformsFrom._stowTransform;  //CONFIRMED THAT STUTTERING OCCURS SWAPPING BETWEEN ScaleGun AND WHATEVER TOOL IT STOLE ITS TRANSFORMS FROM
-                ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"Successfully stole {_foundToolToStealTransformsFrom._stowTransform} from {_foundToolToStealTransformsFrom}"); //The Transforms don't print into strings like this unfortunately
+                LogGoob.WriteLine($"Successfully stole {_foundToolToStealTransformsFrom._stowTransform} from {_foundToolToStealTransformsFrom}"); //The Transforms don't print into strings like this unfortunately
                 _holdTransform = _foundToolToStealTransformsFrom._holdTransform;
-                ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"Successfully stole {_foundToolToStealTransformsFrom._holdTransform} from {_foundToolToStealTransformsFrom}");
+                LogGoob.WriteLine($"Successfully stole {_foundToolToStealTransformsFrom._holdTransform} from {_foundToolToStealTransformsFrom}");
                 _moveSpring = _foundToolToStealTransformsFrom._moveSpring;  //REMEMBER TO DIG UP WHATEVER FORMAT _moveSpring USES AND MAKE YOUR OWN so it stops fighting the tool it stole from.
             }
         }
@@ -55,11 +70,9 @@ namespace ScaleGun420
 
         public override void EquipTool()
         {
-            ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"called ScalegunTool.EquipTool");
+            LogGoob.WriteLine($"called ScalegunTool.EquipTool");
             base.EquipTool();
             this._sgPropClass.OnEquipTool(); //Following in the footsteps of Translator/TranslatorPRop
-                                             // this._isEquipped = true;
-                                             //if (this._staffProp)
         }
 
         public override void UnequipTool()          //CALLED BY ToolModeSwapper.EquipToolMode(ToolMode toolMode), which is itself called by ToolModeSwapper.Update
@@ -72,11 +85,156 @@ namespace ScaleGun420
         public override void Update()
         {
             base.Update();        //PlayerTool's base Update method handles deploy/stow anims; Everything else here is for Scalegun functions
+
+
+            while (_counter < _waitTime)
+            {
+                _counter += Time.deltaTime;
+                Instance.ModHelper.Console.WriteLine("We have waited for: " + _counter + " seconds");
+
+                if (_cancelTimer == true)
+                {
+                    _cancelTimer = false;
+                    _waitTime = 0;
+                    _counter = 0;
+                    break;
+                }
+
+                if (_cancelTimer == true)
+                {
+
+                }
+                
+            }
+
+
             if (!this._isEquipped || this._isPuttingAway)           //Only does additional stuff if ScalegunTool is equipped.  DISABLED ON A HUNCH  UPDATE HUNCH WAS WRONG, CARRY ON
             {
                 return;
             }
+            if (ScaleGun420Modbehavior.Instance._vanillaSwapper.IsInToolMode(ScaleGun420Modbehavior.Instance.SGToolmode) && OWInput.IsInputMode(InputMode.Character))
+            {
+                if (OWInput.IsNewlyPressed(InputLibrary.toolActionPrimary) && !_isInEditMode)   //031823_1505: Changed a bunch of stuff to __instance for cleanliness; may or may not bork things //031823_1525: Okay so apparently that made it start nullreffing? //REBUILDING IS FAILING, THANKS MICROSOFT.NET FRAMEWORK BUG
+                {
+                    EyesDrillHoles();
+                }
+
+
+                if (ToParent)
+                {
+                    if (_selectedObject.transform.parent == null)
+
+                    { return; }
+                    _previousSelection = _selectedObject;
+                    //don't start a coroutine every damn time you press the button
+                }
+                //maybe run this check inside the if(upsibling) and (downsibling) things so it's not constantly checking
+
+                if (UpSibling)            //032223_1747: nullref???  //032323_1753: Setting the Bubbon bools static in Modbehavior lets me not need to do .Instance (with help from the Using: above)
+                {
+                    if (_selObjSiblings == null || _selObjSiblings.Count <= 1)
+                    { return; }
+
+                    ScrollSiblings(1);
+                    _sgPropClass.OnUpSiblings();
+                }
+                else if (DownSibling)
+                {
+                    if (_selObjSiblings == null || _selObjSiblings.Count <= 1)
+                    { return; }
+
+                    ScrollSiblings(-1);
+                    _sgPropClass.OnDownSiblings();
+                }
+
+                //var siblingIndex = _selectedObject.transform.GetSiblingIndex();
+                // var list = _selectedObject.transform.parent.GetChild(siblingIndex);
+                // _sgPropClass.UpdateScreenText(_selectedObject, siblingIndex);
+            }
         }
+
+        public static GameObject GetSiblingAt(int increment = 1)
+        {
+            var listLength = _selObjSiblings.Count;
+            var internalIndex = _selObjIndex;
+            internalIndex += increment;
+            internalIndex = ((internalIndex > listLength - 1) ? 0 : internalIndex);
+            internalIndex = ((internalIndex < 0) ? listLength - 1 : internalIndex);
+            var foundObject = _selObjSiblings[internalIndex]; //these square brackets tell it to find the nth in the list, that's what these are
+            return foundObject;
+        }
+
+        private void ScrollSiblings(int upOrDown)
+        {
+            _previousSelection = _selectedObject;
+            var newSelection = GetSiblingAt(upOrDown);   //0323_1519: Idiot says this will always wrap around the list using "modulo" and Corby says to use .Count since .Count() will return Linq which is "stinky"
+            _selObjIndex = newSelection.transform.GetSiblingIndex();
+            _selectedObject = newSelection;
+        }
+
+
+        private IEnumerator waitBeforeLoadSiblings(bool cancelCondition, float counter = 0, float waitTime = 1)
+        {
+            while (counter < waitTime)
+            {
+                //Increment Timer until counter >= waitTime
+                counter += Time.deltaTime;
+                Instance.ModHelper.Console.WriteLine("We have waited for: " + counter + " seconds");
+                //Wait for a frame so that Unity doesn't freeze
+                //Check if we want to quit this function
+                if (cancelCondition)
+                {
+                    //Quit function
+                    yield break;
+                }
+                yield return null;
+            }
+        }
+
+
+        public static GameObject GetSiblingAboveWIZARD(int increment = 1)    //Stole this from Flater on StackOverflow, i have no idea what this is, I'm just copying runes that the smart wizards trust
+        {
+            int modulo = _selObjSiblings.Count;
+            return _selObjSiblings[((++increment % modulo) + modulo) % modulo];
+        }
+
+        public static GameObject GetSiblingBelowWIZARD(int increment = 1)
+        {
+            int modulo = _selObjSiblings.Count;
+            return _selObjSiblings[((--increment % modulo) + modulo) % modulo];
+        }
+
+
+        private void EyesDrillHoles()
+        {
+            Vector3 fwd = Locator.GetPlayerCamera().transform.forward;  //fwd is a Vector-3 that transforms forward relative to the playercamera
+
+            Physics.Raycast(Locator.GetPlayerCamera().transform.position, fwd, out RaycastHit hit, 50000, OWLayerMask.physicalMask);
+            var retrievedRootObject = hit.collider.gameObject.transform.parent.gameObject;
+
+            if (_selectedObject != null && retrievedRootObject == _selectedObject)
+            { return; }
+
+            _previousSelection = null;
+            _selectedObject = retrievedRootObject;
+
+            _selObjSiblings = _selectedObject.GetSiblings();
+
+            _sgPropClass.UpdateScreenText();
+        }
+
+        public void ClearTerminal()
+        {
+            StopEditing();
+            _selectedObject = null;
+            _parentOfSelection = null;
+            _sgPropClass._sgpTopSibling = null;
+            _sgPropClass._sgpBottomSibling = null;
+            _sgPropClass.UpdateScreenText();
+        }
+        public void StopEditing()
+        { }
+
 
 
         // [[[  P R O P   S T U F F  ]]]
@@ -86,7 +244,7 @@ namespace ScaleGun420
             {
                 if (!PlayerState.AtFlightConsole())        //borrowed from Signalscope.  Idk why different tool props have their OnEnable & OnDisable methods as different access levels
                 {
-                    _sgPropSoupject.SetActive(true);  //TEST Ln114: disabled because NomaiTranslator doesn't override this at all //update: THIS ISN'T AN OVERRIDE, PlayerTool DOESN'T HAVE AN OnEnable BY DEFAULT// 031823_0637: disabling since it wasn't in the holy scriptures of NomaiTranslator, idfk anymore// 031923_1848: Previous entry may have been caused by the VS breakage and unrelated to code function
+                    _sgPropClass.enabled = true;  //TEST Ln114: disabled because NomaiTranslator doesn't override this at all //update: THIS ISN'T AN OVERRIDE, PlayerTool DOESN'T HAVE AN OnEnable BY DEFAULT// 031823_0637: disabling since it wasn't in the holy scriptures of NomaiTranslator, idfk anymore// 032123_1917: Disabling because NomaiTranslatorProp doesn't even define a gameobject.
                 }
             }
         }
