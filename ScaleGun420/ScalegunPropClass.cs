@@ -129,7 +129,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             GetComponentInChildren<ScalegunToolClass>().ClearTerminal();
             base.enabled = false;
         }
-        public void OnToParent()
+        public void OnToParent()   //maybe if user's scrolling through multiple parents, wait a bit before getting adjacent siblings in case they scroll again.
         { }
 
         public void OnToChilds()

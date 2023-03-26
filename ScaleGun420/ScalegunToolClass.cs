@@ -22,10 +22,10 @@ namespace ScaleGun420
 
         public static List<GameObject> _selObjSiblings;
         private List<GameObject> _currentObjChildren;
-        private bool _atBedrock;
-        private bool _atSky;
         private bool _isInEditMode = false;
-        private bool _targetHasSiblings;
+        private bool _cancelTimer = false;
+        private float _counter = 0;
+        private float _waitTime = 0;
         private GameObject _parentOfSelection;
         public static GameObject _selectedObject;
         public static int _selObjIndex = 1;
@@ -48,6 +48,7 @@ namespace ScaleGun420
         public override void Start()
         {
             base.Start(); //disables tool by default, even Translator main. 
+
         }
 
         private void StealOtherToolTransforms()
@@ -86,6 +87,27 @@ namespace ScaleGun420
             base.Update();        //PlayerTool's base Update method handles deploy/stow anims; Everything else here is for Scalegun functions
 
 
+            while (_counter < _waitTime)
+            {
+                _counter += Time.deltaTime;
+                Instance.ModHelper.Console.WriteLine("We have waited for: " + _counter + " seconds");
+
+                if (_cancelTimer == true)
+                {
+                    _cancelTimer = false;
+                    _waitTime = 0;
+                    _counter = 0;
+                    break;
+                }
+
+                if (_cancelTimer == true)
+                {
+
+                }
+                
+            }
+
+
             if (!this._isEquipped || this._isPuttingAway)           //Only does additional stuff if ScalegunTool is equipped.  DISABLED ON A HUNCH  UPDATE HUNCH WAS WRONG, CARRY ON
             {
                 return;
@@ -98,28 +120,33 @@ namespace ScaleGun420
                 }
 
 
-
                 if (ToParent)
                 {
+                    if (_selectedObject.transform.parent == null)
 
-
+                    { return; }
+                    _previousSelection = _selectedObject;
+                    //don't start a coroutine every damn time you press the button
                 }
+                //maybe run this check inside the if(upsibling) and (downsibling) things so it's not constantly checking
 
-                if (_selObjSiblings != null && _selObjSiblings.Count > 1)
+                if (UpSibling)            //032223_1747: nullref???  //032323_1753: Setting the Bubbon bools static in Modbehavior lets me not need to do .Instance (with help from the Using: above)
                 {
-                    if (UpSibling)            //032223_1747: nullref???  //032323_1753: Setting the Bubbon bools static in Modbehavior lets me not need to do .Instance (with help from the Using: above)
-                    {
-                        ScrollSiblings(1);
+                    if (_selObjSiblings == null || _selObjSiblings.Count <= 1)
+                    { return; }
 
-                        _sgPropClass.OnUpSiblings();
-                    }
-                    else if (DownSibling)
-                    {
-                        ScrollSiblings(-1);
-
-                        _sgPropClass.OnDownSiblings();
-                    }
+                    ScrollSiblings(1);
+                    _sgPropClass.OnUpSiblings();
                 }
+                else if (DownSibling)
+                {
+                    if (_selObjSiblings == null || _selObjSiblings.Count <= 1)
+                    { return; }
+
+                    ScrollSiblings(-1);
+                    _sgPropClass.OnDownSiblings();
+                }
+
                 //var siblingIndex = _selectedObject.transform.GetSiblingIndex();
                 // var list = _selectedObject.transform.parent.GetChild(siblingIndex);
                 // _sgPropClass.UpdateScreenText(_selectedObject, siblingIndex);
@@ -146,9 +173,25 @@ namespace ScaleGun420
         }
 
 
+        private IEnumerator waitBeforeLoadSiblings(bool cancelCondition, float counter = 0, float waitTime = 1)
+        {
+            while (counter < waitTime)
+            {
+                //Increment Timer until counter >= waitTime
+                counter += Time.deltaTime;
+                Instance.ModHelper.Console.WriteLine("We have waited for: " + counter + " seconds");
+                //Wait for a frame so that Unity doesn't freeze
+                //Check if we want to quit this function
+                if (cancelCondition)
+                {
+                    //Quit function
+                    yield break;
+                }
+                yield return null;
+            }
+        }
 
 
-      
         public static GameObject GetSiblingAboveWIZARD(int increment = 1)    //Stole this from Flater on StackOverflow, i have no idea what this is, I'm just copying runes that the smart wizards trust
         {
             int modulo = _selObjSiblings.Count;
@@ -188,7 +231,6 @@ namespace ScaleGun420
             _sgPropClass._sgpTopSibling = null;
             _sgPropClass._sgpBottomSibling = null;
             _sgPropClass.UpdateScreenText();
-
         }
         public void StopEditing()
         { }
