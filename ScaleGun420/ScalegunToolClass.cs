@@ -18,14 +18,15 @@ namespace ScaleGun420
     public class ScalegunToolClass : PlayerTool
     {
         private Transform _sgToolClassTransform; //reference to current attached GO's transform; used by Awake
-        public ScalegunPropClass _sgPropClass;
+        private ScalegunPropClass _sgPropClass;
 
         public static List<GameObject> _selObjSiblings;
         private List<GameObject> _currentObjChildren;
         private bool _isInEditMode = false;
+        public Coroutine timer = null;
         private bool _cancelTimer = false;
         private float _counter = 0;
-        private float _waitTime = 0;
+        private float _timeLeft;
         private GameObject _parentOfSelection;
         public static GameObject _selectedObject;
         public static int _selObjIndex = 1;
@@ -82,37 +83,46 @@ namespace ScaleGun420
             //base.UnequipTool SETS _isPuttingAway TO TRUE, THEN PlayerTool.Update APPLIES THE STOWTRANSFORMS THEN SETS base.enabled = false ONCE DONE ANIMATING
         }
 
+        public IEnumerator WaitBeforeLoadingSiblings(float time)
+        {
+            _timeLeft = time;
+            while (_timeLeft >= 0)
+            {
+                if (_cancelTimer)
+                {
+                    _cancelTimer = false;
+                    break;
+                }
+                _timeLeft -= Time.deltaTime;
+                yield return null;
+            }
+            //ensures input gets eaten this frame
+            yield return new WaitForEndOfFrame();
+
+            //do stuffs here 
+
+            _selObjSiblings = _selectedObject.GetSiblings();
+
+            _sgPropClass.UpdateScreenText();
+
+            timer = null;
+        }
         public override void Update()
         {
             base.Update();        //PlayerTool's base Update method handles deploy/stow anims; Everything else here is for Scalegun functions
-
-
-            while (_counter < _waitTime)
-            {
-                _counter += Time.deltaTime;
-                Instance.ModHelper.Console.WriteLine("We have waited for: " + _counter + " seconds");
-
-                if (_cancelTimer == true)
-                {
-                    _cancelTimer = false;
-                    _waitTime = 0;
-                    _counter = 0;
-                    break;
-                }
-
-                if (_cancelTimer == true)
-                {
-
-                }
-                
-            }
-
 
             if (!this._isEquipped || this._isPuttingAway)           //Only does additional stuff if ScalegunTool is equipped.  DISABLED ON A HUNCH  UPDATE HUNCH WAS WRONG, CARRY ON
             {
                 return;
             }
-            if (ScaleGun420Modbehavior.Instance._vanillaSwapper.IsInToolMode(ScaleGun420Modbehavior.Instance.SGToolmode) && OWInput.IsInputMode(InputMode.Character))
+            ///keeping timer in Update loop is "icky"
+
+            //While-loops freeze the entire runtime until they're done, might not want that 
+
+            //do the ol' TardisDematQueue "set it beyond the maximum time" trick
+
+
+            if (_vanillaSwapper.IsInToolMode(SGToolmode) && OWInput.IsInputMode(InputMode.Character))
             {
                 if (OWInput.IsNewlyPressed(InputLibrary.toolActionPrimary) && !_isInEditMode)   //031823_1505: Changed a bunch of stuff to __instance for cleanliness; may or may not bork things //031823_1525: Okay so apparently that made it start nullreffing? //REBUILDING IS FAILING, THANKS MICROSOFT.NET FRAMEWORK BUG
                 {
@@ -120,14 +130,33 @@ namespace ScaleGun420
                 }
 
 
+
                 if (ToParent)
                 {
-                    if (_selectedObject.transform.parent == null)
+                    if (_selectedObject == null || _selectedObject.transform.parent.transform.parent == null)  //prevents it from scrolling to final parent layer, as there's no way to find siblings at the highest level
 
                     { return; }
+
+                    _selObjSiblings.Clear();
+                    Instance.ModHelper.Console.WriteLine($"_selectedObject is {_selectedObject}");
+                    //PUT SOME EVENT HERE FOR THE PROP TO LISTEN FOR, MAKE AN EVENT FOR UPDATING THE SIBLING TEXT EVEN
                     _previousSelection = _selectedObject;
-                    //don't start a coroutine every damn time you press the button
+                    _selectedObject = _selectedObject.transform.parent.gameObject;
+                    Instance.ModHelper.Console.WriteLine($"_selectedObject updated to {_selectedObject} from {_previousSelection}");
+                    _sgPropClass.OnToParentInit();
+
+                    if (timer == null)
+                    {
+                        timer = StartCoroutine(WaitBeforeLoadingSiblings(1));
+                    }
+                    else
+                    { _timeLeft += 0.25f; };
                 }
+
+
+
+                //don't start a coroutine every damn time you press the button
+
                 //maybe run this check inside the if(upsibling) and (downsibling) things so it's not constantly checking
 
                 if (UpSibling)            //032223_1747: nullref???  //032323_1753: Setting the Bubbon bools static in Modbehavior lets me not need to do .Instance (with help from the Using: above)
@@ -173,24 +202,6 @@ namespace ScaleGun420
         }
 
 
-        private IEnumerator waitBeforeLoadSiblings(bool cancelCondition, float counter = 0, float waitTime = 1)
-        {
-            while (counter < waitTime)
-            {
-                //Increment Timer until counter >= waitTime
-                counter += Time.deltaTime;
-                Instance.ModHelper.Console.WriteLine("We have waited for: " + counter + " seconds");
-                //Wait for a frame so that Unity doesn't freeze
-                //Check if we want to quit this function
-                if (cancelCondition)
-                {
-                    //Quit function
-                    yield break;
-                }
-                yield return null;
-            }
-        }
-
 
         public static GameObject GetSiblingAboveWIZARD(int increment = 1)    //Stole this from Flater on StackOverflow, i have no idea what this is, I'm just copying runes that the smart wizards trust
         {
@@ -210,7 +221,8 @@ namespace ScaleGun420
             Vector3 fwd = Locator.GetPlayerCamera().transform.forward;  //fwd is a Vector-3 that transforms forward relative to the playercamera
 
             Physics.Raycast(Locator.GetPlayerCamera().transform.position, fwd, out RaycastHit hit, 50000, OWLayerMask.physicalMask);
-            var retrievedRootObject = hit.collider.gameObject.transform.parent.gameObject;
+            
+            var retrievedRootObject = hit.collider.gameObject.transform.parent.gameObject; //include condition for possibility that hit.collider has no parent somehow idk
 
             if (_selectedObject != null && retrievedRootObject == _selectedObject)
             { return; }

@@ -22,8 +22,9 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         private Text _sgpTxtTopSib;
         private Text _sgpTxtSelObj;
         private Text _sgpTxtBtmSib;
+        private Text _sgpTxtChildOfSel;
         private GameObject _sgpParOfSel;
-        //private GameObject _sgpSelObj
+        private GameObject _sgpChildOfSel;
         private GameObject _sgpCurrentSelObj;
         public GameObject _sgpTopSibling;
         public GameObject _sgpBottomSibling;
@@ -43,6 +44,8 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             this._sgPropCanvas.enabled = false; //031823_0614: doing this since TranslatorProp did it but it wasn't here yet //update: nope //031823_1524: Sudden unexpected nullref?
             this._sgPropGOSelf.SetActive(false);  //what NomaiTranslatorProp does, but better-labeled.  TranslatorProp sets its whole parent propgroup inactive at end of its Awake (the parts of it relevant to me) 
         }
+
+
 
         public void SpawnAdditionalLasses()
         {
@@ -98,7 +101,32 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             _sgpTxtBtmSib.rectTransform.sizeDelta = textSizeDelta;
             _sgpTxtBtmSib.horizontalOverflow = horizontalOverflow;
 
-            _sgpTxtParentOfTarget.enabled = true;  //031823_0608: setting to false doesn't fix the thing, and just leaves it disabled.
+
+
+            //_sgpChildOfSel = Instantiate(GameObject.Find("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas/PageNumberText"), _sgpCanvObj.transform);
+            //_sgpTxtChildOfSel = _sgpChildOfSel.transform.GetComponentInChildren<Text>();
+            // _sgpTxtChildOfSel.name = "Children";
+
+            // _sgpTxtChildOfSel.rectTransform.localPosition = new Vector2(siblingAlignment+900, 75);
+            // _sgpTxtChildOfSel.rectTransform.sizeDelta = textSizeDelta;
+             // _sgpTxtChildOfSel.horizontalOverflow = horizontalOverflow;
+
+
+
+            //_sgpChildOfSel = Instantiate(GameObject.Find("Player_Body/PlayerCamera/NomaiTranslatorProp").transform.Find("TranslatorGroup/Canvas/PageNumberText").transform.gameObject, _sgpCanvObj.transform);
+           // _sgpTxtChildOfSel = _sgpChildOfSel.transform.GetComponentInChildren<Text>();
+            //_sgpTxtChildOfSel.name = "Children";
+
+           // _sgpTxtChildOfSel.rectTransform.localPosition = new Vector2(siblingAlignment + 900, 75);
+           // _sgpTxtChildOfSel.rectTransform.sizeDelta = textSizeDelta;
+           // _sgpTxtChildOfSel.horizontalOverflow = horizontalOverflow;
+
+            //THIS DOESN'T DEFINE _sgpTxtChildOfSel DAMMIT
+            _sgpChildOfSel = _sgpCanvObj.transform.InstantiateTextObj("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas/PageNumberText", "Children",
+                out _sgpTxtChildOfSel, new Vector2(siblingAlignment + 900, 75), textSizeDelta, horizontalOverflow);
+            LogGoob.WriteLine($"Set _sgpChildOfSel to {_sgpChildOfSel}");
+
+            _sgpTxtParentOfTarget.enabled = true;  //031823_0608: setting to false doesn't fix the thing, and just leaves it disabled. //032623_1921: idk why this is still here but I'll leave it for now.
 
 
         }
@@ -129,12 +157,21 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             GetComponentInChildren<ScalegunToolClass>().ClearTerminal();
             base.enabled = false;
         }
-        public void OnToParent()   //maybe if user's scrolling through multiple parents, wait a bit before getting adjacent siblings in case they scroll again.
-        { }
+        public void OnToParentInit()   //maybe if user's scrolling through multiple parents, wait a bit before getting adjacent siblings in case they scroll again.
+        {
+            if (_selectedObject.transform.parent.gameObject != null)
+            { _sgpTxtParentOfTarget.text = $"{_selectedObject.transform.parent.gameObject}"; }
+            _sgpTxtTopSib.text = $"waiting 4 scrolling 2 stop";
+            _sgpTxtSelObj.text = $"{_selectedObject}";
+            _sgpTxtBtmSib.text = $"waiting 4 scrolling 2 stop";
+            LogGoob.WriteLine($"{_previousSelection} is _previousSelection, and will now be set to the currently-null _sgpTxtChildOfSel.text, which is a component of {_sgpChildOfSel}, and nothing will nullref ::)"); //THE TEXT IS NULL, CONFIRMED
+            _sgpTxtChildOfSel.text = $"{_previousSelection}";
+        }   
 
         public void OnToChilds()
         { }
 
+        //MAYBE MAKE ENUMERATOR FOR ALL HIERARCHY NAVIGATION DIRECTIONS, UNIFY IT?
         public void OnDownSiblings()
         {
             var currentIndex = _selectedObject.transform.GetSiblingIndex();
@@ -176,7 +213,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             if (_selectedObject == null)
             {
                 foreach (Text textobject in _sgpCanvObj.GetComponentsInChildren<Text>())
-                { textobject.text = "None"; }
+                { textobject.text = "_selectedObject IS NULL"; }
             } //this is wack
             else
             {

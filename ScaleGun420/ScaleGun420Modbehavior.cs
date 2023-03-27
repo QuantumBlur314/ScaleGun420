@@ -41,7 +41,7 @@ namespace ScaleGun420
         //public GameObject _lookingAt;
         //public GameObject _recentTargetObject;
 
-        public ToolModeSwapper _vanillaSwapper;
+        public static ToolModeSwapper _vanillaSwapper;
 
         public GameObject _sgToolGObj;  //MUST BE PUBLIC
         public ScalegunToolClass _theGunToolClass;
@@ -50,7 +50,7 @@ namespace ScaleGun420
         private Key GunToggle;        //Idk if it'll be more or less work to prevent gun from working while in ship.  guess we'll find out
         private bool toggleGunKey; //whether right-click & other scout-related actions reach the Scalegun instead
 
-        public ToolMode SGToolmode;
+        public static ToolMode SGToolmode;
 
 
         public static ScaleGun420Modbehavior Instance;
@@ -179,7 +179,7 @@ namespace ScaleGun420
             [HarmonyPrefix, HarmonyPatch(typeof(ToolModeSwapper), nameof(ToolModeSwapper.EquipToolMode))]
             private static bool ToolModeSwapper_EquipToolMode_Prefix(ToolMode mode, ToolModeSwapper __instance)  //instance is for referencing the class currently performing the method you're patching 
             {
-                ToolMode scalegunMode = ScaleGun420Modbehavior.Instance.SGToolmode;
+                ToolMode scalegunMode = SGToolmode;
                 if (mode != scalegunMode)
                 {
                     return true;
