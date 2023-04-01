@@ -43,7 +43,10 @@ namespace ScaleGun420
 
         public static ToolModeSwapper _vanillaSwapper;
 
-        public GameObject _sgToolGObj;  //MUST BE PUBLIC
+        public static GameObject _sgCamHoldTransformGO;
+        public static GameObject _sgBodyHoldTransformGO;
+        public static GameObject _sgBodyStowTransformGO;
+        public GameObject _sgtool_GO;  //MUST BE PUBLIC
         public ScalegunToolClass _theGunToolClass;
         public ScalegunPropClass _sgPropClassMain;
 
@@ -80,16 +83,26 @@ namespace ScaleGun420
 
         private void GOSetup()  //does all the object spawning/hierarchies that the base game's creators probably handled better in unity.  idfk.  Does things in such 
         {
-            _sgToolGObj = Locator.GetPlayerTransform().CreateChild("SgToolGObj_husk", false);  //031623_0653: spawns an inactive empty SGToolGO as a child of the player.
-            _theGunToolClass = _sgToolGObj.AddComponent<ScalegunToolClass>();  //hopefully the host _sgToolGObj's inactivity prevents its new ScalegunTool pilot from waking up, or it'll reach for ScalegunPropClass too early
+            _sgCamHoldTransformGO = Locator.GetPlayerCamera().gameObject.transform.CreateChild("SgCamHoldTransform_husk", true, new Vector3(0.14f, -0.425f, 0.11f), new Vector3(19, 5, 8));
+            //_sgBodyHoldTransformGO = Locator.GetPlayerBody().transform.CreateChild("SgBodyHoldTransform_husk", true);
+            //_sgBodyStowTransformGO = Locator.GetPlayerBody().transform.CreateChild("SgBodyStowTransform_husk", true);  //are these redundant?  am i usin em at all
+            _sgtool_GO = Locator.GetPlayerTransform().CreateChild("SgTool_GOHusk", false);  //031623_0653: spawns an inactive empty SGToolGO as a child of the player.
+            var toolGobjHuskPrim = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            toolGobjHuskPrim.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+            toolGobjHuskPrim.transform.parent = _sgtool_GO.transform;
+            toolGobjHuskPrim.transform.localPosition = _sgtool_GO.transform.localPosition;
+            toolGobjHuskPrim.transform.localEulerAngles = _sgtool_GO.transform.localEulerAngles;
 
-            _sgPropClassMain = _sgToolGObj.AddComponent<ScalegunPropClass>(); //ScalegunTool declares a PropClass; hopefully not 2late to attach & designate it to the _sgPropGroupject.
+
+            _theGunToolClass = _sgtool_GO.AddComponent<ScalegunToolClass>();  //hopefully the host _sgtool_GO's inactivity prevents its new ScalegunTool pilot from waking up, or it'll reach for ScalegunPropClass too early
+
+            _sgPropClassMain = _sgtool_GO.AddComponent<ScalegunPropClass>(); //ScalegunTool declares a PropClass; hopefully not 2late to attach & designate it to the _sgPropGroupject.
             _sgPropClassMain._sgPropGOSelf = _theGunToolClass.transform.InstantiatePrefab("brittlehollow/meshes/props", "BrittleHollow_Body/Sector_BH/Sector_NorthHemisphere/Sector_NorthPole/Sector_HangingCity" +
-                            "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff", false, new Vector3(0.5496f, -1.11f, -0.119f), new Vector3(343.8753f, 200.2473f, 345.2718f));
-
+                            "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff", false, new Vector3(0, -0.9f, -0.0005f), new Vector3(0, 180, 0));
+            //  ^^  UNTANGLE THIS FROM ModBehavior AT SOME POINT, PUT IT IN PropClass SOMEHOW, NOT RIGHT NOW THO ^^
             _theGunToolClass.enabled = true; //031823_0622: put back after the other one in hopes of addressing a first-time-equip bug  UPDATE: THAT DID NOTHING EITHER            
 
-            _sgToolGObj.SetActive(true);
+            _sgtool_GO.SetActive(true);
         }
 
         public override void Configure(IModConfig config)
@@ -106,20 +119,6 @@ namespace ScaleGun420
             GunToggle = (Key)System.Enum.Parse(typeof(Key), config.GetSettingsValue<string>("Equip Scalegun"));
         }
 
-        private void EyesDrillHoles()          //GameObjects have a SetActive method, the menu uses this, maybe it's single-target?  maybe I don't have to use my own thingus?
-        {
-            if (BigBubbon && Locator.GetPlayerCamera() != null && _vanillaSwapper.IsInToolMode(SGToolmode))
-            {
-                Vector3 fwd = Locator.GetPlayerCamera().transform.forward;  //fwd is a Vector-3 that transforms forward relative to the playercamera
-
-                Physics.Raycast(Locator.GetPlayerCamera().transform.position, fwd, out RaycastHit hit, 50000, OWLayerMask.physicalMask);
-                var retrievedRootObject = hit.collider.transform.GetPath();
-                NotificationManager.SharedInstance.PostNotification(
-    new NotificationData(NotificationTarget.Player,
-       $"{retrievedRootObject} Observed",
-       5f, true));
-            }
-        }
 
         //ToolModeSwapper Mimickry:
         private void Update()       //UNITY EXPLORER REVEALS ALL THE ScalegunTool's methods work fine and even animate well.  IsEquipped returns true.  Something is failing to pull its strings and read its info.
@@ -136,39 +135,32 @@ namespace ScaleGun420
             }
             if (sceneLoaded)
             {
-                MimickSwapperUpdate();
-                //EYESDRILLHOLES DOES A NULLREF IF CALLED WITHOUT WEARING A SUIT (until you project it to the prop)
-            }
-        }
-
-        private void MimickSwapperUpdate()
-        {
-            //_currentToolMode WILL ALWAYS REGISTER AS "None" EVEN WHEN ALSO REGISTERING THE CURRENT TOOL.  THIS IS HOW THE BASE GAME DOES THINGS, DON'T QUESTION IT
-            //BUT ToolModeSwapper.IsInToolMode returns FALSE when asked if "none" is true while _currentToolMode is ANYTHING?  SOMETHING I'M DOING IS SETTING _currentToolMode to "None" AND THE GAME'S MERCIFULLY IGNORING ME.
-            //CHECK BASELINE
-
-
-            //if (SmallBubbon) { ModHelper.Console.WriteLine($"_equippedTool is {_vanillaSwapper._equippedTool}"); }
-            //if (UpBubbon) { ModHelper.Console.WriteLine($"_nextTool is {_vanillaSwapper._nextTool}"); }
-
-            if (toggleGunKey && OWInput.IsInputMode(InputMode.Character))          //_nextToolMode BECOMES SGToolMode for a SPLIT SECOND then becomes NONE, BUT _nextTOOL NEVER GETS CALLED AT ALL, WHAT ASSIGNS _nextToolMode?
-            {
-                if (_vanillaSwapper._currentToolMode != SGToolmode)
-                {  //FOR SOME REASON H IS STILL ACTIVATING THE TOOL CLASS WHEN THE _sgToolGameObject IS INACTIVE, BUT DOESN'T DEACTIVATE IT ON SUBSEQUENT PRESSES.  IDK IF THIS IS ALSO HOW OTHER OBJECTS WORK.
-                   //UPDATE:  THE SIGNALSCOPE ALSO DOES THIS.  GUESS THAT'S JUST HOW THINGS ARE, NOT A BUG
-                    _vanillaSwapper.EquipToolMode(SGToolmode);
-                }
-                else
+                if (toggleGunKey && OWInput.IsInputMode(InputMode.Character))   //032823_1330: IF PLAYER'S IN EDIT MODE AND HITS Q OR H, THEY SHOULD MOVE IT FROM THEIR CAMERA TO PLAYER_BODY; ONLY CALL Swapper.UnequipTool() WHEN NOT CURRENTLY IN EDIT MODE
                 {
-                    _vanillaSwapper.UnequipTool();  //Swapper's UnequipTool method calls EquipToolMode, for reference
-                    if (_vanillaSwapper._nextToolMode != ToolMode.None)
-                    {
-                        LogGoob.WriteLine($"_nextToolMode isn't ToolMode.None, instead it's {_vanillaSwapper._nextToolMode}");
+                    if (_vanillaSwapper._currentToolMode != SGToolmode)
+                    {  //FOR SOME REASON H IS STILL ACTIVATING THE TOOL CLASS WHEN THE _sgToolGameObject IS INACTIVE, BUT DOESN'T DEACTIVATE IT ON SUBSEQUENT PRESSES.  IDK IF THIS IS ALSO HOW OTHER OBJECTS WORK.
+                       //UPDATE:  THE SIGNALSCOPE ALSO DOES THIS.  GUESS THAT'S JUST HOW THINGS ARE, NOT A BUG
+                        _vanillaSwapper.EquipToolMode(SGToolmode);
                     }
-                }
+                    else
+                    {
+                        if (_theGunToolClass._isInEditMode)  //032823_1558: THE Q BUTTON ISN'T ACCOUNTED FOR HERE
+                        { _theGunToolClass.LeaveEditMode(); }
+                        else
+                        {
+                            _vanillaSwapper.UnequipTool();  //Swapper's UnequipTool method calls EquipToolMode, for reference
+                        }
+                    }
 
+                }
             }
         }
+
+
+
+        //_currentToolMode WILL ALWAYS REGISTER AS "None" EVEN WHEN ALSO REGISTERING THE CURRENT TOOL.  THIS IS HOW THE BASE GAME DOES THINGS, DON'T QUESTION IT
+        //BUT ToolModeSwapper.IsInToolMode returns FALSE when asked if "none" is true while _currentToolMode is ANYTHING?  SOMETHING I'M DOING IS SETTING _currentToolMode to "None" AND THE GAME'S MERCIFULLY IGNORING ME.
+        //CHECK BASELINE
 
 
         [HarmonyPatch]  //NEVER FORGET THIS AGAIN YOU NUMBSKULL
