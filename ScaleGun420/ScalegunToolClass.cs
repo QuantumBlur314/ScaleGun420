@@ -48,10 +48,10 @@ namespace ScaleGun420
             var _foundToolToStealTransformsFrom = Locator.GetPlayerBody().GetComponentInChildren<Signalscope>();  //
             if (_foundToolToStealTransformsFrom != null)
             {
-                _stowTransform = _foundToolToStealTransformsFrom._stowTransform;
-                _bodyHoldTransform = _holdTransform = _foundToolToStealTransformsFrom._holdTransform;
-                _holdTransform.localPosition = new Vector3(0.4f, -0.25f, 0.5f); //Puts Tool Husk rotation origin at right side of hip
-                _holdTransform.localEulerAngles = new Vector3(10, 10, 5);
+                _stowTransform = _foundToolToStealTransformsFrom._stowTransform;  //this isn't a good stowtransform
+                _bodyHoldTransform = _holdTransform = _foundToolToStealTransformsFrom._holdTransform;  
+                _holdTransform.localPosition = new Vector3(0, 0, 0); //Puts Tool Husk rotation origin at right side of hip
+                _holdTransform.localEulerAngles = new Vector3(0, 0, 0);   //THIS IS ALTERING OTHER TOOLS' _holdTransforms, ESPECIALLY THE TRANSLATOR// THESE MAY BE REDUNDANT NOW
 
                 _camHoldTransform = _foundToolToStealTransformsFrom._holdTransform;
                 _camHoldTransform.localPosition = new Vector3(0.4f, -0.25f, 0.5f);
@@ -101,8 +101,8 @@ namespace ScaleGun420
                 this._isLeavingEditMode = false;
                 this._isEditModeCentered = !this.HasEquipAnimation();
 
-                this.transform.parent = _sgCamHoldTransformGO.transform;
-                _holdTransform = _sgCamHoldTransformGO.transform;
+                this.transform.parent = _sgCamHoldTransformGO.transform;   //THE TOOL IS DUPLICATING (THUS DOUBLING) THE HoldTransformGO's TRANSFORM AS ITS _holdTransform.  THIS ISN'T OPTIMAL BUT YOU ALREADY ORIENTED IT IDFK WELL DONE I GUESS
+                _holdTransform = _sgCamHoldTransformGO.transform;  //Oh wait, literally just don't make the transforms their parent, just make them a reference 
 
                // if (this.HasEquipAnimation())
                 //{
@@ -115,8 +115,8 @@ namespace ScaleGun420
         {
             if (_isInEditMode)
             {
-                transform.parent = Locator.GetPlayerBody().transform;
-                _holdTransform = _bodyHoldTransform;
+                transform.parent = Locator.GetPlayerTransform();
+                _holdTransform = _sgBodyHoldTransformGO.transform;
                 this._isInEditMode = false;
 
                 if (!this._isLeavingEditMode)

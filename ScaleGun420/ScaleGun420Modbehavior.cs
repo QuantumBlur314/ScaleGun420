@@ -84,14 +84,14 @@ namespace ScaleGun420
         private void GOSetup()  //does all the object spawning/hierarchies that the base game's creators probably handled better in unity.  idfk.  Does things in such 
         {
             _sgCamHoldTransformGO = Locator.GetPlayerCamera().gameObject.transform.CreateChild("SgCamHoldTransform_husk", true, new Vector3(0.14f, -0.425f, 0.11f), new Vector3(19, 5, 8));
-            //_sgBodyHoldTransformGO = Locator.GetPlayerBody().transform.CreateChild("SgBodyHoldTransform_husk", true);
+            _sgBodyHoldTransformGO = Locator.GetPlayerTransform().CreateChild("SgBodyHoldTransform_husk", true, new Vector3(0.4f, -0.25f, 0.5f), new Vector3(10, 10, 5));
             //_sgBodyStowTransformGO = Locator.GetPlayerBody().transform.CreateChild("SgBodyStowTransform_husk", true);  //are these redundant?  am i usin em at all
             _sgtool_GO = Locator.GetPlayerTransform().CreateChild("SgTool_GOHusk", false);  //031623_0653: spawns an inactive empty SGToolGO as a child of the player.
             var toolGobjHuskPrim = GameObject.CreatePrimitive(PrimitiveType.Cube);
             toolGobjHuskPrim.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-            toolGobjHuskPrim.transform.parent = _sgtool_GO.transform;
-            toolGobjHuskPrim.transform.localPosition = _sgtool_GO.transform.localPosition;
-            toolGobjHuskPrim.transform.localEulerAngles = _sgtool_GO.transform.localEulerAngles;
+            toolGobjHuskPrim.transform.parent = _sgBodyHoldTransformGO.transform;
+            toolGobjHuskPrim.transform.localPosition = _sgBodyHoldTransformGO.transform.localPosition;
+            toolGobjHuskPrim.transform.localEulerAngles = _sgBodyHoldTransformGO.transform.localEulerAngles;
 
 
             _theGunToolClass = _sgtool_GO.AddComponent<ScalegunToolClass>();  //hopefully the host _sgtool_GO's inactivity prevents its new ScalegunTool pilot from waking up, or it'll reach for ScalegunPropClass too early
