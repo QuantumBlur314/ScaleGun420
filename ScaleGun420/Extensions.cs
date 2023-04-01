@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -69,6 +70,22 @@ namespace ScaleGun420
             return newPrefab;
         }
 
+        public static GameObject InstantiateTextObj(this Transform parentTransform, string pathToGO, string customNameOfText,  //CHECK TO SEE WHETHER 
+            out Text textComponent, Vector2 localPosition = default, Vector2 sizeDelta = default, HorizontalWrapMode horizontalOverflow = default, bool spawnActive = true)
+        {//^^ NOTICE the "ref", this means it will let you put in a field
+            GameObject newTextBeast = ScaleGun420Modbehavior.Instantiate(GameObject.Find(pathToGO).transform.gameObject, parentTransform);
+            LogGoob.WriteLine($"set newTextBeast to {newTextBeast} on parent of name {parentTransform}");
+            textComponent = newTextBeast.transform.GetComponentInChildren<Text>(true);
+            LogGoob.WriteLine($"Successfully set textComponent to {textComponent}");
+            textComponent.name = customNameOfText;
+            LogGoob.WriteLine($"named textComponent to customNameOfText {customNameOfText}");
+
+            textComponent.rectTransform.localPosition = localPosition;
+            textComponent.rectTransform.sizeDelta = sizeDelta;
+            textComponent.horizontalOverflow = horizontalOverflow;
+            newTextBeast.SetActive(spawnActive);
+            return newTextBeast;
+        }
 
 
         //  private static T InstaPrefabAnyType<T>(this Transform parentTransform, string streamingAssetsBath, string prefabBath, bool spawnsActive, Vector3 localPosition = default, Vector3 localEulerAngles = default)
@@ -88,8 +105,8 @@ namespace ScaleGun420
         //return newPrefab;
 
         // }
-        
-        
+
+
         public static T GetChildComponentByName<T>(this Transform parent, string name) where T : UnityEngine.Component    //shoutout to markroth8 on Feb 22, 2020 on the unity forums for this
         {
             foreach (T component in parent.GetComponentsInChildren<T>(true))
@@ -105,7 +122,7 @@ namespace ScaleGun420
         public static List<GameObject> GetSiblings(this GameObject gameObject) //If you wanted to put this in another class, you'd get rid of the "this"
         {
             var siblings = new List<GameObject>();
-            foreach (Transform sister in gameObject.transform.parent)
+            foreach (Transform sister in gameObject.transform.parent)  //IF YOU'RE ALREADY AS HIGH AS YOU CAN GET, THERE'S NO WAY TO FIND SIBLINGS???????
             {
                 siblings.Add(sister.gameObject);
             }
