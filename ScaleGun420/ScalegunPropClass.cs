@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -18,9 +19,10 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         public Canvas _sgp_THCanvas;
         private Canvas _sgp_NOMCanvas;
         public GameObject _sgpGO_THCanvas;
+        public GameObject _sgpGO_NOMCanvas; //This can be phased out eventually with enough position tweaking, but for now it's good reference
         public GameObject _sgPropScreen;
         private GameObject _sgPropPrimitive1;
-        
+
 
         private GameObject _sgpTxtGO_Selection;
         private Text _sgpTxt_Selection;
@@ -54,9 +56,6 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             _sgpGO_THCanvas = Instantiate(GameObject.Find("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas"), _sgPropGOSelf.transform);
 
             _sgpGO_THCanvas.name = "ScaleGunCanvas";
-            //_sgpGO_THCanvas = new GameObject("Scalegun_THCanvas");
-            //_sgp_THCanvas = _sgpGO_THCanvas.AddComponent<Canvas>();
-
 
             _sgpGO_THCanvas.transform.localEulerAngles = new Vector3(25f, 160f, 350f);
             _sgpGO_THCanvas.transform.localPosition = new Vector3(0.15f, 1.75f, 0.05f);
@@ -65,8 +64,15 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             //_sgpGO_THCanvas = base.transform.GetComponentInChildren<Canvas>(true);  //031823_0627: GETTING RID OF THE (true) MAYBE?   //031923_1831: never found out whether that would work because VS broke
             _sgp_THCanvas = base.transform.GetComponentInChildren<Canvas>(true);
 
+
+
             _mainTextRecTra = base.transform.GetComponentInChildren<RectTransform>(true); //031823_0523: swapped to before _sgpTextFieldMain gets defined, idk why
             _mainTextRecTra.pivot = new Vector2(1f, 0.5f);
+
+            _sgpGO_NOMCanvas = _sgPropGOSelf.GivesBirthTo("Scalegun_NOMCanvas", true);
+            _sgp_NOMCanvas = _sgpGO_NOMCanvas.AddComponent<Canvas>();
+            _sgpGO_NOMCanvas.AddComponent<TypeEffectText>();
+
 
             _sgpTxt_Selection = _sgpGO_THCanvas.transform.GetChildComponentByName<Text>("TranslatorText").GetComponent<Text>();
             _sgpTxt_Selection.name = "SelectedObject";
@@ -92,7 +98,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             _sgpTxtGO_SibBelow = _sgpGO_THCanvas.transform.InstantiateTextObj("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas/PageNumberText", "BottomSibling",
                 out _sgpTxt_SibBelow, new Vector2(siblingAlignment, 0), textSizeDelta, horizontalOverflow);
 
-            _sgpTxtGO_Child = _sgpGO_THCanvas.transform.InstantiateTextObj("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas/PageNumberText", "Children",
+            _sgpTxtGO_Child = _sgpGO_NOMCanvas.transform.InstantiateTextObj("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas/PageNumberText", "Children",
                 out _sgpTxt_Child, new Vector2(siblingAlignment + 900, 75), textSizeDelta, horizontalOverflow);
 
             _sgpTxt_Parent.enabled = true;  //031823_0608: setting to false doesn't fix the thing, and just leaves it disabled. //032623_1921: idk why this is still here but I'll leave it for now.
@@ -143,12 +149,18 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             _sgpTxt_SibAbove.text = $"waiting 4 scrolling 2 stop";
             _sgpTxt_Selection.text = $"{_selectedObject}";
             _sgpTxt_SibBelow.text = $"waiting 4 scrolling 2 stop";
-            LogGoob.WriteLine($"{_previousSelection} is _previousSelection, and will now be set to the currently-null _sgpTxt_Child.text, which is a component of {_sgpTxtGO_Child}, and nothing will nullref ::)"); //THE TEXT IS NULL, CONFIRMED
             _sgpTxt_Child.text = $"{_previousSelection}";
         }
 
-        public void OnToChilds()
-        { }
+        public void OnToChildsInit()
+        {
+            if (_selectedObject.transform.childCount == 0)
+                _sgpTxt_Parent.text = $"{_previousSelection}";
+            _sgpTxt_SibAbove.text = "Waiting 4 Scroling 2 stop";
+            _sgpTxt_Selection.text = $"{_selectedObject}";
+            _sgpTxt_SibBelow.text = "Waiting 4 scrolin 2 sopt";
+            _sgpTxt_Child.text = $"{_selGO_Children[UnityEngine.Random.Range(0, _selGO_Children.Count)].ToString()}";  ///this is dumb
+        }
 
         //MAYBE MAKE ENUMERATOR FOR ALL HIERARCHY NAVIGATION DIRECTIONS, UNIFY IT?
         public void OnDownSiblings()
@@ -187,19 +199,39 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             var myItem = _selGO_Siblings[(increment + 1) % _selGO_Siblings.Count];  //0323_1519: Idiot says this will always wrap around the list using "modulo" and Corby says to use .Count since .Count() will return Linq which is "stinky"
             _selectedObject = myItem;
         }
-        public void UpdateScreenText()
+        public void UpdateScreenText()  //Add dedicated parameter for where to import _selObjPrevious
         {
             if (_selectedObject == null)
             {
                 foreach (Text textobject in _sgpGO_THCanvas.GetComponentsInChildren<Text>())
-                { textobject.text = "_selectedObject IS NULL"; }
+                { textobject.text = "Select..."; }
             } //this is wack
             else
             {
-                _sgpTxt_SibAbove.text = $"{GetSiblingAt(1)}, {GetSiblingAt(1).transform.GetSiblingIndex()}";
+                if (GetSiblingAt(1) != null)
+                { _sgpTxt_SibAbove.text = $"{GetSiblingAt(1)}, {GetSiblingAt(1).transform.GetSiblingIndex()}"; }  //this all renders the PrevSelection efforts pointless, ugh
+                else { _sgpTxt_SibAbove.text = "Null"; }
+
                 _sgpTxt_Selection.text = _selectedObject.ToString();
-                _sgpTxt_SibBelow.text = $"{GetSiblingAt(-1)}, {GetSiblingAt(-1).transform.GetSiblingIndex()}";
-                _sgpTxt_Parent.text = _selectedObject.transform.parent.ToString();  //this will be redundant once the Prop.OnScroll methods are finished
+
+                if (GetSiblingAt(-1) != null)
+                { _sgpTxt_SibBelow.text = $"{GetSiblingAt(-1)}, {GetSiblingAt(-1).transform.GetSiblingIndex()}"; }
+                else { _sgpTxt_SibBelow.text = "Null"; }
+
+                if (_selectedObject.transform.parent != null)
+                { _sgpTxt_Parent.text = _selectedObject.transform.parent.ToString(); }
+                else { _sgpTxt_Parent.text = "Null"; }
+
+                //this will be redundant once the Prop.OnScroll methods are finished
+
+                if (_selGO_Children != null)
+                {
+                    if (_selGO_Children.Count > 1)
+                    { _sgpTxt_Child.text = _selGO_Children[UnityEngine.Random.Range(0, _selGO_Children.Count)].ToString(); }
+                    else
+                    { _sgpTxt_Child.text = "Idk what index this wretched thing is at pls"; }
+                }
+                else { _sgpTxt_Child.text = "Null"; }
             }
         }
 
