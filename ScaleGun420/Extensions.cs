@@ -1,4 +1,5 @@
-﻿using OWML.ModHelper.Events;
+﻿using OWML.Common;
+using OWML.ModHelper.Events;
 using Steamworks;
 using System;
 using System.Collections.Generic;
@@ -119,16 +120,47 @@ namespace ScaleGun420
             return null;
         }
 
-        public static List<GameObject> GetSiblings(this GameObject gameObject) //If you wanted to put this in another class, you'd get rid of the "this"
-        {
-            var siblings = new List<GameObject>();
-            foreach (Transform sister in gameObject.transform.parent)  //IF YOU'RE ALREADY AS HIGH AS YOU CAN GET, THERE'S NO WAY TO FIND SIBLINGS???????
-            {
-                siblings.Add(sister.gameObject);
-            }
-            return siblings;
-        }
 
+        public static GameObject AdjacentSiblingIn(this int currentIndex, List<GameObject> listToCheck, int toDirection = 1)
+        {
+            if (currentIndex > listToCheck.Count)
+            {
+                LogGoob.WriteLine($"AdjacentSiblingsIn Ln126: currentIndex {currentIndex} was out of range of listToCheck.Count {listToCheck.Count}; returning {listToCheck[0]}");
+                return listToCheck[0]; }
+            else if (listToCheck.Count <= 1)
+            {
+                LogGoob.WriteLine($"AdjacentSiblingsIn: listToCheck was too small, with a count of {listToCheck.Count}. {currentIndex} is currentindex", MessageType.Warning);
+                currentIndex = 0;
+                return listToCheck[currentIndex]; //Returns currentIndex, since searching for 0 didn't work.  Also what the fuck why
+            }
+            else if (listToCheck.Count() > 1)
+            {
+                var listLength = listToCheck.Count();
+                var internalIndex = currentIndex;
+                internalIndex += toDirection;
+                internalIndex = ((internalIndex > listLength - 1) ? 0 : internalIndex);
+                internalIndex = ((internalIndex < 0) ? listLength - 1 : internalIndex);
+                var foundObject = listToCheck[internalIndex];
+                return foundObject;
+            }
+            else return listToCheck[0];
+        }
+        public static List<GameObject> GetAllSiblings(this GameObject gameObject) //If you wanted to put this in another class, you'd get rid of the "this"
+        {
+            if (gameObject.transform.parent != null)
+            {
+                var siblings = new List<GameObject>();
+                foreach (Transform sister in gameObject.transform.parent)  //IF YOU'RE ALREADY AS HIGH AS YOU CAN GET, THERE'S NO WAY TO FIND SIBLINGS???????
+                { siblings.Add(sister.gameObject); }
+                return siblings;
+            }
+            else
+            {
+                LogGoob.Scream("GetAllSiblings extension found no parent for lineage tracing; putting selected GameObject in lonely list instead.");
+                List<GameObject> soloList = new List<GameObject> { gameObject };
+                return soloList;
+            }
+        }
         public static List<GameObject> GetAllChildren(this GameObject parent) //thanks to Corby and Idiot 
         {
             var children = new List<GameObject>();

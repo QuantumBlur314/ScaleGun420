@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
-using static ScaleGun420.ScalegunToolClass;
+
 
 //032123_1546: Staff is starting disabled again but refuses to enable
 
@@ -16,6 +16,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
 {
     public class ScalegunPropClass : MonoBehaviour
     {
+
         public Canvas _sgp_THCanvas;
         private Canvas _sgp_NOMCanvas;
         public GameObject _sgpGO_THCanvas;
@@ -40,22 +41,28 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         private Text _sgpTxt_Child;
 
 
-
+        private string _greatGObbyFilter = $"(UnityEngine.GameObject)";
 
         private bool updateHasBegun = false;
         private bool _prevSelectionToField; //whether to grab ScalegunToolClass._previousSelection to fill a child/parent field, rather than having to dig again; may work better as method, idk
         private RectTransform _mainTextRecTra;
-        public GameObject _sgPropGOSelf;  //TranslatorProp never had to GetComponent() or whatever to define its internal _translatorProp Gameobject, so presumably, neither do I.
+        public GameObject _sgPropGOSelf;  //TranslatorProp never had to GetComponent() or whatever to define its internal _translatorProp Gameobject, so presumably, neither do I
+
+        private ScalegunToolClass _propsToolRef;
+        private SgComputer _computer;
 
 
         //NomaiTranslatorProp only disables TranslatorGroup (the dingus housing all canvas, prop model, etc) near the end of NomaiTranslatorProp's Awake 
 
         private void Awake()   //032123_1602: Everything except _sgOwnPropGroupject starts null when you first wake up.  this seems ill-advised unless it's a side-effect of my current bigger issue
         {
+            _propsToolRef = this.gameObject.GetComponent<ScalegunToolClass>();
+            _computer = gameObject.GetComponent<SgComputer>();
+
 
             _sgpGO_THCanvas = Instantiate(GameObject.Find("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas"), _sgPropGOSelf.transform);
 
-            _sgpGO_THCanvas.name = "ScaleGunCanvas";
+            _sgpGO_THCanvas.name = "ScaleGunCanvasHearth";
 
             _sgpGO_THCanvas.transform.localEulerAngles = new Vector3(25f, 160f, 350f);
             _sgpGO_THCanvas.transform.localPosition = new Vector3(0.15f, 1.75f, 0.05f);
@@ -68,11 +75,6 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
 
             _mainTextRecTra = base.transform.GetComponentInChildren<RectTransform>(true); //031823_0523: swapped to before _sgpTextFieldMain gets defined, idk why
             _mainTextRecTra.pivot = new Vector2(1f, 0.5f);
-
-            _sgpGO_NOMCanvas = _sgPropGOSelf.GivesBirthTo("Scalegun_NOMCanvas", true);
-            _sgp_NOMCanvas = _sgpGO_NOMCanvas.AddComponent<Canvas>();
-            _sgpGO_NOMCanvas.AddComponent<TypeEffectText>();
-
 
             _sgpTxt_Selection = _sgpGO_THCanvas.transform.GetChildComponentByName<Text>("TranslatorText").GetComponent<Text>();
             _sgpTxt_Selection.name = "SelectedObject";
@@ -98,9 +100,21 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             _sgpTxtGO_SibBelow = _sgpGO_THCanvas.transform.InstantiateTextObj("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas/PageNumberText", "BottomSibling",
                 out _sgpTxt_SibBelow, new Vector2(siblingAlignment, 0), textSizeDelta, horizontalOverflow);
 
-            _sgpTxtGO_Child = _sgpGO_NOMCanvas.transform.InstantiateTextObj("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas/PageNumberText", "Children",
-                out _sgpTxt_Child, new Vector2(siblingAlignment + 900, 75), textSizeDelta, horizontalOverflow);
 
+            _sgpGO_NOMCanvas = _sgPropGOSelf.GivesBirthTo("ScalegunCanvasNomai", true, new Vector3(0, 1.7f, 0.15f), new Vector3(45, 180, 0), 0.003f);  //For some reason, spawns with a text component visible from the main GameObject, idk why
+            _sgp_NOMCanvas = _sgpGO_NOMCanvas.AddComponent<Canvas>();  //rectTransform seems to come prepackaged for some reason idfk
+            _sgp_NOMCanvas.worldCamera = Locator.GetPlayerCamera().mainCamera;  //Check when canvases are set, and you'll find these values as the only ones being set
+            _sgp_NOMCanvas.renderMode = RenderMode.WorldSpace;
+
+            _sgpTxtGO_Child = _sgpGO_NOMCanvas.GivesBirthTo("Children", true);   //Get the TextGenerator? idk it's in the instantiated stuff but not in Text by default
+            _sgpTxt_Child = _sgpTxtGO_Child.AddComponent<Text>();
+            RandomizeFontForSomeReason();
+            _sgpTxtGO_Child.AddComponent<TypeEffectText>(); //is this a whole text component in and of itself?
+
+            //_sgpTxtGO_Child = _sgpGO_NOMCanvas.transform.InstantiateTextObj("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas/PageNumberText", "Children",
+            // out _sgpTxt_Child, new Vector2(siblingAlignment + 900, 75), textSizeDelta, horizontalOverflow);
+
+            //
             _sgpTxt_Parent.enabled = true;  //031823_0608: setting to false doesn't fix the thing, and just leaves it disabled. //032623_1921: idk why this is still here but I'll leave it for now.
 
             //_sgOwnPropGroupject = ScaleGun420Modbehavior.Instance._ //Might have to define it here.  How do I break the chains?
@@ -109,11 +123,11 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             this._sgPropGOSelf.SetActive(false);  //what NomaiTranslatorProp does, but better-labeled.  TranslatorProp sets its whole parent propgroup inactive at end of its Awake (the parts of it relevant to me) 
         }
 
-
-
-        public void SpawnAdditionalLasses()
+        private void RandomizeFontForSomeReason()
         {
-
+            var fontList = Font.GetOSInstalledFontNames();
+            int fontIndex = UnityEngine.Random.Range(0, (fontList.Count()));
+            _sgpTxt_Child.font = UnityEngine.Font.CreateDynamicFontFromOSFont(fontList[fontIndex].ToString(), 100);  //idk what the size parameter does; i've set it to 1 and to 100 and there's no noticeable difference; maybe it's instantly getting overwritten by something?  idk
         }
 
         private void Start()
@@ -127,113 +141,66 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             if (updateHasBegun == false)
             {
                 updateHasBegun = true;
-                LogGoob.WriteLine($"set updateHasBegun to {updateHasBegun} (true)");
             }
         }
 
         public void OnEquipTool()   //done & working  //032123_1550: forcing this method made the staff start working, meaning something in the ToolClass isn't enabling
         {
             base.enabled = true;  //just like translatorprop, 
+            this._sgp_NOMCanvas.enabled = true;
             this._sgp_THCanvas.enabled = true; //032123_1605: if putting this down here fixes it, i swear... //032123_1613: I was building to the wrong directory.  now i have it working, no bugs.  the world may never know
             _sgPropGOSelf.SetActive(true);  //032123_1535: not set to instance of an object? 
+            RandomizeFontForSomeReason();
         }
         public void OnUnequipTool() //done & working
         {
-            GetComponentInChildren<ScalegunToolClass>().ClearTerminal();
             base.enabled = false;
         }
-        public void OnToParentInit()   //maybe if user's scrolling through multiple parents, wait a bit before getting adjacent siblings in case they scroll again.
-        {
-            if (_selectedObject.transform.parent.gameObject != null)
-            { _sgpTxt_Parent.text = $"{_selectedObject.transform.parent.gameObject}"; }
-            _sgpTxt_SibAbove.text = $"waiting 4 scrolling 2 stop";
-            _sgpTxt_Selection.text = $"{_selectedObject}";
-            _sgpTxt_SibBelow.text = $"waiting 4 scrolling 2 stop";
-            _sgpTxt_Child.text = $"{_previousSelection}";
-        }
 
-        public void OnToChildsInit()
-        {
-            if (_selectedObject.transform.childCount == 0)
-                _sgpTxt_Parent.text = $"{_previousSelection}";
-            _sgpTxt_SibAbove.text = "Waiting 4 Scroling 2 stop";
-            _sgpTxt_Selection.text = $"{_selectedObject}";
-            _sgpTxt_SibBelow.text = "Waiting 4 scrolin 2 sopt";
-            _sgpTxt_Child.text = $"{_selGO_Children[UnityEngine.Random.Range(0, _selGO_Children.Count)].ToString()}";  ///this is dumb
-        }
+
 
         //MAYBE MAKE ENUMERATOR FOR ALL HIERARCHY NAVIGATION DIRECTIONS, UNIFY IT?
-        public void OnDownSiblings()
-        {
-            var currentIndex = _selectedObject.transform.GetSiblingIndex();
 
-            _sgpTxt_SibAbove.text = $"{_previousSelection},prevsel";
-            _sgpTxt_Selection.text = $"{_selectedObject},{_selObjIndex}";
-            _sgpTxt_SibBelow.text = $"{GetSiblingAt(-1)}, {GetSiblingAt(-1).transform.GetSiblingIndex()}";
-        }
-
-        public void OnUpSiblings()
-        {
-            var currentIndex = _selectedObject.transform.GetSiblingIndex();
-
-            _sgpTxt_SibAbove.text = $"{GetSiblingAt(1)}, {GetSiblingAt(1).transform.GetSiblingIndex()}";
-            _sgpTxt_Selection.text = $"{_selectedObject}, {_selObjIndex}";
-            _sgpTxt_SibBelow.text = $"{_previousSelection}, prevsel";
-        }
 
         public void OnFinishUnequipAnimation()  //called by Tool's OnDisable, just like bart just like bart just like bart just like bart just like bart just like bart jut like bart just like bart just lik ebart just line bart just koll bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart just like bart
         {
+            this._sgp_NOMCanvas.enabled = false;
             this._sgp_THCanvas.enabled = false; //031823_0611: Enabled this code, didn't fix anything, but it's what the translator prop does.  //032123_1543: disabled this code again, and if it starts working again then I think the canvas is getting called early //reenabling
             _sgPropGOSelf.SetActive(false);
         }
-
-        public void GetAdjacentSibling(int increment = 1)
+        public void UpdateScreenTextV2(string parentOrSKIP, string sibAboveOrSKIP, string sibBelowOrSKIP, string childOrSKIP, string currentSelFieldOverride = $"GetCurrentSelectionOugh_ax15")
         {
+            //once I figure out how the TypeEffectText thing works, have separate thing like "ax15_ROLLTEXT_ax15" to evoke stuff like I do with "SKIP"
+            if (parentOrSKIP != "SKIP")
+            { _sgpTxt_Parent.text = parentOrSKIP; }
+            if (sibAboveOrSKIP != "SKIP")
+            { _sgpTxt_SibAbove.text = sibAboveOrSKIP; }
 
-            if (_selGO_Siblings.Count <= 1) //Update already checks this but idk
-            { return; }
-
-
-            var selectedObjectIndex = _selectedObject.transform.GetSiblingIndex();   //how do i account for the list changing without having to rerun GetSiblings?  idk
-
-            var myItem = _selGO_Siblings[(increment + 1) % _selGO_Siblings.Count];  //0323_1519: Idiot says this will always wrap around the list using "modulo" and Corby says to use .Count since .Count() will return Linq which is "stinky"
-            _selectedObject = myItem;
-        }
-        public void UpdateScreenText()  //Add dedicated parameter for where to import _selObjPrevious
-        {
-            if (_selectedObject == null)
+            if (currentSelFieldOverride != "SKIP")
             {
-                foreach (Text textobject in _sgpGO_THCanvas.GetComponentsInChildren<Text>())
-                { textobject.text = "Select..."; }
-            } //this is wack
-            else
-            {
-                if (GetSiblingAt(1) != null)
-                { _sgpTxt_SibAbove.text = $"{GetSiblingAt(1)}, {GetSiblingAt(1).transform.GetSiblingIndex()}"; }  //this all renders the PrevSelection efforts pointless, ugh
-                else { _sgpTxt_SibAbove.text = "Null"; }
-
-                _sgpTxt_Selection.text = _selectedObject.ToString();
-
-                if (GetSiblingAt(-1) != null)
-                { _sgpTxt_SibBelow.text = $"{GetSiblingAt(-1)}, {GetSiblingAt(-1).transform.GetSiblingIndex()}"; }
-                else { _sgpTxt_SibBelow.text = "Null"; }
-
-                if (_selectedObject.transform.parent != null)
-                { _sgpTxt_Parent.text = _selectedObject.transform.parent.ToString(); }
-                else { _sgpTxt_Parent.text = "Null"; }
-
-                //this will be redundant once the Prop.OnScroll methods are finished
-
-                if (_selGO_Children != null)
+                if (currentSelFieldOverride == $"GetCurrentSelectionOugh_ax15")
                 {
-                    if (_selGO_Children.Count > 1)
-                    { _sgpTxt_Child.text = _selGO_Children[UnityEngine.Random.Range(0, _selGO_Children.Count)].ToString(); }
-                    else
-                    { _sgpTxt_Child.text = "Idk what index this wretched thing is at pls"; }
+                    if (_computer.GetSelGOFrom_selObjIndex() != null)  //changed from _selectedObject to GetCurrentSelection, idk what the consequences of this will be
+                    { _sgpTxt_Selection.text = _computer.GetSelGOFrom_selObjIndex().ToString(); }
                 }
-                else { _sgpTxt_Child.text = "Null"; }
+                else
+                { _sgpTxt_Selection.text = currentSelFieldOverride; }
             }
+
+            if (sibBelowOrSKIP != "SKIP")
+            { _sgpTxt_SibBelow.text = sibBelowOrSKIP; }
+            if (childOrSKIP != "SKIP")
+            { _sgpTxt_Child.text = childOrSKIP; }
+
+            foreach (Text textLass in _sgPropGOSelf.GetComponentsInChildren<Text>())  //this can probably run elsewhere and be more efficient idk //it also doesn't work
+            { textLass.text = TrimmedText(textLass.text); }
         }
+        private string TrimmedText(string victim)              //why doesn't it work
+        {
+            victim = victim.Replace(_greatGObbyFilter, ""); //strOne = "Hello" now
+            return victim;   //trying to return victim, idk if this'll work
+        }
+
 
 
 

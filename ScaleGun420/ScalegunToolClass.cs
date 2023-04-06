@@ -1,13 +1,16 @@
 ﻿using HarmonyLib;
 using JetBrains.Annotations;
 using NAudio.MediaFoundation;
+using OWML.Common;
 using OWML.ModHelper;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -15,53 +18,42 @@ using static ScaleGun420.ScaleGun420Modbehavior;  //What the cool kids are doin
 
 namespace ScaleGun420
 {
-    //JUST COPY EVERYTHING OTHER TOOLS DO, EVEN IF THE METHODS ARE EMPTY.  CARGO CULT CODEBASE //Update: my power grows  //031923_1845: UPDATE: hubris
     public class ScalegunToolClass : PlayerTool
     {
+        private ObservableCollection<GameObject> _observableCollectionTest;  //subscribe to the CollectionChanged event.  Event's arguments are NotifyCollectionChangedArgs.  Might be helpful idk
 
-        private ScalegunPropClass _sgPropClass;
-
-        public static List<GameObject> _selGO_Siblings;
-        public static List<GameObject> _selGO_Children;
         private bool _isLeavingEditMode = false;
         public bool _isInEditMode = false;
         private bool _isEditModeCentered = false;
 
-        public Coroutine timer = null;
-        private bool _cancelTimer = false;
-        //private float _counter = 0;
-        private float _timeLeft;
-
         private Transform _camHoldTransform;
         private Transform _bodyHoldTransform;
         private Transform _bodyStowTransform;
-        public static GameObject _previousSelection;  //not used here, but ScalegunPropClass will use it to fill in adjacent UI fields without having to recalculate, //032323_1938: Actually this should probably be defined by the PropClass
-        //private GameObject _parentOfSelection;
-        public static GameObject _selectedObject;
-        private GameObject _oldSelObject;  //not to be confused with _previousSelection
-        public static GameObject _sgTrgt_Child;
-        public static int _selObjIndex = 1;
+
         private DampedSpring3D _moveSpringPosition;
+
+        private ScalegunPropClass _sgPropClass;
+        private ScalegunAnimationSuite _animSuite;
+        private SgComputer _toolComputer;
 
 
         private void Awake()
         {
             //GetComponentInChildren doesn't search for inactive objects by default, needs to be set to (true) to find inactive stuff
             _sgPropClass = GetComponentInChildren<ScalegunPropClass>(true);  //Setting it to (true) worked ok fine idk whatever
+            _toolComputer = GetComponentInChildren<SgComputer>();
 
             var _foundToolToStealTransformsFrom = Locator.GetPlayerBody().GetComponentInChildren<Signalscope>();  //
             if (_foundToolToStealTransformsFrom != null)
             {
-
                 //WHY IS IT GOING TO ZERO LOCAL ROTATION ON INITIAL EQUIP WTF
                 _holdTransform = _sgBodyHoldTransformGO.transform;
                 _stowTransform = _foundToolToStealTransformsFrom._stowTransform;
-                _moveSpring = new DampedSpringQuat(50, 8.49f, 1);  //032823: no more stuttering, I'm my own tool now
+                _moveSpring = new DampedSpringQuat(50, 8.5f, 1);  //032823: no more stuttering, I'm my own tool now  //040323_1737: Note that since _moveSpring isn't a static field, this only tweaks ScalegunTool's _moveSpring
                 _moveSpringPosition = new DampedSpring3D(50, 8.5f, 1);
+                _animSuite = this.gameObject.AddComponent<ScalegunAnimationSuite>();
             }
-            //new Vector3(0.5496f, -1.11f, -0.119f), new Vector3(343.8753f, 200.2473f, 345.2718f)  //local position and local euler angles
         }
-
         public override void Start()
         { base.Start(); } //disables tool by default, even Translator main. 
 
@@ -75,10 +67,13 @@ namespace ScaleGun420
 
         public override void UnequipTool()          //CALLED BY ToolModeSwapper.EquipToolMode(ToolMode toolMode), which is itself called by ToolModeSwapper.Update
         {
+            _toolComputer.StopTheBabens();
             LeaveEditMode();
             base.UnequipTool();
+            _toolComputer.ClearTerminal();
             this._sgPropClass.OnUnequipTool();
-            { }
+            if (_toolComputer.timerLoadingChildren != null || _toolComputer.siblingTimerCoroutine != null)
+            { LogGoob.WriteLine("While Unequipping, one of the timers wasn't null.  Should probably _cancelTimer on those (coroutine breaks already reset value, but i never use _cancelTimer idfk))", MessageType.Error); }
             //base.UnequipTool SETS _isPuttingAway TO TRUE, THEN PlayerTool.Update APPLIES THE STOWTRANSFORMS THEN SETS base.enabled = false ONCE DONE ANIMATING
         }
         public void EnterEditMode()
@@ -115,212 +110,72 @@ namespace ScaleGun420
                 }
             }
         }
-        private enum PreviousSelectionToField
-        {
-            Parent = 0,
-            Child = 1,
-            SiblingAbove = 2,
-            SiblingBelow = 3,
-        }
-        private enum DelayLoadingOf
-        {
-            Siblings = 0,
-            Children = 1,
-        }
-        private IEnumerator WaitBeforeLoading(DelayLoadingOf familyMembers, float time)  //if multiple things call this, ensure each variant waits for other variants to finish to avoid chaos
-        {
-            _timeLeft = time;
-            while (_timeLeft >= 0)
-            {
-                if (_cancelTimer)
-                {
-                    _cancelTimer = false;
-                    break;
-                }
-                _timeLeft -= Time.deltaTime;
-                yield return null;
-            }
-            //ensures input gets eaten this frame
-            yield return new WaitForEndOfFrame();
 
-            //do stuffs here 
-            if (familyMembers == DelayLoadingOf.Siblings) //ADD A CONDITION FOR IF SIBLINGS LIST IS ALREADY ACTIVE FROM CHILD LIST
-            {
-                if (_selGO_Siblings == null)
-                { _selGO_Siblings = _selectedObject.GetSiblings(); }
-                else if (_selGO_Siblings == _selGO_Children)
-                { _selGO_Children.Clear(); }
-            }
 
-            if (familyMembers == DelayLoadingOf.Children)
-            {
-                if (_selectedObject == _oldSelObject)  //if scrolling stopped on the same selection where it started, 
-                {
-                  //  _sgPropClass.UpdateScreenText();  //It's the same Selection, thus the _selGO_Children list (presumably) won't have changed; just refresh the screen
-                    _oldSelObject = null;
-                }
-                else
-                { _selGO_Children = _selectedObject.GetAllChildren(); }
-            }  //If player loops back around and stops on same object, don't re-retrieve a new list of children.
 
-            _sgPropClass.UpdateScreenText();
 
-            timer = null;
-        }
+        //Does injecting a field into a parameter only set the parameter's initial value, or does it check the field every time the parameter's used in the method?  If _selectedObject changes between when this coroutine starts and when the timer runs out, will it use the CURRENT _selectedObject, or will it have the value _selectedObject had when the coroutine started?
+        //040523_1749: Corby confirms it's just like setting a var - it's a one-time copying of the field's value at that moment, and doesn't update.
+
+
+        //What about other possible conditions of _selGO_Siblings than "null" or "equal to Child List"?  they're unaccounted for
+
+
 
         public override void Update()
         {
             base.Update();        //PlayerTool's base Update method handles deploy/stow anims; Everything else here is for Scalegun functions
-
-            float num = (this._isLeavingEditMode ? Time.unscaledDeltaTime : Time.deltaTime);
-            Vector3 vector3 = (this._isLeavingEditMode ? this._stowTransform.localPosition : this._holdTransform.localPosition);
-            base.transform.localPosition = _moveSpringPosition.Update(base.transform.localPosition, vector3, num);
-            float num2 = Vector3.Angle(base.transform.localPosition, vector3);
-
-            if (this._isInEditMode && !this._isEditModeCentered && num2 <= this._arrivalDegrees)
-            { this._isEditModeCentered = true; }  //This might be causing trombles
-            if (this._isLeavingEditMode && num2 <= this._arrivalDegrees)
-            {
-                this._isInEditMode = false;
-                this._isLeavingEditMode = false;
-                //base.enabled = false;
-                this._moveSpringPosition.ResetVelocity();
-            }
+            _animSuite.ToolPositionalUpdate(ref _isLeavingEditMode, ref _isEditModeCentered, ref _isInEditMode, 5f, _moveSpringPosition);                     // PlayerTool is already sketchy enough, I don't like the idea of locking modes behind hold positions idk, seems like a dangerous 
 
             if (!this._isEquipped || this._isPuttingAway)           //Only does additional stuff if ScalegunTool is equipped.  DISABLED ON A HUNCH  UPDATE HUNCH WAS WRONG, CARRY ON
             { return; }
-            if (OWInput.IsNewlyPressed(InputLibrary.freeLook, InputMode.Character))  //Maybe don't restrict holding it up to your face, pointlessly raise the skill ceiling for dweebs who wanna practice blind-nav'ing Hierarchies because that's funny.
-            {
-                if (!_isInEditMode)
-                { EnterEditMode(); }
-                else { LeaveEditMode(); }
-            }
-
             ///keeping timer in Update loop is "icky"
-
             //While-loops freeze the entire runtime until they're done, might not want that 
-
             //do the ol' TardisDematQueue "set it beyond the maximum time" trick
-
-
             if (_vanillaSwapper.IsInToolMode(SGToolmode) && OWInput.IsInputMode(InputMode.Character))
             {
-                if (OWInput.IsNewlyPressed(InputLibrary.toolActionPrimary) && !_isInEditMode)   //031823_1505: Changed a bunch of stuff to __instance for cleanliness; may or may not bork things //031823_1525: Okay so apparently that made it start nullreffing? //REBUILDING IS FAILING, THANKS MICROSOFT.NET FRAMEWORK BUG
-                { EyesDrillHoles(); }
-
-                if (ToParent)
+                if (OWInput.IsNewlyPressed(InputLibrary.freeLook, InputMode.Character))  //Maybe don't restrict holding it up to your face, pointlessly raise the skill ceiling for dweebs who wanna practice blind-nav'ing Hierarchies because that's funny.
                 {
-                    if (_selectedObject == null || _selectedObject.transform.parent.transform.parent == null)  //prevents it from scrolling to final parent layer, as there's no way to find siblings at the highest level
-                    { return; }
-                    //_selGO_Siblings.Clear();
-                    //PUT SOME EVENT HERE FOR THE PROP TO LISTEN FOR, MAKE AN EVENT FOR UPDATING THE SIBLING TEXT EVEN
-                    _previousSelection = _selectedObject;
-                    _selectedObject = _selectedObject.transform.parent.gameObject;
-                    _sgPropClass.OnToParentInit();
-
-                    if (timer == null)
-                    { timer = StartCoroutine(WaitBeforeLoading(DelayLoadingOf.Siblings, 0.5f)); }
-                    else
-                    { _timeLeft += 0.2f; }
-                }
-                
-                else if (ToChilds)
-                {
-                    if (_selectedObject == null || _selGO_Children == null)
-                    { return; }
-                    _previousSelection = _selectedObject;
-                    _selGO_Siblings = _selGO_Children; //CAN I GO TO A CHILD, THEN DELAY THE LOADING OF ITS CHILDREN UNTIL I SCROLL TO THE DESIRED SPOT?!  CAN I SUSPEND THE TIMER IN LIMBO LIKE THAT?!
-                                                       // _selGO_Children = null;  //DON'T DO THIS YET, WaitBeforeLoading CAN COMPARE _selGO_Children with _selGO_Siblings (a comparison probably more computationally intensive than it's worth tbh)
-                    if (timer == null)
-                    { timer = StartCoroutine(WaitBeforeLoading(DelayLoadingOf.Children, 0.5f)); }
-                    else { LogGoob.WriteLine("This is the Else line at toolclass line 242, i couldn't visualize it"); }
-                }
-                //don't start a coroutine every damn time you press the button
-                else if (UpSibling)            //032223_1747: nullref???  //032323_1753: Setting the Bubbon bools static in Modbehavior lets me not need to do .Instance (with help from the Using: above)
-                {
-                    if (_selGO_Siblings == null || _selGO_Siblings.Count <= 1)  //nvm this prevents scrolling before lists are loaded, already handled
-                    { return; }
-
-                    if (timer == null)
+                    if (!_isInEditMode)
                     {
-                        _oldSelObject = _selectedObject;
-                        timer = StartCoroutine(WaitBeforeLoading(DelayLoadingOf.Children, 0.5f));
+                        _toolComputer.StopTheBabens();
+                        EnterEditMode();
                     }
-                    else
-                    { _timeLeft += 0.2f; }
-                    //THIS STUFF IS ABOVE THE SCROLLSIBLINGS STUFF BELOW ON A BLIND GAMBLE; CHANGE IF BORKEN
-
-                    ScrollSiblings(1);
-                    _sgPropClass.OnUpSiblings();
+                    else { LeaveEditMode(); }
                 }
-                else if (DownSibling)
+
+                if (!_isInEditMode)
                 {
-                    if (_selGO_Siblings == null || _selGO_Siblings.Count <= 1)
+                    if (OWInput.IsNewlyPressed(InputLibrary.toolActionPrimary))   //031823_1505: Changed a bunch of stuff to __instance for cleanliness; may or may not bork things //031823_1525: Okay so apparently that made it start nullreffing? //REBUILDING IS FAILING, THANKS MICROSOFT.NET FRAMEWORK BUG
+                    {
+                        _toolComputer.EyesDrillHoles();
+                        Locator.GetPlayerBody().GetComponentInChildren<ProbeLauncherEffects>().PlayLaunchClip(false);
+                    }
+
+                    if (_toolComputer._selectedObject == null)
                     { return; }
 
-                    ScrollSiblings(-1);
-                    _sgPropClass.OnDownSiblings();
+                    _toolComputer.CheckToStartBabens();
+
+                    if (ToParent)
+                    { _toolComputer.OnToParent(); }
+                    else if (ToChilds)  //Selected Object Text doesn't update for some reason?????????    //NEED LIST OF CHILDREN IN ORDER TO SCROLL FURTHER; Coroutines inevitable
+                    { _toolComputer.OnToChilds(); }
+                    //don't start a coroutine every damn time you press the button
+                    else if (UpSibling)            //032223_1747: nullref???  //032323_1753: Setting the Bubbon bools static in Modbehavior lets me not need to do .Instance (with help from the Using: above) //040323_1423: learning this was a mistake
+                    { _toolComputer.ToSiblingInDirection(1); }//STILL SCROLLS IN EditMode!!!! BAD!!!!
+                    else if (DownSibling)
+                    { _toolComputer.ToSiblingInDirection(-1); }
                 }
+                else if (_isInEditMode)
+                {
 
-                //var siblingIndex = _selectedObject.transform.GetSiblingIndex();
-                // var list = _selectedObject.transform.parent.GetChild(siblingIndex);
-                // _sgPropClass.UpdateScreenText(_selectedObject, siblingIndex);
+                }
             }
-        }
-
-        public static GameObject GetSiblingAt(int increment = 1)
-        {
-            if (_selGO_Siblings.Count > 1)
-            {
-                var listLength = _selGO_Siblings.Count;
-                var internalIndex = _selObjIndex;
-                internalIndex += increment;
-                internalIndex = ((internalIndex > listLength - 1) ? 0 : internalIndex);
-                internalIndex = ((internalIndex < 0) ? listLength - 1 : internalIndex);
-                var foundObject = _selGO_Siblings[internalIndex]; //these square brackets tell it to find the nth in the list, that's what these are
-                return foundObject;
-            }
-            else { return _selectedObject; }
-        }
-
-        private void ScrollSiblings(int upOrDown)
-        {
-            _previousSelection = _selectedObject;
-            var newSelection = GetSiblingAt(upOrDown);   //0323_1519: Idiot says this will always wrap around the list using "modulo" and Corby says to use .Count since .Count() will return Linq which is "stinky"
-            _selObjIndex = newSelection.transform.GetSiblingIndex();
-            _selectedObject = newSelection;
-        }
-
-        private void EyesDrillHoles()  //SHOULD EVENTUALLY IMPLEMENT WaitBeforeLoading TO THIS, TOO
-        {
-            Vector3 fwd = Locator.GetPlayerCamera().transform.forward;  //fwd is a Vector-3 that transforms forward relative to the playercamera
-            Physics.Raycast(Locator.GetPlayerCamera().transform.position, fwd, out RaycastHit hit, 50000, OWLayerMask.physicalMask);
-
-            var retrievedRootObject = hit.collider?.gameObject.transform.parent?.gameObject; //include condition for possibility that hit.collider has no parent somehow idk
-
-            if (_selectedObject != null && retrievedRootObject == _selectedObject)
-            { return; }
-            _previousSelection = null;
-            _selectedObject = retrievedRootObject;
-            _selGO_Siblings = _selectedObject.GetSiblings();
-            _selGO_Children = _selectedObject.GetAllChildren();
-            _sgPropClass.UpdateScreenText();
-        }
-
-        public void ClearTerminal()
-        {
-            StopEditing();
-            _selectedObject = null;
-            //_parentOfSelection = null;
-            _sgPropClass._sgpTxtGO_SibAbove = null;
-            _sgPropClass._sgpTxtGO_SibBelow = null;
-            _sgPropClass.UpdateScreenText();
         }
 
         public void StopEditing()
         { }
-
-
 
         // [[[  P R O P   S T U F F  ]]]
 
