@@ -87,16 +87,17 @@ namespace ScaleGun420
             _sgBodyHoldTransformGO = Locator.GetPlayerTransform().CreateChild("SgBodyHoldTransform_husk", true, new Vector3(0.4f, -0.25f, 0.5f), new Vector3(10, 10, 5));
             //_sgBodyStowTransformGO = Locator.GetPlayerBody().transform.CreateChild("SgBodyStowTransform_husk", true);  //are these redundant?  am i usin em at all
             _sgtool_GO = Locator.GetPlayerTransform().CreateChild("SgTool_GOHusk", false);  //031623_0653: spawns an inactive empty SGToolGO as a child of the player.
-            var toolGobjHuskPrim = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            toolGobjHuskPrim.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-            toolGobjHuskPrim.transform.parent = _sgBodyHoldTransformGO.transform;
-            toolGobjHuskPrim.transform.localPosition = _sgBodyHoldTransformGO.transform.localPosition;
-            toolGobjHuskPrim.transform.localEulerAngles = _sgBodyHoldTransformGO.transform.localEulerAngles;
+            //var toolGobjHuskPrim = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            //toolGobjHuskPrim.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+            //toolGobjHuskPrim.transform.parent = _sgBodyHoldTransformGO.transform;
+            //toolGobjHuskPrim.transform.localPosition = _sgBodyHoldTransformGO.transform.localPosition;
+            //toolGobjHuskPrim.transform.localEulerAngles = _sgBodyHoldTransformGO.transform.localEulerAngles;
 
 
             _theGunToolClass = _sgtool_GO.AddComponent<ScalegunToolClass>();  //hopefully the host _sgtool_GO's inactivity prevents its new ScalegunTool pilot from waking up, or it'll reach for ScalegunPropClass too early
 
             _sgPropClassMain = _sgtool_GO.AddComponent<ScalegunPropClass>(); //ScalegunTool declares a PropClass; hopefully not 2late to attach & designate it to the _sgPropGroupject.
+            _sgtool_GO.AddComponent<SgComputer>();
             _sgPropClassMain._sgPropGOSelf = _theGunToolClass.transform.InstantiatePrefab("brittlehollow/meshes/props", "BrittleHollow_Body/Sector_BH/Sector_NorthHemisphere/Sector_NorthPole/Sector_HangingCity" +
                             "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff", false, new Vector3(0, -0.9f, -0.0005f), new Vector3(0, 180, 0));
             //  ^^  UNTANGLE THIS FROM ModBehavior AT SOME POINT, PUT IT IN PropClass SOMEHOW, NOT RIGHT NOW THO ^^
@@ -133,7 +134,7 @@ namespace ScaleGun420
                 ToChilds = Keyboard.current[Right].wasPressedThisFrame;
                 toggleGunKey = Keyboard.current[GunToggle].wasPressedThisFrame;
             }
-            if (sceneLoaded)
+            if (sceneLoaded) //The below should probably be part of the ToolClass, but you made such a mess it's gonna take a while to make room
             {
                 if (toggleGunKey && OWInput.IsInputMode(InputMode.Character))   //032823_1330: IF PLAYER'S IN EDIT MODE AND HITS Q OR H, THEY SHOULD MOVE IT FROM THEIR CAMERA TO PLAYER_BODY; ONLY CALL Swapper.UnequipTool() WHEN NOT CURRENTLY IN EDIT MODE
                 {
