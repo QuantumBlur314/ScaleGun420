@@ -123,19 +123,9 @@ namespace ScaleGun420
 
         public static GameObject AdjacentSiblingIn(this int currentIndex, List<GameObject> listToCheck, int toDirection = 1)
         {
-            if (currentIndex > listToCheck.Count)
+            if (listToCheck.Count >= 1)
             {
-                LogGoob.WriteLine($"AdjacentSiblingsIn Ln126: currentIndex {currentIndex} was out of range of listToCheck.Count {listToCheck.Count}; returning {listToCheck[0]}");
-                return listToCheck[0]; }
-            else if (listToCheck.Count <= 1)
-            {
-                LogGoob.WriteLine($"AdjacentSiblingsIn: listToCheck was too small, with a count of {listToCheck.Count}. {currentIndex} is currentindex", MessageType.Warning);
-                currentIndex = 0;
-                return listToCheck[currentIndex]; //Returns currentIndex, since searching for 0 didn't work.  Also what the fuck why
-            }
-            else if (listToCheck.Count() > 1)
-            {
-                var listLength = listToCheck.Count();
+                var listLength = listToCheck.Count;
                 var internalIndex = currentIndex;
                 internalIndex += toDirection;
                 internalIndex = ((internalIndex > listLength - 1) ? 0 : internalIndex);
@@ -143,8 +133,37 @@ namespace ScaleGun420
                 var foundObject = listToCheck[internalIndex];
                 return foundObject;
             }
-            else return listToCheck[0];
+            else
+            {
+                LogGoob.WriteLine($"listToCheck.Count was 1 or less ({listToCheck.Count} to be precise), while currentIndex was {currentIndex}.  Returning listToCheck[0] ", MessageType.Warning);
+                return listToCheck[0];
+            };
         }
+        public static GameObject AdjacentSiblingOfGOIn(this GameObject currentGO, List<GameObject> listToCheck, int toDirection = 1)
+        {
+            if (!listToCheck.Contains(currentGO))
+            {
+                LogGoob.WriteLine($"No such GO exists in {listToCheck}, have you considered dying for your sins?");
+                return null;
+            }
+            else
+            {
+                var listLength = listToCheck.Count;
+                var internalIndex = currentGO.transform.GetSiblingIndex();
+
+                if (listLength > 1)
+                {
+                    internalIndex += toDirection;
+                    internalIndex = ((internalIndex > listLength - 1) ? 0 : internalIndex);
+                    internalIndex = ((internalIndex < 0) ? listLength - 1 : internalIndex);
+                    var foundObject = listToCheck[internalIndex];
+                    return foundObject;
+                }
+                else
+                { return listToCheck[internalIndex]; }
+            }
+        }
+
         public static List<GameObject> GetAllSiblings(this GameObject gameObject) //If you wanted to put this in another class, you'd get rid of the "this"
         {
             if (gameObject.transform.parent != null)

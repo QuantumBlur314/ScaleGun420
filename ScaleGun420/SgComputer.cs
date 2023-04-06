@@ -83,7 +83,7 @@ namespace ScaleGun420
             {
                 if (_selObjIndex == (int)IndexIs.Null)
                 {
-                    LogGoob.WriteLine("nice", MessageType.Success);
+                    LogGoob.WriteLine("nice.  oh shit this actually triggered, it ended up at 69, how", MessageType.Success);
                     return null;
                 }
                 else if (_selObjIndex > _selGO_Siblings.Count)
@@ -93,7 +93,7 @@ namespace ScaleGun420
                 }
                 else
                 {
-                    _selectedObject = _selGO_Siblings[_selObjIndex];
+                    _selectedObject = _selGO_Siblings[_selObjIndex];  //something is making empty _selGO_Siblings lists - like, not even containing _selObjIndex.  where is it coming from 
                     return _selGO_Siblings[_selObjIndex];
                 }
             }
@@ -206,6 +206,8 @@ namespace ScaleGun420
             _selObjIndex = _selectedObject.transform.GetSiblingIndex();
             _selGO_Siblings = _selectedObject.GetAllSiblings();
 
+
+
             _sgPropClass.UpdateScreenTextV2(
                 "SKIP",  //presumably already set by ToParent's base functions
                 $"{_selObjIndex.AdjacentSiblingIn(_selGO_Siblings, 1)}",
@@ -225,6 +227,7 @@ namespace ScaleGun420
             if (currentSelection.transform.childCount == 0)  //MAYBE CHECK THE WaitBeforeLoadingChildren TIMER INSTEAD OF JUST WHETHER _selGO_Children==null
             {
                 LogGoob.Scream("timerLoadingChildren isn't null!");
+                return;
             }
             else
             {
@@ -250,14 +253,23 @@ namespace ScaleGun420
                     _selectedObject = _selGO_Siblings[_arbitraryChildIndex];
                     _selObjIndex = _arbitraryChildIndex;
                     _arbitraryChildIndex = 0;
-                    _selGO_Children.Clear();
-                    _selGO_Children = null; //Try replacing this with the LoadChildrenAfter() Coroutine maybe?  fulfil your dreams
+                    _selGO_Children = _selGO_Siblings[_selObjIndex].GetAllChildren();  //this might be unavoidable idfk
+                    //_selGO_Children.Clear();
+                    //_selGO_Children = null; //Try replacing this with the LoadChildrenAfter() Coroutine maybe?  fulfil your dreams
                 }
 
-                _sgPropClass.UpdateScreenTextV2(
+                string siblingAbove = "";
+                string siblingBelow = "";
+                if (_selectedObject.transform.parent.transform.childCount > 1)
+                {
+                    siblingAbove = _selectedObject.AdjacentSiblingOfGOIn(_selGO_Siblings, 1).ToString();  
+                    siblingBelow = _selectedObject.AdjacentSiblingOfGOIn(_selGO_Siblings, -1).ToString();
+                }
+
+                _sgPropClass.UpdateScreenTextV2(   ///why must this bastard so insistently nullref
                     $"{priorSelection}, prevsel",
-                    $"{_selObjIndex.AdjacentSiblingIn(_selGO_Siblings, 1)}",
-                    $"{_selObjIndex.AdjacentSiblingIn(_selGO_Siblings, -1)}",
+                    siblingAbove,
+                    siblingBelow,
                     "pending update...",
                     selectedChildName
                     );//CAN I GO TO A CHILD, THEN DELAY THE LOADING OF ITS CHILDREN UNTIL I SCROLL TO THE DESIRED SPOT?!  CAN I SUSPEND THE TIMER IN LIMBO LIKE THAT?!  //040223_2006: More trouble than it's worth for now, maybe later.  Just deal with that list being generated and pray it doesn't lag.
@@ -269,6 +281,8 @@ namespace ScaleGun420
             }
         }
 
+
+        //for some reason, this never terminates because its time somehow stops above 0 and it stays in limbo
         private IEnumerator LoadChildrenAfter(float time, GameObject objectYouStartedAt = null)  //if multiple things call this, ensure each variant waits for other variants to finish to avoid chaos
         {
             _timeLeftChildren = time;
@@ -303,12 +317,17 @@ namespace ScaleGun420
                 LogGoob.WriteLine($"LoadChildrenAfter: != _oldSelObject, so filled _selGO_Children using _selectedObject.GetAllChildren()");
             }
             _sgPropClass.UpdateScreenTextV2("SKIP", "SKIP", "SKIP", $"{_selGO_Children[newChildIndex]}", "SKIP");
-            objectYouStartedAt = null;
             //This has to run after either DelayLoadingOf.Children condition, so                          
             //If player loops back around and stops on same object, don't re-retrieve a new list of children
+            StopCoroutine(timerLoadingChildren);  //can confirm this coroutine wasn't stopping while the other one was, so i did this here too.
             timerLoadingChildren = null;
         }
 
+
+        /// <summary>
+        /// The below is NOT finishing its job, _selGO_Children isn't getting updated by scrolling up and down
+        /// </summary>
+        /// <param name="direction"></param>
         public void ToSiblingInDirection(int direction = 1)   //could probably microOptimize by splitting it up again and having different conditions using some weird hidden tags depending on whether a field was generated fresh or from prevSel, but no fuck you
         {
             string upperSibling = "SKIP";
@@ -412,7 +431,10 @@ namespace ScaleGun420
             Vector3 fwd = Locator.GetPlayerCamera().transform.forward;  //fwd is a Vector-3 that transforms forward relative to the playercamera
             Physics.Raycast(Locator.GetPlayerCamera().transform.position, fwd, out RaycastHit hit, 50000, OWLayerMask.physicalMask);
 
-            var newPickedObject = hit.collider?.gameObject.transform.parent?.gameObject; //include condition for possibility that hit.collider has no parent somehow idk
+            GameObject newPickedObject = null; 
+            if (hit.collider.gameObject.transform.parent.gameObject != null)
+            { newPickedObject = hit.collider.gameObject.transform.parent.gameObject; }
+            else { newPickedObject = hit.collider.gameObject; }//include condition for possibility that hit.collider has no parent somehow idk
 
             if (_selectedObject != null && newPickedObject == _selectedObject)  //probably make this internal, idk , trying to phase out _selectedObject in favor of index, but idk
             { return; }
