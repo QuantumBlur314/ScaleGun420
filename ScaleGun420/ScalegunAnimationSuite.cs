@@ -14,6 +14,8 @@ namespace ScaleGun420
 
         private void Awake()
         {
+            LogGoob.WriteLine("ScalegunAnimationSuite is woke, grabbing ScalegunToolClass", OWML.Common.MessageType.Success);
+
             _toolIServe = Locator.GetPlayerBody().GetComponentInChildren<ScalegunToolClass>();
             _toolBaseTransform = _toolIServe.transform.localPosition;
         }

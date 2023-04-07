@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using static ScaleGun420.ScaleGun420Modbehavior;  //What the cool kids are doin
+using static ScaleGun420.StaffSpawner;
 
 namespace ScaleGun420
 {
@@ -35,13 +36,16 @@ namespace ScaleGun420
         private ScalegunPropClass _sgPropClass;
         private ScalegunAnimationSuite _animSuite;
         private SgComputer _toolComputer;
+        private TheEditMode _toolEditMode;
 
 
         private void Awake()
         {
+            LogGoob.WriteLine("ScalegunToolClass is woke, grabbing ScalegunPropClass, SgComputer, and TheEditMode...", MessageType.Success);
             //GetComponentInChildren doesn't search for inactive objects by default, needs to be set to (true) to find inactive stuff
             _sgPropClass = GetComponentInChildren<ScalegunPropClass>(true);  //Setting it to (true) worked ok fine idk whatever
             _toolComputer = GetComponentInChildren<SgComputer>();
+            _toolEditMode = GetComponentInChildren<TheEditMode>();
 
             var _foundToolToStealTransformsFrom = Locator.GetPlayerBody().GetComponentInChildren<Signalscope>();  //
             if (_foundToolToStealTransformsFrom != null)
@@ -51,7 +55,8 @@ namespace ScaleGun420
                 _stowTransform = _foundToolToStealTransformsFrom._stowTransform;
                 _moveSpring = new DampedSpringQuat(50, 8.5f, 1);  //032823: no more stuttering, I'm my own tool now  //040323_1737: Note that since _moveSpring isn't a static field, this only tweaks ScalegunTool's _moveSpring
                 _moveSpringPosition = new DampedSpring3D(50, 8.5f, 1);
-                _animSuite = this.gameObject.AddComponent<ScalegunAnimationSuite>();
+
+                _animSuite = this.gameObject.GetComponentInChildren<ScalegunAnimationSuite>();
             }
         }
         public override void Start()
@@ -111,9 +116,6 @@ namespace ScaleGun420
             }
         }
 
-
-
-
         //Does injecting a field into a parameter only set the parameter's initial value, or does it check the field every time the parameter's used in the method?  If _selectedObject changes between when this coroutine starts and when the timer runs out, will it use the CURRENT _selectedObject, or will it have the value _selectedObject had when the coroutine started?
         //040523_1749: Corby confirms it's just like setting a var - it's a one-time copying of the field's value at that moment, and doesn't update.
 
@@ -154,8 +156,6 @@ namespace ScaleGun420
 
                     if (_toolComputer._selectedObject == null)
                     { return; }
-
-                    _toolComputer.CheckToStartBabens();
 
                     if (ToParent)
                     { _toolComputer.OnToParent(); }

@@ -15,6 +15,7 @@ using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.SocialPlatforms;
 using static UnityEngine.EventSystems.StandaloneInputModule;
+using static ScaleGun420.StaffSpawner;
 
 namespace ScaleGun420
 {
@@ -43,12 +44,13 @@ namespace ScaleGun420
 
         public static ToolModeSwapper _vanillaSwapper;
 
-        public static GameObject _sgCamHoldTransformGO;
-        public static GameObject _sgBodyHoldTransformGO;
-        public static GameObject _sgBodyStowTransformGO;
+       // public static GameObject _sgCamHoldTransformGO;
+       // public static GameObject _sgBodyHoldTransformGO;
+       // public static GameObject _sgBodyStowTransformGO;
         public GameObject _sgtool_GO;  //MUST BE PUBLIC
         public ScalegunToolClass _theGunToolClass;
         public ScalegunPropClass _sgPropClassMain;
+        private StaffSpawner _spawnerOfStaff = new StaffSpawner();
 
         private Key GunToggle;        //Idk if it'll be more or less work to prevent gun from working while in ship.  guess we'll find out
         private bool toggleGunKey; //whether right-click & other scout-related actions reach the Scalegun instead
@@ -73,9 +75,12 @@ namespace ScaleGun420
                 ModHelper.Events.Unity.FireOnNextUpdate(
     () =>
     {
-        GOSetup();
+        _spawnerOfStaff.SpawnEverything();
+       // GOSetup();
+
         sceneLoaded = true;     //MimicSwapperUpdate can start running now
         _vanillaSwapper = Locator.GetToolModeSwapper();    //Should establish _vanillaSwapper as the game's current ToolModeSwapper for future reference
+        _theGunToolClass = _sgtool_GO.GetComponentInChildren<ScalegunToolClass>();  //hopefully the host _sgtool_GO's inactivity prevents its new ScalegunTool pilot from waking up, or it'll reach for ScalegunPropClass too early
     }
     );
             };
@@ -94,12 +99,18 @@ namespace ScaleGun420
             //toolGobjHuskPrim.transform.localEulerAngles = _sgBodyHoldTransformGO.transform.localEulerAngles;
 
 
-            _theGunToolClass = _sgtool_GO.AddComponent<ScalegunToolClass>();  //hopefully the host _sgtool_GO's inactivity prevents its new ScalegunTool pilot from waking up, or it'll reach for ScalegunPropClass too early
+            _theGunToolClass = _sgtool_GO.GetComponentInChildren<ScalegunToolClass>();  //hopefully the host _sgtool_GO's inactivity prevents its new ScalegunTool pilot from waking up, or it'll reach for ScalegunPropClass too early
 
-            _sgPropClassMain = _sgtool_GO.AddComponent<ScalegunPropClass>(); //ScalegunTool declares a PropClass; hopefully not 2late to attach & designate it to the _sgPropGroupject.
-            _sgtool_GO.AddComponent<SgComputer>();
-            _sgPropClassMain._sgPropGOSelf = _theGunToolClass.transform.InstantiatePrefab("brittlehollow/meshes/props", "BrittleHollow_Body/Sector_BH/Sector_NorthHemisphere/Sector_NorthPole/Sector_HangingCity" +
-                            "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff", false, new Vector3(0, -0.9f, -0.0005f), new Vector3(0, 180, 0));
+            //_sgPropClassMain = _sgtool_GO.AddComponent<ScalegunPropClass>(); //ScalegunTool declares a PropClass; hopefully not 2late to attach & designate it to the _sgPropGroupject.
+
+            
+            ///   D I E   ///
+            //_sgPropClassMain._sgPropGOSelf = _theGunToolClass.transform.InstantiatePrefab("brittlehollow/meshes/props", "BrittleHollow_Body/Sector_BH/Sector_NorthHemisphere/Sector_NorthPole/Sector_HangingCity" +
+                         //   "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff", false, new Vector3(0, -0.9f, -0.0005f), new Vector3(0, 180, 0));
+
+
+
+            //WHY DID YOU DEFINE A CLASS'S LOCAL FIELD IN A DIFFERENT CLASS YOU DINGUS, THIS IS WORK FOR ME TODAY
             //  ^^  UNTANGLE THIS FROM ModBehavior AT SOME POINT, PUT IT IN PropClass SOMEHOW, NOT RIGHT NOW THO ^^
             _theGunToolClass.enabled = true; //031823_0622: put back after the other one in hopes of addressing a first-time-equip bug  UPDATE: THAT DID NOTHING EITHER            
 
