@@ -59,20 +59,37 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         {
             LogGoob.WriteLine("ScalegunPropClass is woke, grabbing SgComputer...", OWML.Common.MessageType.Success);
 
-            _sgPropGOSelf = base.transform.gameObject;
+
+            _sgPropGOSelf = GameObject.Find("ScalegunGroup");
+            //_sgPropGOSelf = base.transform.gameObject;
             //_propsToolRef = _sgPropGOSelf.GetComponent<ScalegunToolClass>();
             _computer = gameObject.GetComponent<SgComputer>();
 
             _sgpTxt_Parent = this.transform.GetChildComponentByName<Text>("SG_Parent");  //can probably make this an enumerator, then do a forEach.
-            _sgpTxt_Selection = this.transform.GetChildComponentByName<Text>("SG_Selection");
-            _sgpTxt_SibAbove = this.transform.GetChildComponentByName<Text>("SG_SiblingUp");
-            _sgpTxt_SibBelow = this.transform.GetChildComponentByName<Text>("SG_SiblingDown");
-            _sgpTxt_Child = this.transform.GetChildComponentByName<Text>("SG_Babens");
-
+            if (_sgpTxt_Parent = null)
+            { LogGoob.WriteLine("_sgpTxt_Parent was null", OWML.Common.MessageType.Warning); }
 
             _sgp_NOMCanvas = this.transform.GetChildComponentByName<Canvas>("SG_NOMCanvas");
             _sgp_THCanvas = this.transform.GetChildComponentByName<Canvas>("SG_THCanvas");
+            
+
+            //PARENT AND SIBLING FIELDS (the original two THCanvas fellas, directly cloned from the translator) ARE BOTH NULL; presumably hierarchy differences  //NVM THEY WEREN'T GETTING RENAMED, SPAWNER ISSUE 
+            _sgpTxt_Parent = _sgp_THCanvas.transform.GetChildComponentByName<Text>("SG_Parent"); //forgor (:-#
+            _sgpTxt_Selection = _sgp_THCanvas.transform.GetChildComponentByName<Text>("SG_Selection");  
+
+            _sgpTxt_SibAbove = _sgp_THCanvas.transform.GetChildComponentByName<Text>("SG_SiblingUp");
+            _sgpTxt_SibBelow = _sgp_THCanvas.transform.GetChildComponentByName<Text>("SG_SiblingDown");
+            _sgpTxt_Child = _sgp_NOMCanvas.transform.GetChildComponentByName<Text>("SG_Babens");
+
+            LogGoob.WriteLine($"ScalegunPropClass reports SgComputer _computer is {_computer} attached to {_computer.transform.gameObject}");
+
+            _sgPropGOSelf.SetActive(false);
         }
+        private void Start()
+        {
+            base.enabled = false;
+        }  // Just like TranslatorProp without all the BS
+
         private void OldSpawnRoutines()
         {
             _sgpGO_THCanvasOBSOLETE = Instantiate(GameObject.Find("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas"), _sgPropGOSelf.transform);
@@ -144,10 +161,6 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             _sgpTxt_Child.font = UnityEngine.Font.CreateDynamicFontFromOSFont(fontList[fontIndex].ToString(), 100);  //idk what the size parameter does; i've set it to 1 and to 100 and there's no noticeable difference; maybe it's instantly getting overwritten by something?  idk
         }
 
-        private void Start()
-        {
-            base.enabled = false;
-        }  // Just like TranslatorProp without all the BS
 
 
         private void Update()  //If update isn't running after the first equip, what else is broken?  //032123_1648: Confirmed update isn't running on first equip.
@@ -186,12 +199,14 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         private bool ShouldEditText(string stringToCheck)
         { return (stringToCheck != "SKIP" && stringToCheck != "SKIP(UnityEngine.GameObject)"); }
 
+        private void FetchComponents()
+        { }
         public void UpdateScreenTextV2(string parentOrSKIP, string sibAboveOrSKIP, string sibBelowOrSKIP, string childOrSKIP, string currentSelFieldOverride = $"GetCurrentSelectionOugh_ax15")
         {
             //once I figure out how the TypeEffectText thing works, have separate thing like "ax15_ROLLTEXT_ax15" to evoke stuff like I do with "SKIP"
 
             if (ShouldEditText(parentOrSKIP))
-            { _sgpTxt_Parent.text = parentOrSKIP; }
+            { _sgpTxt_Parent.text = parentOrSKIP; }  //why is this nullref'ing?  //This is just the first text object that UpdateScreenTextVTWO tries to edit, any nullrefs could be the result of 
             if (ShouldEditText(sibAboveOrSKIP))
             { _sgpTxt_SibAbove.text = sibAboveOrSKIP; }
             if (ShouldEditText(sibBelowOrSKIP))

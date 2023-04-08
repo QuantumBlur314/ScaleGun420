@@ -51,13 +51,15 @@ namespace ScaleGun420
 
 
 
-
+        //CLASS IS ENABLING LATE, ONLY ON EQUIP; ALSO, CONSIDER DEACTIVATING COMPUTER WHILE TOOL IS UNEQUIPPED
         private void Awake()
         {
             LogGoob.WriteLine("SgComputer is woke, grabbing ScalegunPropClass...", MessageType.Success);
             //_sgToolClass = Locator.GetPlayerBody().GetComponentInChildren<ScalegunToolClass>();
             _sgPropClass = Locator.GetPlayerBody().GetComponentInChildren<ScalegunPropClass>();
         }
+        private void Start()
+        { base.enabled = false; }
 
         public enum IndexMarkerState
         {
@@ -107,7 +109,7 @@ namespace ScaleGun420
 
         public void OnToParent()
         {
-            if (_selObjIndex == (int)IndexMarkerState.ToParentSecondScroll || SelectedGOAtIndex().transform.parent.transform.parent == null)  //prevents it from scrolling to final parent layer, as there's no way to find siblings at the highest level
+            if (_selObjIndex == (int)IndexMarkerState.ToParentSecondScroll || SelectedGOAtIndex().transform.parent.transform.parent == null )  //prevents it from scrolling to final parent layer, as there's no way to find siblings at the highest level
             {
                 LogGoob.Scream("ERROR: CANNOT BREACH FIRMAMENT");
                 return;
@@ -166,8 +168,8 @@ namespace ScaleGun420
                 ///  _arbitraryChildIndex = 0; //already handled by first press actually nvm
 
                 var previousSelection = _selectedObject;
-                _selectedObject = _selectedObject.transform.parent.gameObject;   //spamming 
-                var nextParent = _selectedObject.transform.parent.gameObject;
+                _selectedObject = _selectedObject.transform.parent.gameObject;   //spamming //NULLCHECK THIS, DINGUS 
+                var nextParent = _selectedObject.transform.parent.gameObject;     //You forgor to 
 
                 _sgPropClass.UpdateScreenTextV2(
                     $"{nextParent}",
@@ -544,7 +546,7 @@ namespace ScaleGun420
             _selGO_Children = null;
             _selGO_Siblings = null;
             //_parentOfSelection = null;
-            //_sgPropClass._sgpTxtGO_SibAboveOBSOLETE = null;
+            //_sgPropClass._sgpTxtGO_SibAboveOBSOLETE = null;  //how did this bastard nullref when it's literally not written wtf
            // _sgPropClass._sgpTxtGO_SibBelowOBSOLETE = null;
             _sgPropClass.UpdateScreenTextV2("choose...", "Select something!", "AwA", "Please select a collider", "Pick that one");
         }

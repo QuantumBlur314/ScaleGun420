@@ -21,7 +21,7 @@ namespace ScaleGun420
 {
     public class ScaleGun420Modbehavior : ModBehaviour
     {
-        public static List<OWRigidbody> _gunGrowQueue = new(8);//establishes my own _growQueue (with blackjack, and hookers)
+       // public static List<OWRigidbody> _gunGrowQueue = new(8);//establishes my own _growQueue (with blackjack, and hookers)
         public OWRigidbody _gunGrowingBody;
 
         public float _gunNextGrowCheckTime;
@@ -47,7 +47,7 @@ namespace ScaleGun420
        // public static GameObject _sgCamHoldTransformGO;
        // public static GameObject _sgBodyHoldTransformGO;
        // public static GameObject _sgBodyStowTransformGO;
-        public GameObject _sgtool_GO;  //MUST BE PUBLIC
+        private GameObject _sgtool_GO_Old;  //MUST BE PUBLIC
         public ScalegunToolClass _theGunToolClass;
         public ScalegunPropClass _sgPropClassMain;
         private StaffSpawner _spawnerOfStaff = new StaffSpawner();
@@ -79,8 +79,15 @@ namespace ScaleGun420
        // GOSetup();
 
         sceneLoaded = true;     //MimicSwapperUpdate can start running now
-        _vanillaSwapper = Locator.GetToolModeSwapper();    //Should establish _vanillaSwapper as the game's current ToolModeSwapper for future reference
-        _theGunToolClass = _sgtool_GO.GetComponentInChildren<ScalegunToolClass>();  //hopefully the host _sgtool_GO's inactivity prevents its new ScalegunTool pilot from waking up, or it'll reach for ScalegunPropClass too early
+       
+        _theGunToolClass = Locator.GetPlayerBody().GetComponentInChildren<ScalegunToolClass>(true); // you're not set to "true" here, so you're not searching inactive objects, but also this feels solvable without, idfk
+        
+        //hopefully the host _sgtool_GO_Old's inactivity prevents its new ScalegunTool pilot from waking up, or it'll reach for ScalegunPropClass too early
+         _vanillaSwapper = Locator.GetToolModeSwapper();    //Should establish _vanillaSwapper as the game's current ToolModeSwapper for future reference
+        
+       // _theGunToolClass.enabled = true; //031823_0622: put back after the other one in hopes of addressing a first-time-equip bug  UPDATE: THAT DID NOTHING EITHER            
+        //_theGunToolClass.transform.parent.gameObject.SetActive(true);  //will brute force this, cleaarly necessary
+        //_sgtool_GO_Old.SetActive(true);
     }
     );
             };
@@ -88,10 +95,10 @@ namespace ScaleGun420
 
         private void GOSetup()  //does all the object spawning/hierarchies that the base game's creators probably handled better in unity.  idfk.  Does things in such 
         {
-            _sgCamHoldTransformGO = Locator.GetPlayerCamera().gameObject.transform.CreateChild("SgCamHoldTransform_husk", true, new Vector3(0.14f, -0.425f, 0.11f), new Vector3(19, 5, 8));
-            _sgBodyHoldTransformGO = Locator.GetPlayerTransform().CreateChild("SgBodyHoldTransform_husk", true, new Vector3(0.4f, -0.25f, 0.5f), new Vector3(10, 10, 5));
+            //_sgCamHoldTransformGO = Locator.GetPlayerCamera().gameObject.transform.CreateChild("SgCamHoldTransform_husk", true, new Vector3(0.14f, -0.425f, 0.11f), new Vector3(19, 5, 8));
+            //_sgBodyHoldTransformGO = Locator.GetPlayerTransform().CreateChild("SgBodyHoldTransform_husk", true, new Vector3(0.4f, -0.25f, 0.5f), new Vector3(10, 10, 5));
             //_sgBodyStowTransformGO = Locator.GetPlayerBody().transform.CreateChild("SgBodyStowTransform_husk", true);  //are these redundant?  am i usin em at all
-            _sgtool_GO = Locator.GetPlayerTransform().CreateChild("SgTool_GOHusk", false);  //031623_0653: spawns an inactive empty SGToolGO as a child of the player.
+            _sgtool_GO_Old = Locator.GetPlayerTransform().CreateChild("SgTool_GOHusk", false);  //031623_0653: spawns an inactive empty SGToolGO as a child of the player.
             //var toolGobjHuskPrim = GameObject.CreatePrimitive(PrimitiveType.Cube);
             //toolGobjHuskPrim.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
             //toolGobjHuskPrim.transform.parent = _sgBodyHoldTransformGO.transform;
@@ -99,9 +106,9 @@ namespace ScaleGun420
             //toolGobjHuskPrim.transform.localEulerAngles = _sgBodyHoldTransformGO.transform.localEulerAngles;
 
 
-            _theGunToolClass = _sgtool_GO.GetComponentInChildren<ScalegunToolClass>();  //hopefully the host _sgtool_GO's inactivity prevents its new ScalegunTool pilot from waking up, or it'll reach for ScalegunPropClass too early
+            _theGunToolClass = _sgtool_GO_Old.GetComponentInChildren<ScalegunToolClass>();  //hopefully the host _sgtool_GO_Old's inactivity prevents its new ScalegunTool pilot from waking up, or it'll reach for ScalegunPropClass too early
 
-            //_sgPropClassMain = _sgtool_GO.AddComponent<ScalegunPropClass>(); //ScalegunTool declares a PropClass; hopefully not 2late to attach & designate it to the _sgPropGroupject.
+            //_sgPropClassMain = _sgtool_GO_Old.AddComponent<ScalegunPropClass>(); //ScalegunTool declares a PropClass; hopefully not 2late to attach & designate it to the _sgPropGroupject.
 
             
             ///   D I E   ///
@@ -112,9 +119,9 @@ namespace ScaleGun420
 
             //WHY DID YOU DEFINE A CLASS'S LOCAL FIELD IN A DIFFERENT CLASS YOU DINGUS, THIS IS WORK FOR ME TODAY
             //  ^^  UNTANGLE THIS FROM ModBehavior AT SOME POINT, PUT IT IN PropClass SOMEHOW, NOT RIGHT NOW THO ^^
-            _theGunToolClass.enabled = true; //031823_0622: put back after the other one in hopes of addressing a first-time-equip bug  UPDATE: THAT DID NOTHING EITHER            
+            //_theGunToolClass.enabled = true; //031823_0622: put back after the other one in hopes of addressing a first-time-equip bug  UPDATE: THAT DID NOTHING EITHER            
 
-            _sgtool_GO.SetActive(true);
+            _sgtool_GO_Old.SetActive(true);
         }
 
         public override void Configure(IModConfig config)
@@ -156,7 +163,7 @@ namespace ScaleGun420
                     }
                     else
                     {
-                        if (_theGunToolClass._isInEditMode)  //032823_1558: THE Q BUTTON ISN'T ACCOUNTED FOR HERE
+                        if (_theGunToolClass._isInEditMode)  //032823_1558: THE Q BUTTON ISN'T ACCOUNTED FOR HERE  //i think _isInEditMode is the nullref here //nope, it's _theGunToolClass
                         { _theGunToolClass.LeaveEditMode(); }
                         else
                         {
@@ -168,7 +175,9 @@ namespace ScaleGun420
             }
         }
 
-
+        /// <summary>
+        ///AS NOTHING HAS CHANGED ABOUT TOOLMODE SWAPPER BETWEEN WHEN IT WAS WORKING, AND NOW, OBVIOUSLY THE SWAPPER AND PATCH AREN'T THE PROBLEM.
+        /// </summary>
 
         //_currentToolMode WILL ALWAYS REGISTER AS "None" EVEN WHEN ALSO REGISTERING THE CURRENT TOOL.  THIS IS HOW THE BASE GAME DOES THINGS, DON'T QUESTION IT
         //BUT ToolModeSwapper.IsInToolMode returns FALSE when asked if "none" is true while _currentToolMode is ANYTHING?  SOMETHING I'M DOING IS SETTING _currentToolMode to "None" AND THE GAME'S MERCIFULLY IGNORING ME.

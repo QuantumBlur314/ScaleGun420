@@ -13,9 +13,10 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 using static ScaleGun420.ScaleGun420Modbehavior;  //What the cool kids are doin
-using static ScaleGun420.StaffSpawner;
+//using static ScaleGun420.StaffSpawner;
 
 namespace ScaleGun420
 {
@@ -33,7 +34,7 @@ namespace ScaleGun420
 
         private DampedSpring3D _moveSpringPosition;
 
-        private ScalegunPropClass _sgPropClass;
+        private ScalegunPropClass _sgPropClass;   //NomaiTranslator has its internal propclass private
         private ScalegunAnimationSuite _animSuite;
         private SgComputer _toolComputer;
         private TheEditMode _toolEditMode;
@@ -41,9 +42,11 @@ namespace ScaleGun420
 
         private void Awake()
         {
-            LogGoob.WriteLine("ScalegunToolClass is woke, grabbing ScalegunPropClass, SgComputer, and TheEditMode...", MessageType.Success);
+            //NomaiTranslator sets all its process variables to null; might want to do the same for SgComputer, i've heard some vars don't reset on loop reset without it
+
+            LogGoob.WriteLine("ScalegunToolClass is woke, grabbing ScalegunPropClass, SgComputer, TheEditMode, and AnimSuite...", MessageType.Success);
             //GetComponentInChildren doesn't search for inactive objects by default, needs to be set to (true) to find inactive stuff
-            _sgPropClass = GetComponentInChildren<ScalegunPropClass>(true);  //Setting it to (true) worked ok fine idk whatever
+            _sgPropClass = GetComponentInChildren<ScalegunPropClass>();  //Setting it to (true) worked ok fine idk whatever  //040823_1045: OnEnable is Nullref'ing; since all it does is enable the propclass, I'm assuming this here's failing
             _toolComputer = GetComponentInChildren<SgComputer>();
             _toolEditMode = GetComponentInChildren<TheEditMode>();
 
@@ -51,7 +54,9 @@ namespace ScaleGun420
             if (_foundToolToStealTransformsFrom != null)
             {
                 //WHY IS IT GOING TO ZERO LOCAL ROTATION ON INITIAL EQUIP WTF
-                _holdTransform = _sgBodyHoldTransformGO.transform;
+                _bodyHoldTransform = Locator.GetPlayerBody().transform.GetChildComponentByName<Transform>("SG_HoldTransform_BODY");
+                _camHoldTransform = Locator.GetPlayerBody().transform.GetChildComponentByName<Transform>("SG_HoldTransform_CAMERA");
+                _holdTransform = _bodyHoldTransform;
                 _stowTransform = _foundToolToStealTransformsFrom._stowTransform;
                 _moveSpring = new DampedSpringQuat(50, 8.5f, 1);  //032823: no more stuttering, I'm my own tool now  //040323_1737: Note that since _moveSpring isn't a static field, this only tweaks ScalegunTool's _moveSpring
                 _moveSpringPosition = new DampedSpring3D(50, 8.5f, 1);
@@ -65,20 +70,24 @@ namespace ScaleGun420
         public override void EquipTool()
         {
             base.EquipTool();
-            if (this._isInEditMode)
-            { }
+
             this._sgPropClass.OnEquipTool(); //Following in the footsteps of Translator/TranslatorPRop
+            _toolComputer.enabled = true;
         }
+
+
 
         public override void UnequipTool()          //CALLED BY ToolModeSwapper.EquipToolMode(ToolMode toolMode), which is itself called by ToolModeSwapper.Update
         {
-            _toolComputer.StopTheBabens();
+            LogGoob.WriteLine("ScalegunToolClass UnequipTool: Ran UnequipTool");
+            base.UnequipTool();   //Do I have to put this first?
+            _toolComputer.StopTheBabens();  //this probably can't run/the rest of UnequipTool can't finish until _toolComputer is active
             LeaveEditMode();
-            base.UnequipTool();
             _toolComputer.ClearTerminal();
             this._sgPropClass.OnUnequipTool();
             if (_toolComputer.timerLoadingChildren != null || _toolComputer.siblingTimerCoroutine != null)
             { LogGoob.WriteLine("While Unequipping, one of the timers wasn't null.  Should probably _cancelTimer on those (coroutine breaks already reset value, but i never use _cancelTimer idfk))", MessageType.Error); }
+            _toolComputer.enabled = false;
             //base.UnequipTool SETS _isPuttingAway TO TRUE, THEN PlayerTool.Update APPLIES THE STOWTRANSFORMS THEN SETS base.enabled = false ONCE DONE ANIMATING
         }
         public void EnterEditMode()
@@ -89,8 +98,8 @@ namespace ScaleGun420
                 this._isLeavingEditMode = false;
                 this._isEditModeCentered = !this.HasEquipAnimation();
 
-                this.transform.parent = _sgCamHoldTransformGO.transform;   //THE TOOL IS DUPLICATING (THUS DOUBLING) THE HoldTransformGO's TRANSFORM AS ITS _holdTransform.  THIS ISN'T OPTIMAL BUT YOU ALREADY ORIENTED IT IDFK WELL DONE I GUESS
-                _holdTransform = _sgCamHoldTransformGO.transform;  //Oh wait, literally just don't make the transforms their parent, just make them a reference 
+                this.transform.parent = _camHoldTransform.transform;   //THE TOOL IS DUPLICATING (THUS DOUBLING) THE HoldTransformGO's TRANSFORM AS ITS _holdTransform.  THIS ISN'T OPTIMAL BUT YOU ALREADY ORIENTED IT IDFK WELL DONE I GUESS
+                _holdTransform = _camHoldTransform.transform;  //Oh wait, literally just don't make the transforms their parent, just make them a reference 
 
                 // if (this.HasEquipAnimation())
                 //{
@@ -104,8 +113,8 @@ namespace ScaleGun420
         {
             if (_isInEditMode)
             {
-                transform.parent = Locator.GetPlayerTransform();
-                _holdTransform = _sgBodyHoldTransformGO.transform;
+                transform.parent = Locator.GetPlayerTransform();  //This used to work, i think I'm overcomplicating idfk
+                _holdTransform = _bodyHoldTransform.transform;
                 this._isInEditMode = false;
 
                 if (!this._isLeavingEditMode)
@@ -114,6 +123,13 @@ namespace ScaleGun420
                     this._isEditModeCentered = false;
                 }
             }
+        }
+
+
+        private void ToolToModeHoldTransforms(Transform setNewParent, Transform setHoldTransform, Transform setStowTransform)
+        { transform.parent = setNewParent;
+            _holdTransform = setHoldTransform;
+            _stowTransform = setStowTransform;
         }
 
         //Does injecting a field into a parameter only set the parameter's initial value, or does it check the field every time the parameter's used in the method?  If _selectedObject changes between when this coroutine starts and when the timer runs out, will it use the CURRENT _selectedObject, or will it have the value _selectedObject had when the coroutine started?
