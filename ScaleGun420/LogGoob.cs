@@ -14,12 +14,12 @@ namespace ScaleGun420
 
 
         //thanks again to Raoul1808 for notification help
-        public static void Scream(string notification, NotificationTarget target = NotificationTarget.All)
+        public static void Scream(string notification, MessageType notifType = MessageType.Info, NotificationTarget target = NotificationTarget.All)
         {
             NotificationManager.SharedInstance.PostNotification(
                 new NotificationData(target, notification, 5f, false)
                 );
-            WriteLine(notification, MessageType.Warning);
+            WriteLine(notification, notifType);
 
             Locator.GetPlayerAudioController().PlaySuitWarning();
         }

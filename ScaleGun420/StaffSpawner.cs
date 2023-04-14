@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -37,6 +38,8 @@ namespace ScaleGun420
         public GameObject GOtxt_Child;
         public Text _text_Child;
 
+        public GameObject _sgPlaceholderGO;
+
         private RectTransform _mainTextRecTra;
         private HorizontalWrapMode _horizontalOverflow = HorizontalWrapMode.Overflow;
         private Vector2 _textSizeDelta = new Vector2(1400, 35);
@@ -60,6 +63,31 @@ namespace ScaleGun420
             "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff", true, new Vector3(0, -0.9f, -0.0005f), new Vector3(0, 180, 0));  //040723_1811: Set to spawn active because idk, everything's broken now
             _GO_ScalegunStaff.name = "ScalegunGroup";
 
+            SpawnBeamOrigin();
+
+
+
+            var placeholderGO = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            placeholderGO.name = "Placeholder_SG";
+            placeholderGO.GetComponentInChildren<BoxCollider>().enabled = false;
+            //var brother = placeholderGO.GetCollisionGroup()._colliders ;
+            placeholderGO.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
+            placeholderGO.transform.parent = _GO_sgTool.transform;
+            placeholderGO.transform.localPosition = _GO_sgTool.transform.localPosition;
+            placeholderGO.transform.localEulerAngles = _GO_sgTool.transform.localEulerAngles;
+            //placeholderGO.SetActive(false);
+
+
+            var cursorGO = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cursorGO.name = "Cursor_SG";
+            cursorGO.GetComponentInChildren<BoxCollider>().enabled = false;
+            //var brother = placeholderGO.GetCollisionGroup()._colliders ;
+            cursorGO.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
+            cursorGO.transform.parent = _GO_sgTool.transform;
+            cursorGO.transform.localPosition = _GO_sgTool.transform.localPosition;
+            cursorGO.transform.localEulerAngles = _GO_sgTool.transform.localEulerAngles;
+            //cursorGO.SetActive(false);
+
             DupeTranslatorCanvasGO();
             MangleTranslator();  //oh you forgot to put the method in SpawnEverything, ok //and consider putting it AFTER the thing that spawns the translator dupe dummy
             StealGOsForSiblingLabels();
@@ -77,14 +105,14 @@ namespace ScaleGun420
 
             //_GO_sgTool.SetActive(true);
             _GO_sgTool.SetActive(true);
-              //   _thCanvas.enabled = false; //031823_0614: doing this since TranslatorProp did it but it wasn't here yet //update: nope //031823_1524: Sudden unexpected nullref?
-           // _nomCanvas.enabled = false;
+            //   _thCanvas.enabled = false; //031823_0614: doing this since TranslatorProp did it but it wasn't here yet //update: nope //031823_1524: Sudden unexpected nullref?
+            // _nomCanvas.enabled = false;
             //_sgOwnPropGroupject = ScaleGun420Modbehavior.Instance._ //Might have to define it here.  How do I break the chains?
 
             //_theProp.SetActive(true);  //what NomaiTranslatorProp does, but better-labeled.  TranslatorProp sets its whole parent propgroup inactive at end of its Awake (the parts of it relevant to me) }
 
             //_theGunToolClass.enabled = true; //031823_0622: put back after the other one in hopes of addressing a first-time-equip bug  UPDATE: THAT DID NOTHING EITHER  
-
+            SpawnLineRenderers();
 
             LogGoob.WriteLine("idfk m8 it should be active", OWML.Common.MessageType.Success);
         }
@@ -98,11 +126,7 @@ namespace ScaleGun420
 
         //_sgBodyStowTransformGO = Locator.GetPlayerBody().transform.CreateChild("SgBodyStowTransform_husk", true);  //are these redundant?  am i usin em at all
 
-        //var toolGobjHuskPrim = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        //toolGobjHuskPrim.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-        //toolGobjHuskPrim.transform.parent = _sgBodyHoldTransformGO.transform;
-        //toolGobjHuskPrim.transform.localPosition = _sgBodyHoldTransformGO.transform.localPosition;
-        //toolGobjHuskPrim.transform.localEulerAngles = _sgBodyHoldTransformGO.transform.localEulerAngles;
+
 
         private void DupeTranslatorCanvasGO()
         {
@@ -173,6 +197,38 @@ namespace ScaleGun420
             var fontList = Font.GetOSInstalledFontNames();
             int fontIndex = UnityEngine.Random.Range(0, (fontList.Count()));
             _text_Child.font = UnityEngine.Font.CreateDynamicFontFromOSFont(fontList[fontIndex].ToString(), 100);  //idk what the size parameter does; i've set it to 1 and to 100 and there's no noticeable difference; maybe it's instantly getting overwritten by something?  idk
+        }
+
+        private void SpawnBeamOrigin()
+        {
+            _beamsJohnson = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            _beamsJohnson.name = "SG_BeamOrigin";
+            _beamsJohnson.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+            _beamsJohnson.transform.parent = _GO_ScalegunStaff.transform;
+            _beamsJohnson.transform.localPosition = new Vector3(0f, 2f, 0.0005f);
+            _beamsJohnson.transform.localEulerAngles = default;
+            _beamsJohnson.AddComponent<BeamsAKATrails>();
+        }
+        private void SpawnLineRenderers()
+        {
+            GameObject beamMatGO = GameObject.Find("Ship_Body/Module_Cabin/Systems_Cabin/Hatch/TractorBeam/BeamVolume/BeamParticles");
+            if (beamMatGO == null)
+                return;
+            var beamMat = beamMatGO.GetComponent<ParticleSystemRenderer>().material;
+
+            for (int i = 0; i < 6; i++)
+            {
+                string beamName = $"SGBeam{i}";
+                GameObject beamObject = _beamsJohnson.GivesBirthTo(beamName, true);
+
+                LineRenderer lineRenderer = beamObject.AddComponent<LineRenderer>();
+                lineRenderer.startColor = Color.blue;
+                lineRenderer.startWidth = 1;
+                lineRenderer.SetPosition(0, Vector3.zero);
+                lineRenderer.SetPosition(1, Vector3.one);
+                lineRenderer.material = beamMat;  //value cannot be null
+            }
+
         }
     }
 }

@@ -32,16 +32,6 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         private Text _sgpTxt_SibBelow;
         private Text _sgpTxt_Child;
 
-
-        public GameObject _sgpGO_THCanvasOBSOLETE;
-        public GameObject _sgpGO_NOMCanvasOBSOLETE; //This can be phased out eventually with enough position tweaking, but for now it's good reference
-        private RectTransform _mainTextRecTraOBSOLETE;
-        private GameObject _sgpTxtGO_ChildOBSOLETE;
-        private GameObject _sgpTxtGO_SibBelowOBSOLETE;
-        private GameObject _sgpTxtGO_SibAboveOBSOLETE;
-        private GameObject _sgpTxtGO_ParentOBSOLETE;
-        private GameObject _sgpTxtGO_SelectionOBSOLETE;
-
         private string _greatGObbyFilter = $"(UnityEngine.GameObject)";
 
         private bool updateHasBegun = false;
@@ -90,70 +80,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             base.enabled = false;
         }  // Just like TranslatorProp without all the BS
 
-        private void OldSpawnRoutines()
-        {
-            _sgpGO_THCanvasOBSOLETE = Instantiate(GameObject.Find("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas"), _sgPropGOSelf.transform);
-
-            _sgpGO_THCanvasOBSOLETE.name = "ScaleGunCanvasHearth";
-
-            _sgpGO_THCanvasOBSOLETE.transform.localEulerAngles = new Vector3(25f, 160f, 350f);
-            _sgpGO_THCanvasOBSOLETE.transform.localPosition = new Vector3(0.15f, 1.75f, 0.05f);
-            _sgpGO_THCanvasOBSOLETE.transform.localScale = new Vector3(0.0003f, 0.0003f, 0.0003f);
-            _sgpGO_THCanvasOBSOLETE.SetActive(true);  //031823_0616: This is a definite "true" moment (don't change)
-            //_sgpGO_THCanvas = base.transform.GetComponentInChildren<Canvas>(true);  //031823_0627: GETTING RID OF THE (true) MAYBE?   //031923_1831: never found out whether that would work because VS broke
-            _sgp_THCanvas = base.transform.GetComponentInChildren<Canvas>(true);
-
-
-
-            _mainTextRecTraOBSOLETE = base.transform.GetComponentInChildren<RectTransform>(true); //031823_0523: swapped to before _sgpTextFieldMain gets defined, idk why
-            _mainTextRecTraOBSOLETE.pivot = new Vector2(1f, 0.5f);
-
-            _sgpTxt_Selection = _sgpGO_THCanvasOBSOLETE.transform.GetChildComponentByName<Text>("TranslatorText").GetComponent<Text>();
-            _sgpTxt_Selection.name = "SelectedObject";
-            _sgpTxt_Selection.rectTransform.localPosition = new Vector2(1100, 260);
-            _sgpTxt_Selection.rectTransform.localScale = new Vector3(0.85f, 0.85f, 0.85f);
-            _sgpTxt_Selection.alignment = TextAnchor.MiddleCenter;
-            var horizontalOverflow = HorizontalWrapMode.Overflow;
-            var textSizeDelta = new Vector2(1400, 35);
-
-
-            _sgpTxt_Parent = _sgpGO_THCanvasOBSOLETE.transform.GetChildComponentByName<Text>("PageNumberText").GetComponent<Text>();   //THIS IS ALL YOU NEED TO SPAWN NEW LASSES YOU DINGUS
-            _sgpTxt_Parent.name = "ParentOfSelectedObject";
-            _sgpTxt_Parent.rectTransform.localPosition = new Vector2(-1680, 245);
-            _sgpTxt_Parent.rectTransform.sizeDelta = textSizeDelta;
-            _sgpTxt_Parent.horizontalOverflow = horizontalOverflow;
-
-
-            float siblingAlignment = -835;
-
-            _sgpTxtGO_SibAboveOBSOLETE = _sgpGO_THCanvasOBSOLETE.transform.InstantiateTextObj("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas/PageNumberText", "TopSibling",
-                out _sgpTxt_SibAbove, new Vector2(siblingAlignment, 140), textSizeDelta, horizontalOverflow);
-
-            _sgpTxtGO_SibBelowOBSOLETE = _sgpGO_THCanvasOBSOLETE.transform.InstantiateTextObj("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas/PageNumberText", "BottomSibling",
-                out _sgpTxt_SibBelow, new Vector2(siblingAlignment, 0), textSizeDelta, horizontalOverflow);
-
-
-            _sgpGO_NOMCanvasOBSOLETE = _sgPropGOSelf.GivesBirthTo("ScalegunCanvasNomai", true, new Vector3(0, 1.7f, 0.15f), new Vector3(45, 180, 0), 0.003f);  //For some reason, spawns with a text component visible from the main GameObject, idk why
-            _sgp_NOMCanvas = _sgpGO_NOMCanvasOBSOLETE.AddComponent<Canvas>();  //rectTransform seems to come prepackaged for some reason idfk
-            _sgp_NOMCanvas.worldCamera = Locator.GetPlayerCamera().mainCamera;  //Check when canvases are set, and you'll find these values as the only ones being set
-            _sgp_NOMCanvas.renderMode = RenderMode.WorldSpace;
-
-            _sgpTxtGO_ChildOBSOLETE = _sgpGO_NOMCanvasOBSOLETE.GivesBirthTo("Children", true);   //Get the TextGenerator? idk it's in the instantiated stuff but not in Text by default
-            _sgpTxt_Child = _sgpTxtGO_ChildOBSOLETE.AddComponent<Text>();
-            RandomizeFontForSomeReason();
-            _sgpTxtGO_ChildOBSOLETE.AddComponent<TypeEffectText>(); //is this a whole text component in and of itself?
-
-            //_sgpTxtGO_Child = _sgpGO_NOMCanvas.transform.InstantiateTextObj("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas/PageNumberText", "Children",
-            // out _sgpTxt_Child, new Vector2(siblingAlignment + 900, 75), textSizeDelta, horizontalOverflow);
-
-            //
-            _sgpTxt_Parent.enabled = true;  //031823_0608: setting to false doesn't fix the thing, and just leaves it disabled. //032623_1921: idk why this is still here but I'll leave it for now.
-
-            //_sgOwnPropGroupject = ScaleGun420Modbehavior.Instance._ //Might have to define it here.  How do I break the chains?
-            this._sgp_NOMCanvas.enabled = false;
-            this._sgp_THCanvas.enabled = false; //031823_0614: doing this since TranslatorProp did it but it wasn't here yet //update: nope //031823_1524: Sudden unexpected nullref?
-            this._sgPropGOSelf.SetActive(false);  //what NomaiTranslatorProp does, but better-labeled.  TranslatorProp sets its whole parent propgroup inactive at end of its Awake (the parts of it relevant to me) }
-        }
+        
         private void RandomizeFontForSomeReason()
         {
             var fontList = Font.GetOSInstalledFontNames();
@@ -185,7 +112,6 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         }
 
 
-
         //MAYBE MAKE ENUMERATOR FOR ALL HIERARCHY NAVIGATION DIRECTIONS, UNIFY IT?
 
 
@@ -197,11 +123,11 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         }
 
         private bool ShouldEditText(string stringToCheck)
-        { return (stringToCheck != "SKIP" && stringToCheck != "SKIP(UnityEngine.GameObject)"); }
+        { return (stringToCheck != "SKIP" && stringToCheck != "SKIP (UnityEngine.GameObject)"); }
 
         private void FetchComponents()
         { }
-        public void UpdateScreenTextV2(string parentOrSKIP, string sibAboveOrSKIP, string sibBelowOrSKIP, string childOrSKIP, string currentSelFieldOverride = $"GetCurrentSelectionOugh_ax15")
+        public void RefreshScreen(string parentOrSKIP, string sibAboveOrSKIP, string sibBelowOrSKIP, string childOrSKIP, string currentSelFieldOverride = $"ax15_computer._selectedObjectPublic_ax15")
         {
             //once I figure out how the TypeEffectText thing works, have separate thing like "ax15_ROLLTEXT_ax15" to evoke stuff like I do with "SKIP"
 
@@ -214,9 +140,9 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
 
             if (ShouldEditText(currentSelFieldOverride))
             {
-                if (currentSelFieldOverride == $"GetCurrentSelectionOugh_ax15")
+                if (currentSelFieldOverride == $"ax15_computer._selectedObjectPublic_ax15")
                 {
-                    GameObject currentComputerSelection = _computer.SelectedGOAtIndex();  //don't forget the parentheses or the formatting will be arbitrarily different, awesome
+                    GameObject currentComputerSelection = _computer._selectedGOPublic;  //don't forget the parentheses or the formatting will be arbitrarily different, awesome
                     if (currentComputerSelection != null)  //changed from _selectedObject to GetCurrentSelection, idk what the consequences of this will be
                     { _sgpTxt_Selection.text = $"{currentComputerSelection}"; }
                 }
@@ -236,8 +162,6 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             victim = victim.Replace(_greatGObbyFilter, ""); //strOne = "Hello" now
             return victim;   //trying to return victim, idk if this'll work
         }
-
-
 
 
         //  vv  NO LONGER IN USE HERE  vv , INSTEAD CALLED DURING THE MAIN MODBEHAVIOR CLASS DURING GOSetup USING THE InstantiatePrefab EXTENSION; THIS IS JUST HERE FOR REFERENCE
