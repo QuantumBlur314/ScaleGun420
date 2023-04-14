@@ -440,8 +440,6 @@ namespace ScaleGun420
             {
                 internalConsensusGO_LCA = candidateFrom_NavToChild;  //
                 newChildIndex = 0;
-
-                LogGoob.WriteLine($"LoadChildrenAfter ~405: set currentObject to _toChildInternalConsensusGOMaybe {candidateFrom_NavToChild} THIS WAS NOT REACHED BY THE CURRENT ERROR");
             }  //OnToSiblings REQUIRES an initial value to start at, unless you want different conditions for a post-OnToChild scroll
             else if (!_onToChildsBeganThisCoroutine)
             {
@@ -634,16 +632,17 @@ namespace ScaleGun420
 
         public void StopTheBabens()
         {
-            if (_babenCycleShouldRun == true || timerBabyCycle != null)
+            if (_babenCycleShouldRun == true)
             {
                 _babenCycleShouldRun = false;    //this will set _shouldBabens to false and deactivate the timingBabens coroutine when in edit mode
-                StopCoroutine(timerBabyCycle);
-                timerBabyCycle = null;
+                if (timerBabyCycle != null)
+                {
+                    StopCoroutine(timerBabyCycle);  //routine is null?
+                    timerBabyCycle = null;
+                }
             }
             else
-            {
-                LogGoob.WriteLine("StopTheBabens L426: _babenCycleShouldRun was already false; StopoTheBabens but also wtf.");
-            }
+                LogGoob.WriteLine("StopTheBabens ~645: Run was already false; StopoTheBabens but also wtf.");
         }
 
         /// <summary>
