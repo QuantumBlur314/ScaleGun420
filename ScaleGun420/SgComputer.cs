@@ -296,7 +296,7 @@ namespace ScaleGun420
             {
                 newSelIndex.TextFromAdjacentSiblingsIn(newSiblingsList, out upperSibling, out lowerSibling);
                 //upperSibling = $"{newSelIndex.AdjacentSiblingIn(newSiblingsList, 1)}";
-               // lowerSibling = $"{newSelIndex.AdjacentSiblingIn(newSiblingsList, -1)}";
+                // lowerSibling = $"{newSelIndex.AdjacentSiblingIn(newSiblingsList, -1)}";
             }
 
             SetPubSelGOFieldPlusIndexOption(internalStoredSelection, false);
@@ -344,8 +344,8 @@ namespace ScaleGun420
 
             GameObject newCandidateFromChild = kidIndexAtPress.FindIndexedGOIn(childListAtPress) ?? throw new System.Exception("OnToChilds: couldn't find GO @ _childIndexCurrent for any number of reasons.  check logs i guess.");
             GameObject priorSelectionGO = _selectedGOPublic;
-                                                                //_vvv  an update  vvv_ You don't update selecIndex or sibling list until a few lines down, why are you even using GetGOAtSelecIndexCheck here????
-                                                        //upon pressing NavToChild after selecting slate(parentless), apparently newCandidateFromChild was correct, but the index wasn't                    //foundObject was the same as before the press, didn't yield the child somehow
+            //_vvv  an update  vvv_ You don't update selecIndex or sibling list until a few lines down, why are you even using GetGOAtSelecIndexCheck here????
+            //upon pressing NavToChild after selecting slate(parentless), apparently newCandidateFromChild was correct, but the index wasn't                    //foundObject was the same as before the press, didn't yield the child somehow
             timerChildrenPending = StartCoroutine(LoadChildrenAfter(_coroutineTimerStartValueUniv, priorSelectionGO));
             _onToChildsBeganThisCoroutine = true;
 
@@ -453,11 +453,12 @@ namespace ScaleGun420
                 else LogGoob.WriteLine($"Stopped where we started, no need to load new child list", MessageType.Info);
             }
             else
+                throw new Exception("LoadChildrenAfter wack conditions");
 
-                _childGOList = internalConsensusGO_LCA.ListChildrenOrNull(); //This just threw a nullref; internalConsensusGO_LCA was null  //did it again
+            _childGOList = internalConsensusGO_LCA.ListChildrenOrNull(); //This just threw a nullref; internalConsensusGO_LCA was null  //did it again
             _indexDisplayedChild = newChildIndex;  //newChildIndex exists specifically so _arbitraryChildIndex can be defined outside the brackets //ACTUALLY, ToCHILD SHOULD PROBABLY LEAVE THIS INDEX IN A MARKER STATE AND OH BOY HERE I GO LOOPING
 
-            var firstChildAtNewChildIndex = _childGOList[newChildIndex]; //a nullref.  also this is all lagging to hell
+            var firstChildAtNewChildIndex = _childGOList[newChildIndex]; //a nullref.  also this is all lagging to hell  //another nullref
 
             _onToChildsBeganThisCoroutine = false;
             _sgPropClass.RefreshScreen("SKIP", "SKIP", "SKIP", GOToStringOrElse(firstChildAtNewChildIndex), "SKIP");  //040623_1222: _childGOList[newChildIndex] got an OutOfRangeException from something //Another nullref from scrolling up fast, seems to make subsequent vertical scrolls no longer update the child list
