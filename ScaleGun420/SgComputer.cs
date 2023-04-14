@@ -176,12 +176,15 @@ namespace ScaleGun420
                 throw new Exception($"OnToParent 145ish: Unaccounted-for scrollstate, setting originalGOThisPress from GetPubSelection().  {_hasScrolledToParentXTimes}, {existingInternalSelection}");
             //now no longer dumb, but very messy  //now no longer messy
 
-            GameObject originalParentThisPress = originalGOThisPress.transform.parent.gameObject;  //maybe just an extension that slaps another .transform.parent.gameObject to the end of the previous, for however many times you press Up?  sounds easier
-            if (originalParentThisPress != null)
+            //you should probably nullcheck this you dingus
+            Transform originalParentTransformThisPress = originalGOThisPress.transform.parent;  //maybe just an extension that slaps another .transform.parent.gameObject to the end of the previous, for however many times you press Up?  sounds easier
+            if (originalParentTransformThisPress != null)
             {
-                GameObject firstGrandparent = originalParentThisPress.transform.parent.gameObject;
-                if (firstGrandparent != null) //FOR REFERENCE, _siblingsOfSelGO DOESN'T UPDATE UNTIL THE COROUTINE; _siblingsOfSelGO IS THE LIFELINE THAT _selecIndex CLINGS TO HERE
+                GameObject originalParentThisPress = originalParentTransformThisPress.gameObject;
+                Transform firstGrandparentTransform = originalParentTransformThisPress.parent;
+                if (firstGrandparentTransform != null) //FOR REFERENCE, _siblingsOfSelGO DOESN'T UPDATE UNTIL THE COROUTINE; _siblingsOfSelGO IS THE LIFELINE THAT _selecIndex CLINGS TO HERE
                 {
+                    GameObject firstGrandparent = firstGrandparentTransform.gameObject;
                     _babenCycleShouldRun = false;
 
                     string upperSibling = "";
