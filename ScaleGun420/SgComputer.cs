@@ -61,8 +61,8 @@ namespace ScaleGun420
         public int _selecIndex = 0;
         private int _indexDisplayedChild = 0;
 
-        private float _coroutineTimerStartValueUniv = 1f;
-        private float _subsequentPressIncrementUniv = 0.5f;
+        private float _coroutineTimerStartValueUniv = 0.5f;
+        private float _subsequentPressIncrementUniv = 0.25f;
         public ProbeLauncherEffects _probeLauncherEffects;
 
         public static string _colliderFilter = "Collider";
@@ -334,6 +334,9 @@ namespace ScaleGun420
         //UNDER CONSTRUCTION: true
         public void NavToChild() //Add condition for scrolling to very bottom of the well
         {
+
+            //AN UPDATE:   USING THE LoadChildrenAfter COROUTINE IS NEEDLESSLY SLOW AND HAS TO RUN A COROUTINE EVERY TIME; this should have its own coroutine to wait until done scrolling down before it loads ALL OTHER HIERARCHIES i guess
+            //Wait, why would you want to scroll indiscriminately
             if (_childGOList == null || timerChildrenPending != null || _onToChildsBeganThisCoroutine)  //Can't gatekeep whether timerChildrenPending's running here, or else it will just skip the whole function
                 return;
             _babenCycleShouldRun = false;
@@ -455,8 +458,9 @@ namespace ScaleGun420
 
             _childGOList = internalConsensusGO_LCA.ListChildrenOrNull(); //This just threw a nullref; internalConsensusGO_LCA was null  //did it again
             _indexDisplayedChild = newChildIndex;  //newChildIndex exists specifically so _arbitraryChildIndex can be defined outside the brackets //ACTUALLY, ToCHILD SHOULD PROBABLY LEAVE THIS INDEX IN A MARKER STATE AND OH BOY HERE I GO LOOPING
+            LogGoob.WriteLine($"LoadChildrenAfter ~465: set _childGOList to {_childGOList} & _indexDisplayedChild to {_indexDisplayedChild}");
 
-            var firstChildAtNewChildIndex = _childGOList[newChildIndex]; //a nullref.  also this is all lagging to hell  //another nullref
+            var firstChildAtNewChildIndex = newChildIndex.FindIndexedGOIn(_childGOList);  //NavToChild can go all the way down to the bottom of the well, genius. //a nullref.  also this is all lagging to hell  //another nullref  
 
             _onToChildsBeganThisCoroutine = false;
             _sgPropClass.RefreshScreen("SKIP", "SKIP", "SKIP", GOToStringOrElse(firstChildAtNewChildIndex), "SKIP");  //040623_1222: _childGOList[newChildIndex] got an OutOfRangeException from something //Another nullref from scrolling up fast, seems to make subsequent vertical scrolls no longer update the child list
