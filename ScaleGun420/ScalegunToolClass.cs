@@ -83,7 +83,7 @@ namespace ScaleGun420
         public override void UnequipTool()          //CALLED BY ToolModeSwapper.EquipToolMode(ToolMode toolMode), which is itself called by ToolModeSwapper.Update
         {
             base.UnequipTool();   //Do I have to put this first?
-            _toolComputer.StopTheBabens();  //this probably can't run/the rest of UnequipTool can't finish until _toolComputer is active
+            _toolComputer.StopCyclingChildren();  //this probably can't run/the rest of UnequipTool can't finish until _toolComputer is active
             LeaveEditMode();
             _toolComputer.ClearTerminal();
             this._sgPropClass.OnUnequipTool();
@@ -108,7 +108,7 @@ namespace ScaleGun420
                 this.transform.parent = _camHoldTransform.transform;   //THE TOOL IS DUPLICATING (THUS DOUBLING) THE HoldTransformGO's TRANSFORM AS ITS _holdTransform.  THIS ISN'T OPTIMAL BUT YOU ALREADY ORIENTED IT IDFK WELL DONE I GUESS
                 _holdTransform = _camHoldTransform.transform;  //Oh wait, literally just don't make the transforms their parent, just make them a reference 
 
-                _toolComputer.StopTheBabens();
+                _toolComputer.StopCyclingChildren();
                 _toolEditMode.BeginEditing();
                 // if (this.HasEquipAnimation())
                 //{

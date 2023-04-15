@@ -10,7 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using static ScaleGun420.Extensions;  //had to do this for some bs reason idfk
-
+using XGamingRuntime;
 
 namespace ScaleGun420
 {
@@ -22,14 +22,16 @@ namespace ScaleGun420
     public class SgComputer : MonoBehaviour
     {
         private ScalegunPropClass _sgPropClass;
-        //private ScalegunToolClass _sgToolClass;
+        private ScalegunToolClass _sgToolClass;
 
         private List<GameObject> _siblingsOfSelGO;
         private List<GameObject> _childGOList;
         ///public static ObservableCollection<GameObject> _observableCollectionTest;  //subscribe to the CollectionChanged event.  Event's arguments are NotifyCollectionChangedArgs.  Might be helpful idk
 
+        private bool _interruptBabenCycle;
         private bool _babenCycleShouldRun = false;
         private Coroutine timerBabyCycle = null;
+        private float _timeBeforeStartCycling;
 
         private bool _onToChildsBeganThisCoroutine = false;
         private bool _loadingKids_OnToAdjSibsBehalf = false;
@@ -40,12 +42,13 @@ namespace ScaleGun420
         public bool _cancelLoadChildren = false;
         public bool _cancelLoadSiblings = false;
 
-        private bool _pauseBabenCycleUntilLoaded = false;
+        private bool _babensToggleOn = false;
 
         private int _hasScrolledToParentXTimes = 0;
 
         private float _timeBeforeChildrenLoad;
         private float _timeBeforeSiblingsLoad;
+
 
         //public static GameObject _previousSelection;  //not used here, but ScalegunPropClass will use it to fill in adjacent UI fields without having to recalculate, //032323_1938: Actually this should probably be defined by the PropClass
         //private GameObject _parentOfSelection;
@@ -69,12 +72,11 @@ namespace ScaleGun420
         public List<string> _forbiddenObjects = new List<string>() { "Collider" };
 
 
-
         //CLASS IS ENABLING LATE, ONLY ON EQUIP; ALSO, CONSIDER DEACTIVATING COMPUTER WHILE TOOL IS UNEQUIPPED
         private void Awake()
         {
             LogGoob.WriteLine("SgComputer is woke, grabbing ScalegunPropClass...", MessageType.Success);
-            //_sgToolClass = Locator.GetPlayerBody().GetComponentInChildren<ScalegunToolClass>();
+            _sgToolClass = Locator.GetPlayerBody().GetComponentInChildren<ScalegunToolClass>();
             _sgPropClass = Locator.GetPlayerBody().GetComponentInChildren<ScalegunPropClass>();
             _probeLauncherEffects = Locator.GetPlayerBody().GetComponentInChildren<ProbeLauncherEffects>();
         }
@@ -124,6 +126,7 @@ namespace ScaleGun420
         }
         private void SetSelGOIndexVia(GameObject thisGO)
         { _selecIndex = thisGO.transform.GetSiblingIndex(); }
+
         private void FlushChildListPlusIndex(bool resetChildIndex = false)
         {
             _childGOList = null;
@@ -165,12 +168,13 @@ namespace ScaleGun420
                 LogGoob.Scream("Scrolling up hierarchy of unloaded family inadvisable");
                 return;
             }
-            GameObject existingInternalSelection = _freshSelInternal_OnToParent;
+            GameObject existingInternalSelection = _freshSelInternal_OnToParent;  //where does this get set?
             GameObject originalGOThisPress;
+            int timesScrolledToSiblings = _hasScrolledToParentXTimes;
 
-            if (_hasScrolledToParentXTimes <= 0 && existingInternalSelection == null)
+            if (timesScrolledToSiblings <= 0 && existingInternalSelection == null)
                 originalGOThisPress = GetPubSelection();
-            else if (_hasScrolledToParentXTimes >= 1 && existingInternalSelection != null)
+            else if (timesScrolledToSiblings >= 1 && existingInternalSelection != null)
                 originalGOThisPress = existingInternalSelection;
             else
                 throw new Exception($"OnToParent 145ish: Unaccounted-for scrollstate, setting originalGOThisPress from GetPubSelection().  {_hasScrolledToParentXTimes}, {existingInternalSelection}");
@@ -178,21 +182,35 @@ namespace ScaleGun420
 
             //you should probably nullcheck this you dingus
             Transform originalParentTransformThisPress = originalGOThisPress.transform.parent;  //maybe just an extension that slaps another .transform.parent.gameObject to the end of the previous, for however many times you press Up?  sounds easier
+
             if (originalParentTransformThisPress != null)
             {
                 GameObject originalParentThisPress = originalParentTransformThisPress.gameObject;
                 Transform firstGrandparentTransform = originalParentTransformThisPress.parent;
-                if (firstGrandparentTransform != null) //FOR REFERENCE, _siblingsOfSelGO DOESN'T UPDATE UNTIL THE COROUTINE; _siblingsOfSelGO IS THE LIFELINE THAT _selecIndex CLINGS TO HERE
+                string upperSibling = "";
+                string lowerSibling = "";
+                string newParentTxtCandidate = "Firmament";
+
+
+                if (firstGrandparentTransform == null)  //041423_1356: Try allowing scrolling to higher places, but do filter out sectors and stuff and cancel sibling loading once there's no parent to reference.  
+                                                        //FOR REFERENCE, _siblingsOfSelGO DOESN'T UPDATE UNTIL THE COROUTINE; _siblingsOfSelGO IS THE LIFELINE THAT _selecIndex CLINGS TO HERE
+                {
+                    //if scrolling for first timepush current sibling list to child list
+                    //otherwise, if has scrolled more than once, current sibling list is useless
+
+                    //whatever these two processes decide upon, 
+
+                }
+                else if (firstGrandparentTransform != null)
                 {
                     GameObject firstGrandparent = firstGrandparentTransform.gameObject;
                     _babenCycleShouldRun = false;
 
-                    string upperSibling = "";
-                    string lowerSibling = "";
-                    _indexDisplayedChild = 0;
+
+                    _indexDisplayedChild = 0;  //shouldn't this always be the index of the old selected?  why am i setting it to 0 here?
 
                     //______The First Press_________
-                    if (_hasScrolledToParentXTimes < 1 && timerLoadingSiblings == null && AreSiblingsLoaded() == true) /// && originalGOThisPress != null)  //Doesn't require _childGOList to be defined actually, surprising
+                    if (timesScrolledToSiblings < 1 && timerLoadingSiblings == null && AreSiblingsLoaded() == true) /// && originalGOThisPress != null)  //Doesn't require _childGOList to be defined actually, surprising
                     {
                         CopySiblingsToChildList();   //The aforementioned flush lets us push the current siblings into the child field without issue,
                         int unchangedSelIndexForChildField = _selecIndex;
@@ -202,22 +220,21 @@ namespace ScaleGun420
                         upperSibling = $"Waiting to Load Siblings...";
                         lowerSibling = "Waiting to Load Siblings...";
                         timerLoadingSiblings = StartCoroutine(LoadSiblingsAfter(_coroutineTimerStartValueUniv));  //handles the rest, retrieves fresh _selectedObject index if unavailable; also can probably use _selectObject unless u wanna fuckin... inject it as a parameter
-
-                        if (_hasScrolledToParentXTimes != 0)
-                            LogGoob.Scream($"OnToParent Ln175: timerLoadingSiblings was null, but _hasScrolledToParentXTimes was already at {_hasScrolledToParentXTimes}??", MessageType.Error);
-                        _hasScrolledToParentXTimes = 1;
+                        if (timesScrolledToSiblings == 0)
+                        {
+                            timesScrolledToSiblings = 1;
+                            _hasScrolledToParentXTimes = timesScrolledToSiblings;
+                        }
+                        else
+                            LogGoob.Scream($"NavToParent ~225: timerLoadingSiblings was null, but _hasScrolledToParentXTimes was already at {_hasScrolledToParentXTimes}??", MessageType.Error);
                     }
-                    else if (_hasScrolledToParentXTimes >= 1 && timerLoadingSiblings != null && AreSiblingsLoaded() == false) /// && originalGOThisPress == null) //whar?
+                    else if (timesScrolledToSiblings >= 1 && timerLoadingSiblings != null && AreSiblingsLoaded() == false) /// && originalGOThisPress == null) //whar?
                     {
                         _timeBeforeSiblingsLoad += _subsequentPressIncrementUniv;
-                        _hasScrolledToParentXTimes += 1;
-
-                        if (_hasScrolledToParentXTimes >= 2)
-                        {
-                            FlushChildListPlusIndex();
-                            _selecIndex = 0; //(int)IndexMarkerState.ToParentSecondScroll;  //SET THIS NULL WHENEVER YOU NEED TO START FROM 0
-                        }///  _arbitraryChildIndex = 0; //already handled by first press actually nvm
+                        timesScrolledToSiblings += 1;
+                        _hasScrolledToParentXTimes = timesScrolledToSiblings;
                     }
+
                     else
                     {
                         LogGoob.WriteLine($"OnToParent ~215: OnToParent ERROR, {_hasScrolledToParentXTimes}, {timerLoadingSiblings}, {AreSiblingsLoaded()}", MessageType.Warning);
@@ -225,24 +242,25 @@ namespace ScaleGun420
                         return;
                     }
 
-                    GameObject newSelectionAfterPress = originalParentThisPress;
-                    _freshSelInternal_OnToParent = newSelectionAfterPress;
-
-                    string newParent = GOToStringOrElse(firstGrandparent);
-                    string newChild = GOToStringOrElse(originalGOThisPress, "ERROR");
-                    string newSelection = $"{newSelectionAfterPress}";  //nullcheck already exists 
-
-                    _sgPropClass.RefreshScreen(newParent, upperSibling, lowerSibling, newChild, newSelection);
+                    if (timesScrolledToSiblings >= 2)  //this must happen no matter what.  Checks after previous processes of current press to decide whether to flush child list & reset child index //actually should maybe get current selection index
+                    {
+                        FlushChildListPlusIndex();
+                        _selecIndex = originalGOThisPress.transform.GetSiblingIndex(); //  //(int)IndexMarkerState.ToParentSecondScroll;  //SET THIS NULL WHENEVER YOU NEED TO START FROM 0
+                    }///  _arbitraryChildIndex = 0; //already handled by first press actually nvm
+                    newParentTxtCandidate = $"{firstGrandparent}";
                 }
-                else
-                {
-                    LogGoob.Scream("CANNOT BREACH FIRMAMENT", MessageType.Info);
-                    return;
-                }
+                GameObject newSelectionAfterPress = originalParentThisPress;
+                _freshSelInternal_OnToParent = newSelectionAfterPress;
+
+                string newParentTxtNominee = newParentTxtCandidate;
+                string newChild = GOToStringOrElse(originalGOThisPress, "ERROR");
+                string newSelection = $"{newSelectionAfterPress}";  //nullcheck already exists 
+
+                _sgPropClass.RefreshScreen(newParentTxtNominee, upperSibling, lowerSibling, newChild, newSelection);
             }
             else
             {
-                LogGoob.Scream("HOW DID YOU GET HERE", MessageType.Warning);
+                LogGoob.Scream("CANNOT BREACH FIRMAMENT", MessageType.Info);
                 return;
             }
         }
@@ -337,10 +355,9 @@ namespace ScaleGun420
         //UNDER CONSTRUCTION: true
         public void NavToChild() //Add condition for scrolling to very bottom of the well
         {
-
             //AN UPDATE:   USING THE LoadChildrenAfter COROUTINE IS NEEDLESSLY SLOW AND HAS TO RUN A COROUTINE EVERY TIME; this should have its own coroutine to wait until done scrolling down before it loads ALL OTHER HIERARCHIES i guess
             //Wait, why would you want to scroll indiscriminately
-            if (_childGOList == null || timerChildrenPending != null || _onToChildsBeganThisCoroutine)  //Can't gatekeep whether timerChildrenPending's running here, or else it will just skip the whole function
+            if (_childGOList == null || timerChildrenPending != null || _onToChildsBeganThisCoroutine)  //removed "_childGOList == null" check, since we want to scroll to the bottom//Can't gatekeep whether timerChildrenPending's running here, or else it will just skip the whole function
                 return;
             _babenCycleShouldRun = false;
 
@@ -352,7 +369,7 @@ namespace ScaleGun420
             GameObject priorSelectionGO = _selectedGOPublic;
             //_vvv  an update  vvv_ You don't update selecIndex or sibling list until a few lines down, why are you even using GetGOAtSelecIndexCheck here????
             //upon pressing NavToChild after selecting slate(parentless), apparently newCandidateFromChild was correct, but the index wasn't                    //foundObject was the same as before the press, didn't yield the child somehow
-            timerChildrenPending = StartCoroutine(LoadChildrenAfter(_coroutineTimerStartValueUniv, priorSelectionGO));
+            timerChildrenPending = StartCoroutine(LoadChildrenAfter(_coroutineTimerStartValueUniv));
             _onToChildsBeganThisCoroutine = true;
 
             _candidateInternal_onToChilds = newCandidateFromChild; //wtf is this  //
@@ -437,43 +454,50 @@ namespace ScaleGun420
             //ensures input gets eaten this frame
             yield return new WaitForEndOfFrame();
 
+            List<GameObject> listOfSiblings = _siblingsOfSelGO;
             GameObject candidateFrom_NavToChild = _candidateInternal_onToChilds;
-            GameObject internalConsensusGO_LCA = null;  //if this is here, it means the internalConsensusGO_LCA will already not matter.  any value initially set by OnToChild 
+            GameObject internalConsensusList_LCA = null;  //if this is here, it means the internalConsensusList_LCA will already not matter.  any value initially set by OnToChild 
             int newChildIndex = 0;  //ToChild already handles this; does ToSiblings? 
             int currentChildIndex = _indexDisplayedChild;  //BECAUSE OF THE WAY CHILDREN ARE DISPLAYED & LOADED, I'M IN HELL
 
             if (_onToChildsBeganThisCoroutine || _childGOList == null || candidateFrom_NavToChild == null)  //<--- if this, then don't bother checking whether you're where you started; being back where you started is theoretically impossible
             {
-                internalConsensusGO_LCA = candidateFrom_NavToChild;  //
+                internalConsensusList_LCA = candidateFrom_NavToChild;  //why are you setting 
                 newChildIndex = 0;
             }  //OnToSiblings REQUIRES an initial value to start at, unless you want different conditions for a post-OnToChild scroll
             else if (!_onToChildsBeganThisCoroutine)
             {
-                if (originalSelGOWhenCoroutineStarted != internalConsensusGO_LCA)
+                if (originalSelGOWhenCoroutineStarted != internalConsensusList_LCA)  //this was originally meant to check whether the INDEXES matched.  somehow i ended up writing this around GOs instead, and including a local variable meant to represent a list on accident to boot.  well done.
                 {
-                    internalConsensusGO_LCA = GetPubSelection();
+                    internalConsensusList_LCA = _selecIndex.FindIndexedGOIn(listOfSiblings);
+
                     newChildIndex = currentChildIndex;  //If NavToChild has run at all, this will be 0.  if BabyCycle was erroneously running during coroutine, it may be some number beyond the index (babentimer has always been bad)
                 }
-                else LogGoob.WriteLine($"Stopped where we started, no need to load new child list", MessageType.Info);
+                else
+                {
+                    internalConsensusList_LCA = _selectedGOPublic;  //this essentially 
+                    LogGoob.WriteLine($"Stopped where we started, no need to load new child list", MessageType.Info);  //YOU STILL HAVE TO INTERNALLY DEFINE internalConsensusList_LCA DINGUS
+                }
             }
             else
                 throw new Exception("LoadChildrenAfter wack conditions");
 
-            _childGOList = internalConsensusGO_LCA.ListChildrenOrNull(); //This just threw a nullref; internalConsensusGO_LCA was null  //did it again
+            _childGOList = internalConsensusList_LCA.ListChildrenOrNull(); //internalConsensusList_LCA was null  //did it again
             _indexDisplayedChild = newChildIndex;  //newChildIndex exists specifically so _arbitraryChildIndex can be defined outside the brackets //ACTUALLY, ToCHILD SHOULD PROBABLY LEAVE THIS INDEX IN A MARKER STATE AND OH BOY HERE I GO LOOPING
             LogGoob.WriteLine($"LoadChildrenAfter ~465: set _childGOList to {_childGOList} & _indexDisplayedChild to {_indexDisplayedChild}");
 
-            var firstChildAtNewChildIndex = newChildIndex.FindIndexedGOIn(_childGOList);  //NavToChild can go all the way down to the bottom of the well, genius. //a nullref.  also this is all lagging to hell  //another nullref  
+            var firstChildAtNewChildIndex = newChildIndex.FindIndexedGOIn(_childGOList);  //NavToChild should go all the way down to the bottom of the well, genius. //a nullref.  also this is all lagging to hell  //another nullref  
 
             _onToChildsBeganThisCoroutine = false;
             _sgPropClass.RefreshScreen("SKIP", "SKIP", "SKIP", GOToStringOrElse(firstChildAtNewChildIndex), "SKIP");  //040623_1222: _childGOList[newChildIndex] got an OutOfRangeException from something //Another nullref from scrolling up fast, seems to make subsequent vertical scrolls no longer update the child list
                                                                                                                       //This has to run after either DelayLoadingOf.Children condition, so                          
-
+            StopCoroutine(timerChildrenPending);
+            timerChildrenPending = null;
             StopCoroutineStartBabies(ref timerChildrenPending);  //can confirm this corouttine wasn't stopping while the other one was, so i did this here too.
 
             //originalSelGOWhenCoroutineStarted shouldn't be null, because OnToChild shouldn't be able to run again if it started this timerChildrenPending, and I think NavToParent should be forbidden
             //GRAB WHICHEVER OBJECT THE OnToChild AND NavToSibling METHODS LAST SETTLED ON INTERNALLY (_toChildsToSibsInternalConsensusGO)
-            //GameObject internalConsensusGO_LCA = _candidateInternal_onToChilds;
+            //GameObject internalConsensusList_LCA = _candidateInternal_onToChilds;
             //CHECK IF IT WAS THE SAME AS THE ORIGINAL SELECTION (AUTOMATICALLY RULE OUT POSSIBILITY IF OnToChild WAS USED SUCCESSFULLY)
 
             //if (_currentSelInternal_onToChild == null)  //coroutine SHOULDN'T BE RUNNING
@@ -568,89 +592,139 @@ namespace ScaleGun420
             else if (multipleBabiesInList)
                 StartBabies();
             else if (timerLoadingSiblings != null || timerChildrenPending != null)
-                StopTheBabens();
+                StopCyclingChildren();
             else
                 LogGoob.Scream("BABY ERROR 498: WEIRD HAPPEN", MessageType.Info);
         }
         private void StartBabies()
         {
-            if (_babenCycleShouldRun == false)
+            if (timerBabyCycle != null)
             {
-                _babenCycleShouldRun = true;
-                if (timerBabyCycle == null)  //starts cycling through babies
-                { timerBabyCycle = StartCoroutine(CycleBabens(1)); }
-                else
-                { LogGoob.Scream("timingBabies are already born!"); }
+                LogGoob.Scream("timingBabies are already born!");
+                return;
+            }
+            else
+                timerBabyCycle = StartCoroutine(CycleBabens(1));                          //starts cycling through babies
+        }
+
+        private void FixedUpdate()
+        {
+
+        }
+
+        public bool AreNavCoroutinesRunning()
+        { return (timerLoadingSiblings != null || timerChildrenPending != null); }
+
+        public void StopCyclingChildren()
+        {
+            if (_babenCycleShouldRun == true)
+            {
+                _babenCycleShouldRun = false;
+            }
+            if (timerBabyCycle != null)
+            {
+                if (_babenCycleShouldRun == true)
+                {
+                    LogGoob.WriteLine("StopCyclingChildren ~670: _babenCycleShouldRun was true, so set it to false.");
+                    _babenCycleShouldRun = false;    //this will set _shouldBabens to false and deactivate the timingBabens coroutine when in edit mode
+                }
+                StopCoroutine(timerBabyCycle);  //routine is null?
+                timerBabyCycle = null;
+            }
+            else
+                LogGoob.WriteLine("StopCyclingChildren ~675: timerBabyCycle was already null.  Don't worry about it", MessageType.Info);
+            if (_babenCycleShouldRun == true)
+            {
+                _babenCycleShouldRun = false;
+                throw new Exception("StopCyclingChildren Incongruity: despite timerBabyCycle already being null, _babenCycleShouldRun was somehow true.");
             }
         }
 
-        public void CleanDeadCoroutines()
-        { }
-
-
+        private void DelayBabenCycle(float baseDelayTime = 0.2f, float timerToAddTo = 0f, string childFieldText = "SKIP")
+        {
+            _timeBeforeStartCycling += (baseDelayTime + timerToAddTo);
+            _babenCycleShouldRun = false;
+            _sgPropClass.RefreshScreen("SKIP", "SKIP", "SKIP", childFieldText, "SKIP");
+        }
 
         // INSTEAD OF RUNNING ENDLESSLY AND RISKING INPUTS OVERLAPPING THE BABENCYCLE,
         // MAYBE SAVE BUTTONPRESSES IN SOME KIND OF INPUT QUEUE
         //THAT DOESN'T GET READ UNTIL THE CURRENT BABEN LOOP IS DONE???
         //and the next baben loop doesn't happen until the input queue's been read/all related coroutines are done
-        public IEnumerator CycleBabens(int upDown, float time = 1f)  //should probably make sure other children exist first
+
+        //maybe also just put the checks inside this
+
+        private IEnumerator CycleBabens(int upDown, float time = 1f, float cycleInterruptTime = -4f, string newChildText = "")  //should probably make sure other children exist first
         {
-            if (!_babenCycleShouldRun)
-            {
-                LogGoob.Scream("The Babens are Revving their Engines in the Garage!!!!!");
-                yield break;
-            }
-            GameObject currentSelection = GetGOAtSelecIndexCheck();
-            string newChildText = "";
 
-            if (_childGOList == null)
+            WaitForSeconds waitForSeconds = new(time);
+            for (; ; )
             {
-                if (currentSelection.transform.childCount > 0)
-                { LogGoob.WriteLine("CycleBabens: _selGO_Children is null, despite GOFromSelectionIndex having at least 1 child", MessageType.Warning); }
-                else
-                { LogGoob.WriteLine("CycleBabens: _selGOChildren is null, and GOFromSelectionIndex has no children"); }
-                yield break;
-            }
-            else if (_childGOList.Count <= 1)
-            {
-                newChildText = $"{0.FindIndexedGOIn(_childGOList)}";
-                _sgPropClass.RefreshScreen("SKIP", "SKIP", "SKIP", newChildText, "SKIP");
-                yield break;
-            }
-            else for (; ; )
-                {
-                    if (_childGOList == null)
-                    { LogGoob.WriteLine("CycleBabens: coroutine was running while _selGO_Children was null.", MessageType.Warning); }
-                    else
-                    {
-                        List<GameObject> currentKidList = _childGOList;
-                        int currentChildIndex = _indexDisplayedChild;
-                        int nextChildIndex = currentChildIndex.AdjacentSibIndexIn(_childGOList, 1);  //maybe make lists a whole class component to attach to current index somehow?  idk if that's possible 
-                        _indexDisplayedChild = nextChildIndex;  //the above converts an index to a GO, then this line converts it back from a GO to an index.  hell hell nightmare nightmare scream scream
-
-                        GameObject newBaben = nextChildIndex.FindIndexedGOIn(currentKidList);
-                        newChildText = newBaben.name;
-                        _sgPropClass.RefreshScreen("SKIP", "SKIP", "SKIP", newChildText, "SKIP");
-                    }
+                if (_selectedGOPublic == null || _sgToolClass._isInEditMode || AreNavCoroutinesRunning())
                     yield return new WaitForSeconds(time);
+
+                if (!_babenCycleShouldRun)
+                {
+                    if (_timeBeforeStartCycling >= 0)
+                    {
+                        _timeBeforeStartCycling -= Time.deltaTime;   //WHY IN GOD'S NAME IS _timeLeftChildren STUCK ABOVE 0, THIS ISN'T JUST BECAUSE I DON'T _cancelTimerChildren ON UNEQUIP, IT'S HAPPENING WHILE EQUIPPED
+                        yield return null;
+                    }
+                    yield return new WaitForEndOfFrame();
+                    _babenCycleShouldRun = true;
                 }
-            //_sgPropClass.RefreshScreen("SKIP", "SKIP", "SKIP", newChildText, "SKIP");
+
+                var freshChildList = _childGOList;  //do i even need this if I'm no longer doing the thing
+                if (freshChildList == null)
+                {
+                    GameObject freshDad = _selectedGOPublic;
+                    // if (currentDadSelected != freshDad)  //this shouldn't be necessary unless something fails //yeh _selectedGOPublic is only used in checking the list
+                    // {
+                    //   currentDadSelected = freshDad;
+                    //   LogGoob.Scream("CycleBabens dadCheck ~695: updated currentDadSelected to new _selectedGOPublic.  I feel like this should be handled better but idfk", MessageType.Warning);
+                    // }
+                    if (freshDad.transform.childCount > 0)
+                    {
+                        freshChildList = freshDad.ListChildrenOrNull();
+                        _childGOList = freshChildList;  //INCLUDE METHODS ELSEWHERE IN CycleBabens TO ENSURE THE CHILD INDEX EXISTS
+                        LogGoob.Scream("CycleBabens ~695: Despite _selectedGOPublic's nonzero childCount, _childGOList was null; generating emergency childlist", MessageType.Error);
+                    }
+                    else yield return waitForSeconds;
+                }
+
+                int staleChildIndex = _indexDisplayedChild;
+                int currentChildCount = freshChildList.Count;
+                GameObject nominatedChild = null;
+                if (staleChildIndex <= currentChildCount)
+                {
+                    if (currentChildCount <= 1)
+                        yield return waitForSeconds;
+                    else
+                        nominatedChild = staleChildIndex.AdjacentSiblingIn(freshChildList, 1);
+                }
+                else
+                {
+                    int failsafeIndex = 0;
+                    staleChildIndex = failsafeIndex;
+                    nominatedChild = failsafeIndex.FindIndexedGOIn(freshChildList);
+                    LogGoob.WriteLine("CycleBabens ~710: _indexDisplayedChild was beyond _childGOList count; set to failsafe index 0; Fix this", MessageType.Error);
+                }
+                //maybe make lists a whole class component to attach to current index somehow?  idk if that's possible 
+
+                _indexDisplayedChild = nominatedChild.transform.GetSiblingIndex();  //the above converts an index to a GO, then this line converts it back from a GO to an index.  hell hell nightmare nightmare scream scream
+                newChildText = $"{nominatedChild}";
+
+                _sgPropClass.RefreshScreen("SKIP", "SKIP", "SKIP", newChildText, "SKIP");
+
+                yield return waitForSeconds;
+            }
+
         }
 
-        public void StopTheBabens()
-        {
-            if (_babenCycleShouldRun == true)
-            {
-                _babenCycleShouldRun = false;    //this will set _shouldBabens to false and deactivate the timingBabens coroutine when in edit mode
-                if (timerBabyCycle != null)
-                {
-                    StopCoroutine(timerBabyCycle);  //routine is null?
-                    timerBabyCycle = null;
-                }
-            }
-            else
-                LogGoob.WriteLine("StopTheBabens ~645: Run was already false; StopoTheBabens but also wtf.");
-        }
+        //_sgPropClass.RefreshScreen("SKIP", "SKIP", "SKIP", newChildText, "SKIP");
+
+
+
 
         /// <summary>
         /// Raycasts until collider, gets that's attached gameobject, plugs it all into the computer
@@ -684,7 +758,6 @@ namespace ScaleGun420
         }
         private void RefreshSGSelection(GameObject objectToInternalSelection, string parentField = "", string siblingAbove = "", string siblingBelow = "", string childField = "")
         {
-
             _selectedGOPublic = objectToInternalSelection;
             Transform parentTrnsfrmOfNewInternal = objectToInternalSelection.transform.parent;
 
@@ -710,6 +783,8 @@ namespace ScaleGun420
             //nullref????
             _sgPropClass.RefreshScreen(parentField, siblingAbove, siblingBelow, childField);
         } //should probably set these differently depending
+
+
 
         public void ClearTerminal()
         {
