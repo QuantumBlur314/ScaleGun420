@@ -24,9 +24,9 @@ namespace ScaleGun420
     {
         private ObservableCollection<GameObject> _observableCollectionTest;  //subscribe to the CollectionChanged event.  Event's arguments are NotifyCollectionChangedArgs.  Might be helpful idk
 
-        private bool _isLeavingEditMode = false;
+        public bool _isLeavingEditMode = false;
         public bool _isInEditMode = false;
-        private bool _isEditModeCentered = false;
+        public bool _isEditModeCentered = false;
 
         private Transform _camHoldTransform;
         private Transform _bodyHoldTransform;
@@ -39,6 +39,7 @@ namespace ScaleGun420
         private SgComputer _toolComputer;
         private TheEditMode _toolEditMode;
 
+        public static string _colliderFilter = "Collider";
 
         private void Awake()
         {
@@ -56,8 +57,10 @@ namespace ScaleGun420
                 //WHY IS IT GOING TO ZERO LOCAL ROTATION ON INITIAL EQUIP WTF
                 _bodyHoldTransform = Locator.GetPlayerBody().transform.GetChildComponentByName<Transform>("SG_HoldTransform_BODY");
                 _camHoldTransform = Locator.GetPlayerBody().transform.GetChildComponentByName<Transform>("SG_HoldTransform_CAMERA");
+
                 _holdTransform = _bodyHoldTransform;
                 _stowTransform = _foundToolToStealTransformsFrom._stowTransform;
+
                 _moveSpring = new DampedSpringQuat(50, 8.5f, 1);  //032823: no more stuttering, I'm my own tool now  //040323_1737: Note that since _moveSpring isn't a static field, this only tweaks ScalegunTool's _moveSpring
                 _moveSpringPosition = new DampedSpring3D(50, 8.5f, 1);
 
@@ -79,19 +82,30 @@ namespace ScaleGun420
 
         public override void UnequipTool()          //CALLED BY ToolModeSwapper.EquipToolMode(ToolMode toolMode), which is itself called by ToolModeSwapper.Update
         {
-            LogGoob.WriteLine("ScalegunToolClass UnequipTool: Ran UnequipTool");
             base.UnequipTool();   //Do I have to put this first?
-            _toolComputer.StopTheBabens();  //this probably can't run/the rest of UnequipTool can't finish until _toolComputer is active
+            _toolComputer.StopCyclingChildren();  //this probably can't run/the rest of UnequipTool can't finish until _toolComputer is active
             LeaveEditMode();
             _toolComputer.ClearTerminal();
             this._sgPropClass.OnUnequipTool();
-            if (_toolComputer.timerLoadingChildren != null || _toolComputer.siblingTimerCoroutine != null)
-            { LogGoob.WriteLine("While Unequipping, one of the timers wasn't null.  Should probably _cancelTimer on those (coroutine breaks already reset value, but i never use _cancelTimer idfk))", MessageType.Error); }
+            if (_toolComputer.timerChildrenPending != null || _toolComputer.timerLoadingSiblings != null)
+            {
+                _toolComputer._cancelLoadChildren = true; _toolComputer._cancelLoadSiblings = true;
+                LogGoob.WriteLine("ScalegunToolClass UnequipTool: one of the _toolComputer loading timers wasn't null.  Canceled them here, but consider a SgComputer public method for handling its powerdown, instead of this mess in ToolClass.UnequipTool)", MessageType.Info);
+            }
             _toolComputer.enabled = false;
             //base.UnequipTool SETS _isPuttingAway TO TRUE, THEN PlayerTool.Update APPLIES THE STOWTRANSFORMS THEN SETS base.enabled = false ONCE DONE ANIMATING
         }
+
+
+        /// <summary>
+        /// I MIGHT STRAIGHT-UP SWAP WHICH THING IS CONSIDERED "EDITMODE" AND WHICH THING IS CONSIDERED ANYTHING ELSE; MIGHT HAVE IT START IN YOUR FACE FOR SELECTING STUFF IDK;
+        /// 
+        /// Navigation still occurs while it's at your side?  actual clickable interface while it's up IN your face?  idfk
+        /// </summary>
         public void EnterEditMode()
         {
+            if (!_toolComputer.CanEnterEditMode())
+                return;
             if (!this._isInEditMode)
             {
                 this._isInEditMode = true;
@@ -101,6 +115,8 @@ namespace ScaleGun420
                 this.transform.parent = _camHoldTransform.transform;   //THE TOOL IS DUPLICATING (THUS DOUBLING) THE HoldTransformGO's TRANSFORM AS ITS _holdTransform.  THIS ISN'T OPTIMAL BUT YOU ALREADY ORIENTED IT IDFK WELL DONE I GUESS
                 _holdTransform = _camHoldTransform.transform;  //Oh wait, literally just don't make the transforms their parent, just make them a reference 
 
+                _toolComputer.StopCyclingChildren();
+                _toolEditMode.BeginEditing();   //try just enabling it here, then giving the edit mode an OnEnable
                 // if (this.HasEquipAnimation())
                 //{
                 //    base.transform.localRotation = this._stowTransform.localRotation;
@@ -125,9 +141,9 @@ namespace ScaleGun420
             }
         }
 
-
         private void ToolToModeHoldTransforms(Transform setNewParent, Transform setHoldTransform, Transform setStowTransform)
-        { transform.parent = setNewParent;
+        {
+            transform.parent = setNewParent;
             _holdTransform = setHoldTransform;
             _stowTransform = setStowTransform;
         }
@@ -135,10 +151,7 @@ namespace ScaleGun420
         //Does injecting a field into a parameter only set the parameter's initial value, or does it check the field every time the parameter's used in the method?  If _selectedObject changes between when this coroutine starts and when the timer runs out, will it use the CURRENT _selectedObject, or will it have the value _selectedObject had when the coroutine started?
         //040523_1749: Corby confirms it's just like setting a var - it's a one-time copying of the field's value at that moment, and doesn't update.
 
-
-        //What about other possible conditions of _selGO_Siblings than "null" or "equal to Child List"?  they're unaccounted for
-
-
+        //What about other possible conditions of _siblingsOfSelGO than "null" or "equal to Child List"?  they're unaccounted for
 
         public override void Update()
         {
@@ -153,38 +166,35 @@ namespace ScaleGun420
             if (_vanillaSwapper.IsInToolMode(SGToolmode) && OWInput.IsInputMode(InputMode.Character))
             {
                 if (OWInput.IsNewlyPressed(InputLibrary.freeLook, InputMode.Character))  //Maybe don't restrict holding it up to your face, pointlessly raise the skill ceiling for dweebs who wanna practice blind-nav'ing Hierarchies because that's funny.
-                {
                     if (!_isInEditMode)
-                    {
-                        _toolComputer.StopTheBabens();
                         EnterEditMode();
-                    }
-                    else { LeaveEditMode(); }
-                }
+                    else
+                        LeaveEditMode();
 
                 if (!_isInEditMode)
                 {
                     if (OWInput.IsNewlyPressed(InputLibrary.toolActionPrimary))   //031823_1505: Changed a bunch of stuff to __instance for cleanliness; may or may not bork things //031823_1525: Okay so apparently that made it start nullreffing? //REBUILDING IS FAILING, THANKS MICROSOFT.NET FRAMEWORK BUG
                     {
                         _toolComputer.EyesDrillHoles();
-                        Locator.GetPlayerBody().GetComponentInChildren<ProbeLauncherEffects>().PlayLaunchClip(false);
-                    }
 
-                    if (_toolComputer._selectedObject == null)
-                    { return; }
+                    }
+                    if (_toolComputer._selectedGOPublic == null)  //if the _selectedGOPublic is null, this is where I want the whack mode to work
+                        return;
 
                     if (ToParent)
-                    { _toolComputer.OnToParent(); }
+                        _toolComputer.NavToParent();
                     else if (ToChilds)  //Selected Object Text doesn't update for some reason?????????    //NEED LIST OF CHILDREN IN ORDER TO SCROLL FURTHER; Coroutines inevitable
-                    { _toolComputer.OnToChilds(); }
+                        _toolComputer.NavToChild();
                     //don't start a coroutine every damn time you press the button
                     else if (UpSibling)            //032223_1747: nullref???  //032323_1753: Setting the Bubbon bools static in Modbehavior lets me not need to do .Instance (with help from the Using: above) //040323_1423: learning this was a mistake
-                    { _toolComputer.ToSiblingInDirection(1); }//STILL SCROLLS IN EditMode!!!! BAD!!!!
+                        _toolComputer.NavToSibling(1);//STILL SCROLLS IN EditMode!!!! BAD!!!!
                     else if (DownSibling)
-                    { _toolComputer.ToSiblingInDirection(-1); }
+                        _toolComputer.NavToSibling(-1);
                 }
                 else if (_isInEditMode)
                 {
+                    if (OWInput.IsPressed(InputLibrary.toolActionPrimary))
+                    { }
 
                 }
             }
