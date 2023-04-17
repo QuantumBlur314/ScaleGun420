@@ -22,6 +22,8 @@ namespace ScaleGun420
 
         public GameObject _GO_ScalegunStaff;
         public GameObject _beamsJohnson;
+        private GameObject _theCursor;
+
 
         public GameObject GO_THCanvas;
         public Canvas _thCanvas;
@@ -78,14 +80,15 @@ namespace ScaleGun420
             //placeholderGO.SetActive(false);
 
 
-            var cursorGO = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cursorGO.name = "Cursor_SG";
-            cursorGO.GetComponentInChildren<BoxCollider>().enabled = false;
+            _theCursor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            _theCursor.name = "Cursor_SG";
+            _theCursor.GetComponentInChildren<BoxCollider>().enabled = false;
             //var brother = placeholderGO.GetCollisionGroup()._colliders ;
-            cursorGO.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
-            cursorGO.transform.parent = _GO_sgTool.transform;
-            cursorGO.transform.localPosition = _GO_sgTool.transform.localPosition;
-            cursorGO.transform.localEulerAngles = _GO_sgTool.transform.localEulerAngles;
+            _theCursor.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
+            _theCursor.transform.parent = _GO_sgTool.transform;
+            _theCursor.transform.localPosition = _GO_sgTool.transform.localPosition;
+            _theCursor.transform.localEulerAngles = _GO_sgTool.transform.localEulerAngles;
+            _theCursor.AddComponent<BeamsAKATrails>();
             //cursorGO.SetActive(false);
 
             DupeTranslatorCanvasGO();
@@ -202,15 +205,16 @@ namespace ScaleGun420
         private void SpawnBeamOrigin()
         {
             _beamsJohnson = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            _beamsJohnson.name = "SG_BeamOrigin";
+            _beamsJohnson.name = "BeamOrigin_SG";
             _beamsJohnson.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
             _beamsJohnson.transform.parent = _GO_ScalegunStaff.transform;
             _beamsJohnson.transform.localPosition = new Vector3(0f, 2f, 0.0005f);
             _beamsJohnson.transform.localEulerAngles = default;
-            _beamsJohnson.AddComponent<BeamsAKATrails>();
+
         }
         private void SpawnLineRenderers()
         {
+
             GameObject beamMatGO = GameObject.Find("Ship_Body/Module_Cabin/Systems_Cabin/Hatch/TractorBeam/BeamVolume/BeamParticles");
             if (beamMatGO == null)
                 return;
@@ -219,13 +223,13 @@ namespace ScaleGun420
             for (int i = 0; i < 6; i++)
             {
                 string beamName = $"SGBeam{i}";
-                GameObject beamObject = _beamsJohnson.GivesBirthTo(beamName, true);
+                GameObject beamObject = _theCursor.GivesBirthTo(beamName, true);
 
                 LineRenderer lineRenderer = beamObject.AddComponent<LineRenderer>();
                 lineRenderer.startColor = Color.blue;
                 lineRenderer.startWidth = 1;
-                lineRenderer.SetPosition(0, Vector3.zero);
-                lineRenderer.SetPosition(1, Vector3.one);
+                lineRenderer.SetPosition(0, _theCursor.transform.position);
+                lineRenderer.SetPosition(1, _beamsJohnson.transform.position);
                 lineRenderer.material = beamMat;  //value cannot be null
             }
 

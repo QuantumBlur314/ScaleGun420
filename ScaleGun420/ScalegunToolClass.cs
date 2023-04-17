@@ -95,6 +95,13 @@ namespace ScaleGun420
             _toolComputer.enabled = false;
             //base.UnequipTool SETS _isPuttingAway TO TRUE, THEN PlayerTool.Update APPLIES THE STOWTRANSFORMS THEN SETS base.enabled = false ONCE DONE ANIMATING
         }
+
+
+        /// <summary>
+        /// I MIGHT STRAIGHT-UP SWAP WHICH THING IS CONSIDERED "EDITMODE" AND WHICH THING IS CONSIDERED ANYTHING ELSE; MIGHT HAVE IT START IN YOUR FACE FOR SELECTING STUFF IDK;
+        /// 
+        /// Navigation still occurs while it's at your side?  actual clickable interface while it's up IN your face?  idfk
+        /// </summary>
         public void EnterEditMode()
         {
             if (!_toolComputer.CanEnterEditMode())
@@ -109,7 +116,7 @@ namespace ScaleGun420
                 _holdTransform = _camHoldTransform.transform;  //Oh wait, literally just don't make the transforms their parent, just make them a reference 
 
                 _toolComputer.StopCyclingChildren();
-                _toolEditMode.BeginEditing();
+                _toolEditMode.BeginEditing();   //try just enabling it here, then giving the edit mode an OnEnable
                 // if (this.HasEquipAnimation())
                 //{
                 //    base.transform.localRotation = this._stowTransform.localRotation;

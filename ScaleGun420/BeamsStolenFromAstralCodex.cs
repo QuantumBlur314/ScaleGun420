@@ -1,102 +1,184 @@
-﻿using System;
+﻿using Steamworks;
+using System;
 using System.Collections.Generic;
+using System.EnterpriseServices;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using static UnityEngine.GraphicsBuffer;
 
 namespace ScaleGun420
 {
 
     class BeamsAKATrails : MonoBehaviour
     {
-        public static bool visible = false;
+        //private static bool visible = false;
 
-        public List<List<Transform>> targets;
+        private GameObject _cursorSG;
+        private List<Vector3> cursorCorners;
         public List<List<string>> targetPaths;
         public List<LineRenderer> trails;
         Material trailMat;
         float widthMultiplier;
-        
+        private Transform _sgCursorTransform;
+        private Transform _sgBeamOriginTransform;
+        private GameObject _sgBeamOrigin;
+        private float updateTimerTick = 0f;
+
+        private const float N = -0.5f;
+        private const float P = 0.5f;
+
         MeshRenderer darkBrambleCloakSphereRenderer;
 
         private void Awake()
-        { }
+        {
+            _cursorSG = GameObject.Find("Cursor_SG");
+            _sgBeamOrigin = GameObject.Find("BeamOrigin_SG");
+            _sgCursorTransform = _cursorSG.transform;
+            _sgBeamOriginTransform = transform.GetChildComponentByName<Transform>("BeamOrigin_SG");
+
+        }
+
+        private enum CornerTransform
+        {
+            UpBackLeft = 0,
+            UpForeLeft = 1,
+            UpForeRight = 2,
+            DownForeRight = 3,
+            DownBackRight = 4,
+            DownBackLeft = 5,
+        }
+
         public virtual void Start()
         {
-            visible = false;
-            //Get QM
-            
-            //Get trails
             trails = GetComponentsInChildren<LineRenderer>(true).ToList();
-            if (trails.Count == 0) LogGoob.WriteLine("NO TRAILS FOUND", OWML.Common.MessageType.Error);
-            widthMultiplier = trails[0].widthMultiplier;
-            //Get targets
-            targets = new List<List<Transform>>();
+            cursorCorners = new List<Vector3>();
+            for (int i = 0; i < 6; i++)
+            { cursorCorners.Add(new Vector3(0, 0, 0)); }
+            widthMultiplier = 0.5f;
+        }
+        private void RecommendedVectors()
+        {
+            Vector3 Start = transform.position;
+            Vector3 End = transform.worldToLocalMatrix.MultiplyPoint(_sgCursorTransform.position);
+        }
 
-            //string cursorTarget = GameObject.Find("Cursor_SG")
-            var cursorTargetListSolo = new List<string> { "Cursor_SG" };
-            targetPaths.Add(cursorTargetListSolo);
+        private void EnumeratedSetCorners(Transform theOrigin, int theBeamInt)  //this is illegibile but it does the joj
+        {
+            float xOff;
+            float yOff;
+            float zOff;
 
-            if (targetPaths == null) LogGoob.WriteLine("NO TARGET PATHS", OWML.Common.MessageType.Error);
-            
-   
-            
-            foreach (List<string> pathList in targetPaths)
-            {
-                List<Transform> pathTargets = new List<Transform>();
-                foreach (string path in pathList)
-                {
-                    GameObject go = GameObject.Find(path);
-                    if (go != null)
-                        pathTargets.Add(go.transform);
-                    else
-                        LogGoob.WriteLine("FAILED TO FIND TRAIL TARGET " + path, OWML.Common.MessageType.Error);
-                }
-                targets.Add(pathTargets);
-            }
-            //Get material
-            GameObject trailMatGO = GameObject.Find("Ship_Body/Module_Cabin/Systems_Cabin/Hatch/TractorBeam/BeamVolume/BeamParticles");
-            if (trailMatGO != null)
-                trailMat = trailMatGO.GetComponent<ParticleSystemRenderer>().material;
+            if (theBeamInt == 0 || theBeamInt == 1 || theBeamInt == 5)
+                xOff = P;
+            else xOff = N;
+
+            if (theBeamInt == 0 || theBeamInt == 1 || theBeamInt == 2)
+                yOff = P;
+            else yOff = N;
+
+            if (theBeamInt == 1 || theBeamInt == 2 || theBeamInt == 3)
+                zOff = P;
+            else zOff = N;
+
+            cursorCorners[theBeamInt] = theOrigin.TransformPoint(xOff, yOff, zOff);
+        }
+
+        private void OffsetCornersTransformPoints(GameObject theTarget)
+        {
+            Transform theOrigin = theTarget.transform;
+
+            cursorCorners[0] = theOrigin.TransformPoint(P, P, N);
+            cursorCorners[1] = theOrigin.TransformPoint(P, P, P);
+            cursorCorners[2] = theOrigin.TransformPoint(N, P, P);
+            cursorCorners[3] = theOrigin.TransformPoint(N, N, P);
+            cursorCorners[4] = theOrigin.TransformPoint(N, N, N);
+            cursorCorners[5] = theOrigin.TransformPoint(P, N, N);
+        }
+
+        private void SetVectorsV2(Vector3 theBeast = default)
+        {
+            theBeast = _cursorSG.transform.localPosition;   //_cursorSG.transform.localToWorldMatrix.MultiplyPoint(Vector3.one);  //_sgBeamOriginTransform.worldToLocalMatrix.MultiplyPoint(_cursorSG.transform.position);
+            cursorCorners[0] = MakeVector(theBeast, P, P, N);  //just use transformPoint
+            cursorCorners[1] = MakeVector(theBeast, P, P, P);
+            cursorCorners[2] = MakeVector(theBeast, N, P, P);
+            cursorCorners[3] = MakeVector(theBeast, N, N, P);
+            cursorCorners[4] = MakeVector(theBeast, N, N, N);
+            cursorCorners[5] = MakeVector(theBeast, P, N, N);
+        }
+        private void Update()
+        {
+            if (_cursorSG.transform == null) //not running augh
+                return;
+            if (updateTimerTick < 10f)
+                updateTimerTick += 0.1f;
             else
-                LogGoob.WriteLine("FAILED TO FIND TRAIL MATERIAL", OWML.Common.MessageType.Error);
-            trailMat.color = new Color(trailMat.color.r, trailMat.color.g, trailMat.color.b, 3f);
-            //Initial configuration
-            for (int i = 0; i < trails.Count && i < targets.Count; i++)
             {
-                trails[i].gameObject.name = targets[i][0].name;
-                trails[i].material = trailMat;
+                LogGoob.WriteLine("Beams Update ticking nicely", OWML.Common.MessageType.Info);
+                updateTimerTick = 0f;
+            }
+            //OffsetCornersTransformPoints(_cursorSG);
+            Transform currentCursorLocation = _cursorSG.transform;
+            for (int i = 0; i < trails.Count; i++)
+            {
+                EnumeratedSetCorners(currentCursorLocation, i);
+                trails[i].SetPosition(0, cursorCorners[i]);//
+                trails[i].SetPosition(1, _sgBeamOrigin.transform.position);
+                trails[i].widthMultiplier = Mathf.Min(widthMultiplier, Vector3.Distance(trails[i].GetPosition(1), transform.position) / 250);
             }
         }
 
-        public virtual void Update()
-        { }
-
-        private void OldUpdate()
+        private Vector3 MakeVector(Vector3 theMonster, float X, float Y, float Z)
         {
-            //Ensure targets remain accurate
-            if (visible == true)
-            {
-                for (int i = 0; i < trails.Count && i < targets.Count; i++)  //for 
-                {
-                    bool validTarget = false;
-                    for (int j = 0; j < targets[i].Count; j++)
-                    {
-                        if (targets[i][j] == null || !targets[i][j].gameObject.activeInHierarchy || (targets[i][j].transform.root.gameObject.name.Substring(0, 3) == "DB_" && darkBrambleCloakSphereRenderer.enabled == false))
-                            continue;
+            return new Vector3(theMonster.x + X, theMonster.y + Y, theMonster.z + Z);
+        }
 
-                        trails[i].SetPosition(0, transform.position);
-                        trails[i].SetPosition(3, targets[i][j].position + targets[i][j].up * 1.5f);
-                        trails[i].SetPosition(1, Vector3.Lerp(trails[i].GetPosition(0), trails[i].GetPosition(3), 0.1f));
-                        trails[i].SetPosition(2, Vector3.Lerp(trails[i].GetPosition(0), trails[i].GetPosition(3), 0.89f));
-                        trails[i].widthMultiplier = Mathf.Min(widthMultiplier, Vector3.Distance(trails[i].GetPosition(3), transform.position) / 250);
-                        validTarget = true;
-                        break;
-                    }
-                    trails[i].gameObject.SetActive(validTarget);
-                }
-            }
+
+
+
+        private void SetTheWretchedValues()
+        {
+            Vector3 theBeast = _sgBeamOrigin.transform.worldToLocalMatrix.MultiplyPoint(_cursorSG.transform.position); //_cursorSG.transform.localToWorldMatrix.MultiplyPoint(Vector3.one); 
+
+            cursorCorners[0] = MakeVector(theBeast, P, P, N);  //just use TransformPoint
+            cursorCorners[1] = MakeVector(theBeast, P, P, P);
+            cursorCorners[2] = MakeVector(theBeast, N, P, P);
+            cursorCorners[3] = MakeVector(theBeast, N, N, P);
+            cursorCorners[4] = MakeVector(theBeast, N, N, N);
+            cursorCorners[5] = MakeVector(theBeast, P, N, N);
+        }
+
+        private void FuxedUpdateShhh()
+        {
+            if (_cursorSG.transform == null)
+                return;
+            SetTheWretchedValues();
+            foreach (LineRenderer trail in trails)
+                trail.SetPosition(0, transform.position);
+
+            int randomIndex = UnityEngine.Random.Range(0, trails.Count);
+            var booty = trails[randomIndex];
+
+
+            booty.SetPosition(1, cursorCorners[randomIndex]);
+            booty.widthMultiplier = Mathf.Min(widthMultiplier, Vector3.Distance(booty.GetPosition(1), transform.position) / 250);
+        }
+
+
+
+
+
+
+        private void WeirdUpdate()
+        {
+            //Calculate new postion 
+            ///  Vector3 newBeginPos = transform.localToWorldMatrix * new Vector4(beginPos.x, beginPos.y, beginPos.z, 1);
+            /// Vector3 newEndPos = transform.localToWorldMatrix * new Vector4(endPos.x, endPos.y, endPos.z, 1);
+
+            //Apply new position
+            /// diagLine.SetPosition(0, newBeginPos);
+            /// diagLine.SetPosition(1, newEndPos);
         }
     }
 }

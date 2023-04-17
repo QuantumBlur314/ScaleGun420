@@ -118,7 +118,7 @@ namespace ScaleGun420
             return true;
         }
 
-        private void SetPubSelGOFieldPlusIndexOption(GameObject setToThis, bool updateSelGOIndexToo = true)
+        private void SetPubSelGOFieldAs(GameObject setToThis, bool updateSelGOIndexToo = true)
         {
             _selectedGOPublic = setToThis;
             if (updateSelGOIndexToo)
@@ -142,7 +142,7 @@ namespace ScaleGun420
 
         private bool AreSiblingsLoaded()
         { return _siblingsOfSelGO != null; }
-        private GameObject GetPubSelection()
+        public GameObject GetPubSelection()
         { return _selectedGOPublic; }
 
 
@@ -169,7 +169,15 @@ namespace ScaleGun420
 
 
 
+        // if (timesScrolledToSiblings <= 0 && staleSelectionThisPress == null)
+        // originalGOThisPress = GetPubSelection();
+        // else if (timesScrolledToSiblings >= 1 && staleSelectionThisPress != null)
+        //  originalGOThisPress = GetPubSelection();
+        //  else
+        // throw new Exception($"OnToParent 145ish: Unaccounted-for scrollstate, setting originalGOThisPress from GetPubSelection().  {_hasScrolledToParentXTimes}, {staleSelectionThisPress}");
+        //now no longer dumb, but very messy  //now no longer messy
 
+        //you should probably nullcheck this you dingus
 
         /// <summary>
         /// LEAVES A TRAIL OF CHILD INDEX
@@ -182,28 +190,10 @@ namespace ScaleGun420
                 LogGoob.Scream("sorry, loading; try it now");
                 return;
             }
-            GameObject existingInternalSelection = _selectedGOPublic; ///_freshSelInternal_OnToParent;  //where does this get set?  //screw this
-            GameObject originalGOThisPress = _selectedGOPublic;
+            GameObject staleSelectionThisPress = _selectedGOPublic; ///_freshSelInternal_OnToParent;  //where does this get set?  //screw this
+            Transform originalParentTransformThisPress = staleSelectionThisPress.transform.parent;  //maybe just an extension that slaps another .transform.parent.gameObject to the end of the previous, for however many times you press Up?  sounds easier
 
-            int unchangedSelIndexForChildField = _selecIndex;
-            int actualSelIndex = originalGOThisPress.transform.GetSiblingIndex();
-            if (unchangedSelIndexForChildField != actualSelIndex)
-            {
-                _selecIndex = actualSelIndex;
-                throw new Exception("NavToParent: _selecIndex doesn't match current _selectedGOPublic sibling index!!! set to correct one for next press but wtf, should've set it right elsewhere");
-            }
             int timesScrolledToParent = _hasScrolledToParentXTimes;
-
-            // if (timesScrolledToSiblings <= 0 && existingInternalSelection == null)
-            // originalGOThisPress = GetPubSelection();
-            // else if (timesScrolledToSiblings >= 1 && existingInternalSelection != null)
-            //  originalGOThisPress = GetPubSelection();
-            //  else
-            // throw new Exception($"OnToParent 145ish: Unaccounted-for scrollstate, setting originalGOThisPress from GetPubSelection().  {_hasScrolledToParentXTimes}, {existingInternalSelection}");
-            //now no longer dumb, but very messy  //now no longer messy
-
-            //you should probably nullcheck this you dingus
-            Transform originalParentTransformThisPress = originalGOThisPress.transform.parent;  //maybe just an extension that slaps another .transform.parent.gameObject to the end of the previous, for however many times you press Up?  sounds easier
 
             if (originalParentTransformThisPress != null)
             {
@@ -252,20 +242,25 @@ namespace ScaleGun420
                 else throw new Exception($"NavToParent: unaccounted-for Safe scroll conditions, idk,  scrolled {_hasScrolledToParentXTimes} times, had {_timeBeforeSiblingsLoad} seconds left, and the coroutine is {timerLoadingSiblings}.  AreSiblingsLoaded is {AreSiblingsLoaded()}");
 
                 //_indexDisplayedChild = 0;  //shouldn't this always be the index of the old selected?  why am i setting it to 0 here?
+                int staleSelIndex = _selecIndex;
+                int actualStaleSelIndex = staleSelectionThisPress.transform.GetSiblingIndex();
+                if (staleSelIndex != actualStaleSelIndex)
+                {
+                    _selecIndex = actualStaleSelIndex;
+                    throw new Exception("NavToParent: _selecIndex doesn't match current _selectedGOPublic sibling index!!! set to correct one for next press but wtf, should've set it right elsewhere");
+                }
+                SetPubSelGOFieldAs(originalParentThisPress, true);
+                _indexDisplayedChild = actualStaleSelIndex;
 
-                GameObject newSelectionAfterPress = originalParentThisPress;
-                SetPubSelGOFieldPlusIndexOption(newSelectionAfterPress, true);
-
-                int freshChildIndex_NTPInternal = unchangedSelIndexForChildField; //And now we can tell it to select the one we were on, possibly needless but if Babens start Cycling somehow, it'll be happy
-                _indexDisplayedChild = freshChildIndex_NTPInternal;
+                //And now we can tell it to select the one we were on, possibly needless but if Babens start Cycling somehow, it'll be happy
 
                 string newParentTxtCandidate = "firmament.ax15";
-                string newSelection = $"{newSelectionAfterPress}";  //nullcheck already exists 
-                string newChild = GOToStringOrElse(originalGOThisPress, "ERROR");  //should never be null
+                //string newSelection = $"{newSelectionAfterPress}";  //nullcheck already exists 
+                string newChild = $"{staleSelectionThisPress}";  //should never be null
                 if (firstGrandparentTransform != null)
                     newParentTxtCandidate = GOToStringOrElse(firstGrandparentTransform.gameObject, "wtf");
 
-                _sgPropClass.RefreshScreen(newParentTxtCandidate, upperSibling, lowerSibling, newChild, newSelection);
+                _sgPropClass.RefreshScreen(newParentTxtCandidate, upperSibling, lowerSibling, newChild);
             }
             else
             {
@@ -305,15 +300,15 @@ namespace ScaleGun420
 
             string upperSibling = "";
             string lowerSibling = "";
-            GameObject internalStoredSelection = _selectedGOPublic;
+            GameObject selectionInternal = _selectedGOPublic;
 
             if (_hasScrolledToParentXTimes >= 2)
-                _childGOList = internalStoredSelection.ListChildrenOrNull();  //for the record, ToParent should ALWAYS generate a child list; if it goes blank exclusively from scrolling ToPArents, then something broke
+                _childGOList = selectionInternal.ListChildrenOrNull();  //for the record, ToParent should ALWAYS generate a child list; if it goes blank exclusively from scrolling ToPArents, then something broke
 
-            int newSelIndex = internalStoredSelection.transform.GetSiblingIndex();  //Now handled by SetPubSelGOFieldPlusIndexOption()'s default parameters //nvm 
+            int newSelIndex = selectionInternal.transform.GetSiblingIndex();  //Now handled by SetPubSelGOFieldAs()'s default parameters //nvm 
             _selecIndex = newSelIndex;
 
-            List<GameObject> newSiblingsList = internalStoredSelection.GetAllSiblings();
+            List<GameObject> newSiblingsList = selectionInternal.GetAllSiblings();
             _siblingsOfSelGO = newSiblingsList;
 
             if (newSiblingsList.Count > 1)
@@ -325,7 +320,7 @@ namespace ScaleGun420
 
             _hasScrolledToParentXTimes = 0;
 
-            SetPubSelGOFieldPlusIndexOption(internalStoredSelection, false);
+            SetPubSelGOFieldAs(selectionInternal, false);
             _sgPropClass.RefreshScreen("SKIP", lowerSibling, upperSibling, "SKIP");
             StopCoroutine(timerLoadingSiblings);
             timerLoadingSiblings = null;
@@ -360,6 +355,8 @@ namespace ScaleGun420
         //or perchance a dog
 
         //UNDER CONSTRUCTION: true
+
+
         public void NavToChild() //Add condition for scrolling to very bottom of the well
         {
             //AN UPDATE:   USING THE LoadChildrenAfter COROUTINE IS NEEDLESSLY SLOW AND HAS TO RUN A COROUTINE EVERY TIME; this should have its own coroutine to wait until done scrolling down before it loads ALL OTHER HIERARCHIES i guess
@@ -384,7 +381,7 @@ namespace ScaleGun420
             _selecIndex = kidIndexAtPress;
 
             FlushChildListPlusIndex(true);
-            SetPubSelGOFieldPlusIndexOption(newCandidateFromChild); //PENDING
+            SetPubSelGOFieldAs(newCandidateFromChild); //PENDING
 
             string siblingAbove = "";
             string siblingBelow = "";
@@ -409,7 +406,7 @@ namespace ScaleGun420
 
 
 
-        //SetPubSelGOFieldPlusIndexOption(_currentSelInternal_onToChild);  //OnToChild SHOULDN'T EVEN START IF NO CHILD EXISTs;DO I NEED THIS INTERNAL VALUE FOR NavToSibling?!
+        //SetPubSelGOFieldAs(_currentSelInternal_onToChild);  //OnToChild SHOULDN'T EVEN START IF NO CHILD EXISTs;DO I NEED THIS INTERNAL VALUE FOR NavToSibling?!
 
         //WHAT DO YOU MEAN GetChild() BY INDEX ALREADY EXISTS
         //Really wanna make _selectedObject local but The Brain Wall, The Bricks
@@ -462,8 +459,8 @@ namespace ScaleGun420
             yield return new WaitForEndOfFrame();
 
             List<GameObject> listOfSiblings = _siblingsOfSelGO;
-            GameObject candidateFrom_NavToChild = _candidateInternal_onToChilds;
-            GameObject internalConsensusList_LCA = null;  //if this is here, it means the internalConsensusList_LCA will already not matter.  any value initially set by OnToChild 
+            GameObject candidateFrom_NavToChild = _selectedGOPublic;  //this consensus thing is stupid, die
+            GameObject internalConsensusList_LCA = _selectedGOPublic;  //if this is here, it means the internalConsensusList_LCA will already not matter.  any value initially set by OnToChild 
             int newChildIndex = 0;  //ToChild already handles this; does ToSiblings? 
             int currentChildIndex = _indexDisplayedChild;  //BECAUSE OF THE WAY CHILDREN ARE DISPLAYED & LOADED, I'M IN HELL
 
@@ -487,13 +484,13 @@ namespace ScaleGun420
                 }
             }
             else
-                throw new Exception("LoadChildrenAfter wack conditions");
+                throw new Exception($"LoadChildrenAfter wack conditions.  _childGOList is {_childGOList},  ");  //nullref
 
-            _childGOList = internalConsensusList_LCA.ListChildrenOrNull(); //internalConsensusList_LCA was null  //did it again
+            _childGOList = internalConsensusList_LCA.ListChildrenOrNull(); //internalConsensusList_LCA was null  //did it again  //and again
             _indexDisplayedChild = newChildIndex;  //newChildIndex exists specifically so _arbitraryChildIndex can be defined outside the brackets //ACTUALLY, ToCHILD SHOULD PROBABLY LEAVE THIS INDEX IN A MARKER STATE AND OH BOY HERE I GO LOOPING
             LogGoob.WriteLine($"LoadChildrenAfter ~465: set _childGOList to {_childGOList} & _indexDisplayedChild to {_indexDisplayedChild}");
 
-            var firstChildAtNewChildIndex = newChildIndex.FindIndexedGOIn(_childGOList);  //NavToChild should go all the way down to the bottom of the well, genius. //a nullref.  also this is all lagging to hell  //another nullref  
+            var firstChildAtNewChildIndex = newChildIndex.FindIndexedGOIn(_childGOList);  //SHOULD PROBABLY MAKE UNEQUIPPING CANCEL ALL CURRENT//NavToChild should go all the way down to the bottom of the well, genius. //a nullref.  also this is all lagging to hell  //another nullref    //anotha one
 
             _onToChildsBeganThisCoroutine = false;
             _sgPropClass.RefreshScreen("SKIP", "SKIP", "SKIP", GOToStringOrElse(firstChildAtNewChildIndex), "SKIP");  //040623_1222: _childGOList[newChildIndex] got an OutOfRangeException from something //Another nullref from scrolling up fast, seems to make subsequent vertical scrolls no longer update the child list
@@ -533,6 +530,7 @@ namespace ScaleGun420
         /// 
         /// 
         /// </summary>
+        /// AFTER A SINGLE SIBLING SCROLL, NavToParent BREAKS.  WHY
 
         public void NavToSibling(int direction = 1)   //could probably microOptimize by splitting it up again and having different conditions using some weird hidden tags depending on whether a field was generated fresh or from prevSel, but no fuck you
         {
@@ -554,7 +552,7 @@ namespace ScaleGun420
             GameObject coolNewSelection = oldNewPriorIndex.AdjacentSiblingIn(listOfSiblings, direction);
             GameObject upcomingSibling = coolNewSelection.AdjacentSiblingOfGOIn(listOfSiblings, direction);             //_selectedObject = brandSelectionGO;  //disabled on a hunch aka mercy
 
-            SetPubSelGOFieldPlusIndexOption(coolNewSelection, true);
+            SetPubSelGOFieldAs(coolNewSelection, true);
 
             string newSelectionText = GOToStringOrElse(coolNewSelection, "SKIP");
 
