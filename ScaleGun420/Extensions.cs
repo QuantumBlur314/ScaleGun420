@@ -251,22 +251,15 @@ namespace ScaleGun420
         }
         public static List<GameObject> ListChildrenOrNull(this GameObject current) //thanks to Corby and Idiot 
         {
-            if (current == null)
-                throw new Exception("ListChildrenOrNull Ext ~175: current GameObject was null");
-            if (current.transform == null)
-            {
-                LogGoob.WriteLine("current.transform was null", MessageType.Warning);
-                return null;
-            }
+            if (current == null || current.transform == null)
+                throw new Exception($"current GameObject {current} was null, or somehow missing a transform");
             if (current.transform.childCount <= 0)  //nullref'd //nullref'd again, computer line 420(nice)
                 return null;
-            else
-            {
-                var children = new List<GameObject>();
-                foreach (Transform child in current.transform)
-                    children.Add(child.gameObject);
-                return children;
-            }
+
+            var children = new List<GameObject>();
+            foreach (Transform child in current.transform)
+                children.Add(child.gameObject);
+            return children;
         }
 
         public static GameObject FindIndexedGOIn(this int gOIndex, List<GameObject> inList)  //_siblingsOfSelGO starts null  

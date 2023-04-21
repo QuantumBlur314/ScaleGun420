@@ -504,14 +504,14 @@ namespace ScaleGun420
             else
                 throw new Exception($"LoadChildrenAfter wack conditions.  _childGOList is {_childGOList}");  //nullref
 
-            _childGOList = newChildList; //internalConsensusList_LCA was null  //did it again  //and again
+            _childGOList = newChildList; //candidateSelection.ListChildrenOrNull() WILL RETURN NULL IF NO CHILDREN EXIST //internalConsensusList_LCA was null  //did it again  //and again
             _indexDisplayedChild = newChildIndex;  //newChildIndex exists specifically so _arbitraryChildIndex can be defined outside the brackets //ACTUALLY, ToCHILD SHOULD PROBABLY LEAVE THIS INDEX IN A MARKER STATE AND OH BOY HERE I GO LOOPING
             LogGoob.WriteLine($"LoadChildrenAfter ~465: set _childGOList to {_childGOList} & _indexDisplayedChild to {_indexDisplayedChild}");
 
             var firstChildAtNewChildIndex = newChildIndex.FindIndexedGOIn(currentChildList);  //SHOULD PROBABLY MAKE UNEQUIPPING CANCEL ALL CURRENT//NavToChild should go all the way down to the bottom of the well, genius. //a nullref.  also this is all lagging to hell  //another nullref    //anotha one
 
             _onToChildsBeganThisCoroutine = false;
-            _sgPropClass.RefreshScreen("SKIP", "SKIP", "SKIP", GOToStringOrElse(firstChildAtNewChildIndex, "LoadChildrenAfter ERROR"), "SKIP");  //040623_1222: _childGOList[newChildIndex] got an OutOfRangeException from something //Another nullref from scrolling up fast, seems to make subsequent vertical scrolls no longer update the child list
+            _sgPropClass.RefreshScreen("SKIP", "SKIP", "SKIP", GOToStringOrElse(firstChildAtNewChildIndex, "Children not found"), "SKIP");  //040623_1222: _childGOList[newChildIndex] got an OutOfRangeException from something //Another nullref from scrolling up fast, seems to make subsequent vertical scrolls no longer update the child list
                                                                                                                       //This has to run after either DelayLoadingOf.Children condition, so                          
             StopCoroutine(timerChildrenPending);
             timerChildrenPending = null;
