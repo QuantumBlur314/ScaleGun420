@@ -114,7 +114,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             this._sgp_NOMCanvas.enabled = true;
             this._sgp_THCanvas.enabled = true; //032123_1605: if putting this down here fixes it, i swear... //032123_1613: I was building to the wrong directory.  now i have it working, no bugs.  the world may never know
             _sgPropGOSelf.SetActive(true);  //032123_1535: not set to instance of an object? 
-            _sgpTxt_Child.RandomFont();
+            //_sgpTxt_Child.RandomFont();
         }
         public void OnUnequipTool() //done & working
         {

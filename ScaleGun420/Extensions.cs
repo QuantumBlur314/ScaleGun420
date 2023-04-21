@@ -254,7 +254,10 @@ namespace ScaleGun420
             if (current == null || current.transform == null)
                 throw new Exception($"current GameObject {current} was null, or somehow missing a transform");
             if (current.transform.childCount <= 0)  //nullref'd //nullref'd again, computer line 420(nice)
+            {
+                LogGoob.WriteLine($"X.ListChildrenOrNull~260: {current} didn't have any children, returned null.");
                 return null;
+            }
 
             var children = new List<GameObject>();
             foreach (Transform child in current.transform)
@@ -265,10 +268,7 @@ namespace ScaleGun420
         public static GameObject FindIndexedGOIn(this int gOIndex, List<GameObject> inList)  //_siblingsOfSelGO starts null  
         {
             if (inList == null || gOIndex < 0)
-            {
-                LogGoob.WriteLine("Something called FindIndexedGOIn using a list that was currently null (or the gOIndex was < 0, if you're still doing that) Returning null", MessageType.Warning);
-                return null;
-            }
+                throw new Exception($"Null: a gOIndex of {gOIndex} and a list of {inList}");
             if (gOIndex > inList.Count)
                 throw new Exception("GetGOAtIndexIfPossible was called with a gOIndex greater than the inList.Count!");
 

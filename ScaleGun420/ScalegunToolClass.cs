@@ -79,7 +79,7 @@ namespace ScaleGun420
             base.EquipTool();
 
             this._sgPropClass.OnEquipTool(); //Following in the footsteps of Translator/TranslatorPRop
-            _toolComputer.enabled = true;
+            _toolComputer.OnEquipTool();
         }
 
 
@@ -87,16 +87,8 @@ namespace ScaleGun420
         public override void UnequipTool()          //CALLED BY ToolModeSwapper.EquipToolMode(ToolMode toolMode), which is itself called by ToolModeSwapper.Update
         {
             base.UnequipTool();   //Do I have to put this first?
-            _toolComputer.StopCyclingChildren();  //this probably can't run/the rest of UnequipTool can't finish until _toolComputer is active
-            LeaveEditMode();
-            _toolComputer.ClearTerminal();
+            this._toolComputer.OnUnequipTool();
             this._sgPropClass.OnUnequipTool();
-            if (_toolComputer.timerChildrenPending != null || _toolComputer.timerLoadingSiblings != null)
-            {
-                _toolComputer._cancelLoadChildren = true; _toolComputer._cancelLoadSiblings = true;
-                LogGoob.WriteLine("ScalegunToolClass UnequipTool: one of the _toolComputer loading timers wasn't null.  Canceled them here, but consider a SgNavComputer public method for handling its powerdown, instead of this mess in ToolClass.UnequipTool)", MessageType.Info);
-            }
-            _toolComputer.enabled = false;
             //base.UnequipTool SETS _isPuttingAway TO TRUE, THEN PlayerTool.Update APPLIES THE STOWTRANSFORMS THEN SETS base.enabled = false ONCE DONE ANIMATING
         }
 
@@ -106,7 +98,7 @@ namespace ScaleGun420
         /// 
         /// Navigation still occurs while it's at your side?  actual clickable interface while it's up IN your face?  idfk
         /// </summary>
-        public void EnterEditMode()
+        public void EnterEditMode()  //this should probably be its own thing?
         {
             if (!_toolComputer.CanEnterEditMode())
                 return;
@@ -185,7 +177,7 @@ namespace ScaleGun420
                     if (_toolComputer._selectedGOPublic == null)  //if the _selectedGOPublic is null, this is where I want the whack mode to work
                         return;
 
-                    if (ToParent)
+                    if (ToParent)    //SHOULD PROBABLY ALL BE IN COMPUTER
                         _toolComputer.NavToParent();
                     else if (ToChilds)  //Selected Object Text doesn't update for some reason?????????    //NEED LIST OF CHILDREN IN ORDER TO SCROLL FURTHER; Coroutines inevitable
                         _toolComputer.NavToChild();
