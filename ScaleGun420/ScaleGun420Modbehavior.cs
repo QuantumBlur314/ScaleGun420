@@ -141,6 +141,9 @@ namespace ScaleGun420
         //CHECK BASELINE
 
 
+
+
+
         [HarmonyPatch]  //NEVER FORGET THIS AGAIN YOU NUMBSKULL
         public class ScaleGun420PatchClass
         {
@@ -149,7 +152,7 @@ namespace ScaleGun420
             [HarmonyPrefix, HarmonyPatch(typeof(ToolModeSwapper), nameof(ToolModeSwapper.EquipToolMode))]
             private static bool ToolModeSwapper_EquipToolMode_Prefix(ToolMode mode, ToolModeSwapper __instance)  //instance is for referencing the class currently performing the method you're patching 
             {
-                ToolMode scalegunMode = SGToolmode;
+                ToolMode scalegunMode = SGToolmode;            //might have to patch swapper regardless to make special exception for leaving editmode
                 if (mode != scalegunMode)
                 {
                     return true;
@@ -161,7 +164,7 @@ namespace ScaleGun420
 
                 if (__instance._equippedTool != playerTool)  //if the ToolModeSwapper's currently-equipped tool isn't the newly-set playerTool,
                 {
-                    if (__instance._equippedTool != null)    //and isn't null
+                    if (__instance._equippedTool != null)    //and isn't null  
                     {
                         __instance._equippedTool.UnequipTool();   //unequip the equipped tool,
                         __instance._nextToolMode = mode;     //set the Instance.SGToolmode mode as ToolModeSwapper's _nextToolMode,  THIS PATCH'S BASE-GAME COUNTERPART ISN'T 

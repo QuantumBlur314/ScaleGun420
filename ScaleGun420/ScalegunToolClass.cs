@@ -18,8 +18,12 @@ using UnityEngine;
 using static ScaleGun420.ScaleGun420Modbehavior;  //What the cool kids are doin
 //using static ScaleGun420.StaffSpawner;
 
+
+
+
 namespace ScaleGun420
 {
+
     public class ScalegunToolClass : PlayerTool
     {
         private ObservableCollection<GameObject> _observableCollectionTest;  //subscribe to the CollectionChanged event.  Event's arguments are NotifyCollectionChangedArgs.  Might be helpful idk
@@ -36,19 +40,19 @@ namespace ScaleGun420
 
         private ScalegunPropClass _sgPropClass;   //NomaiTranslator has its internal propclass private
         private ScalegunAnimationSuite _animSuite;
-        private SgComputer _toolComputer;
+        private SgNavComputer _toolComputer;
         private TheEditMode _toolEditMode;
 
         public static string _colliderFilter = "Collider";
 
         private void Awake()
         {
-            //NomaiTranslator sets all its process variables to null; might want to do the same for SgComputer, i've heard some vars don't reset on loop reset without it
+            //NomaiTranslator sets all its process variables to null; might want to do the same for SgNavComputer, i've heard some vars don't reset on loop reset without it
 
-            LogGoob.WriteLine("ScalegunToolClass is woke, grabbing ScalegunPropClass, SgComputer, TheEditMode, and AnimSuite...", MessageType.Success);
+            LogGoob.WriteLine("ScalegunToolClass is woke, grabbing ScalegunPropClass, SgNavComputer, TheEditMode, and AnimSuite...", MessageType.Success);
             //GetComponentInChildren doesn't search for inactive objects by default, needs to be set to (true) to find inactive stuff
             _sgPropClass = GetComponentInChildren<ScalegunPropClass>();  //Setting it to (true) worked ok fine idk whatever  //040823_1045: OnEnable is Nullref'ing; since all it does is enable the propclass, I'm assuming this here's failing
-            _toolComputer = GetComponentInChildren<SgComputer>();
+            _toolComputer = GetComponentInChildren<SgNavComputer>();
             _toolEditMode = GetComponentInChildren<TheEditMode>();
 
             var _foundToolToStealTransformsFrom = Locator.GetPlayerBody().GetComponentInChildren<Signalscope>();  //
@@ -90,7 +94,7 @@ namespace ScaleGun420
             if (_toolComputer.timerChildrenPending != null || _toolComputer.timerLoadingSiblings != null)
             {
                 _toolComputer._cancelLoadChildren = true; _toolComputer._cancelLoadSiblings = true;
-                LogGoob.WriteLine("ScalegunToolClass UnequipTool: one of the _toolComputer loading timers wasn't null.  Canceled them here, but consider a SgComputer public method for handling its powerdown, instead of this mess in ToolClass.UnequipTool)", MessageType.Info);
+                LogGoob.WriteLine("ScalegunToolClass UnequipTool: one of the _toolComputer loading timers wasn't null.  Canceled them here, but consider a SgNavComputer public method for handling its powerdown, instead of this mess in ToolClass.UnequipTool)", MessageType.Info);
             }
             _toolComputer.enabled = false;
             //base.UnequipTool SETS _isPuttingAway TO TRUE, THEN PlayerTool.Update APPLIES THE STOWTRANSFORMS THEN SETS base.enabled = false ONCE DONE ANIMATING

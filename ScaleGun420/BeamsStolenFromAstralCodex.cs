@@ -10,7 +10,9 @@ using static UnityEngine.GraphicsBuffer;
 
 namespace ScaleGun420
 {
-
+    /// <summary>
+    /// USE Mesh.Bounds 
+    /// </summary>
     class BeamsAKATrails : MonoBehaviour
     {
         //private static bool visible = false;
@@ -40,7 +42,7 @@ namespace ScaleGun420
 
         }
 
-        private enum CornerTransform
+        private enum CornerTransform  //could probably do this more cleanly with some movesprings 
         {
             UpBackLeft = 0,
             UpForeLeft = 1,
@@ -97,27 +99,31 @@ namespace ScaleGun420
             cursorCorners[5] = theOrigin.TransformPoint(P, N, N);
         }
 
-        private void SetVectorsV2(Vector3 theBeast = default)
+        void GetBoundsOf()
         {
-            theBeast = _cursorSG.transform.localPosition;   //_cursorSG.transform.localToWorldMatrix.MultiplyPoint(Vector3.one);  //_sgBeamOriginTransform.worldToLocalMatrix.MultiplyPoint(_cursorSG.transform.position);
-            cursorCorners[0] = MakeVector(theBeast, P, P, N);  //just use transformPoint
-            cursorCorners[1] = MakeVector(theBeast, P, P, P);
-            cursorCorners[2] = MakeVector(theBeast, N, P, P);
-            cursorCorners[3] = MakeVector(theBeast, N, N, P);
-            cursorCorners[4] = MakeVector(theBeast, N, N, N);
-            cursorCorners[5] = MakeVector(theBeast, P, N, N);
+            Mesh mesh = GetComponent<MeshFilter>().mesh;
+            Vector3[] vertices = mesh.vertices;
+            Vector2[] uvs = new Vector2[vertices.Length];
+            Bounds bounds = mesh.bounds;
+            int i = 0;
+            while (i < uvs.Length)
+            {
+                uvs[i] = new Vector2(vertices[i].x / bounds.size.x, vertices[i].z / bounds.size.x);
+                i++;
+            }
+            mesh.uv = uvs;
         }
         private void Update()
         {
             if (_cursorSG.transform == null) //not running augh
                 return;
-            if (updateTimerTick < 10f)
-                updateTimerTick += 0.1f;
-            else
-            {
-                LogGoob.WriteLine("Beams Update ticking nicely", OWML.Common.MessageType.Info);
-                updateTimerTick = 0f;
-            }
+            //if (updateTimerTick < 10f)
+            //    updateTimerTick += 0.1f;
+           // else
+           // {
+           //     LogGoob.WriteLine("Beams Update ticking nicely", OWML.Common.MessageType.Info);
+           //     updateTimerTick = 0f;
+          //  }
             //OffsetCornersTransformPoints(_cursorSG);
             Transform currentCursorLocation = _cursorSG.transform;
             for (int i = 0; i < trails.Count; i++)

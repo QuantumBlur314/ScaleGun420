@@ -19,7 +19,7 @@ namespace ScaleGun420
     /// <summary>
     /// MISSION UPDATE: Needlessly complex, but perhaps prevent going down paths that exclusively contain colliders?
     /// </summary>
-    public class SgComputer : MonoBehaviour
+    public class SgNavComputer : MonoBehaviour
     {
         private ScalegunPropClass _sgPropClass;
         private ScalegunToolClass _sgToolClass;
@@ -75,7 +75,7 @@ namespace ScaleGun420
         //CLASS IS ENABLING LATE, ONLY ON EQUIP; ALSO, CONSIDER DEACTIVATING COMPUTER WHILE TOOL IS UNEQUIPPED
         private void Awake()
         {
-            LogGoob.WriteLine("SgComputer is woke, grabbing ScalegunPropClass...", MessageType.Success);
+            LogGoob.WriteLine("SgNavComputer is woke, grabbing ScalegunPropClass...", MessageType.Success);
             _sgToolClass = Locator.GetPlayerBody().GetComponentInChildren<ScalegunToolClass>();
             _sgPropClass = Locator.GetPlayerBody().GetComponentInChildren<ScalegunPropClass>();
             _probeLauncherEffects = Locator.GetPlayerBody().GetComponentInChildren<ProbeLauncherEffects>();
@@ -107,7 +107,7 @@ namespace ScaleGun420
         {
             if (_selectedGOPublic == null)
             {
-                LogGoob.WriteLine("SgComputer.CanEnterEditMode ~100: Was called when _selectedObjectPublic was null; you shouldn't be doing that anywhere");
+                LogGoob.WriteLine("SgNavComputer.CanEnterEditMode ~100: Was called when _selectedObjectPublic was null; you shouldn't be doing that anywhere");
                 return false;
             }
             if (_selectedGOPublic.ToString().Contains(_colliderFilter))
@@ -442,7 +442,7 @@ namespace ScaleGun420
         /// <param name="time"></param>
         /// <param name="originalSelGOWhenCoroutineStarted"></param>
         /// <returns></returns>
-        private IEnumerator LoadChildrenAfter(float time, GameObject originalSelGOWhenCoroutineStarted = null)  //if multiple things call this, ensure each variant waits for other variants to finish to avoid chaos
+        private IEnumerator LoadChildrenAfter(float time, GameObject originalSelGOWhenCoroutineStarted = null, List<GameObject> currentChildList = null)  //if multiple things call this, ensure each variant waits for other variants to finish to avoid chaos
         {
             _timeBeforeChildrenLoad = time;   //WHY IN GOD'S NAME IS _timeLeftChildren STUCK ABOVE 0, THIS ISN'T JUST BECAUSE I DON'T _cancelTimerChildren ON UNEQUIP, IT'S HAPPENING WHILE EQUIPPED
             while (_timeBeforeChildrenLoad >= 0)
@@ -459,41 +459,59 @@ namespace ScaleGun420
             yield return new WaitForEndOfFrame();
 
             List<GameObject> listOfSiblings = _siblingsOfSelGO;
-            GameObject candidateFrom_NavToChild = _selectedGOPublic;  //this consensus thing is stupid, die
-            GameObject internalConsensusList_LCA = _selectedGOPublic;  //if this is here, it means the internalConsensusList_LCA will already not matter.  any value initially set by OnToChild 
+            currentChildList = _childGOList;  //
+
+            GameObject candidateSelection = _selectedGOPublic;  //this consensus thing is stupid, die
+            //GameObject internalConsensusList_LCA = _selectedGOPublic;  //if this is here, it means the internalConsensusList_LCA will already not matter.  any value initially set by OnToChild 
             int newChildIndex = 0;  //ToChild already handles this; does ToSiblings? 
             int currentChildIndex = _indexDisplayedChild;  //BECAUSE OF THE WAY CHILDREN ARE DISPLAYED & LOADED, I'M IN HELL
+            List<GameObject> newChildList = null;  //this is an emergency thing idfk
 
-            if (_onToChildsBeganThisCoroutine || _childGOList == null || candidateFrom_NavToChild == null)  //<--- if this, then don't bother checking whether you're where you started; being back where you started is theoretically impossible
+            if (_onToChildsBeganThisCoroutine || originalSelGOWhenCoroutineStarted != candidateSelection)  //<--- if this, then don't bother checking whether you're where you started; being back where you started is theoretically impossible
             {
-                internalConsensusList_LCA = candidateFrom_NavToChild;  //why are you setting 
+                newChildList = candidateSelection.ListChildrenOrNull();
                 newChildIndex = 0;
+                if (currentChildList != null) LogGoob.WriteLine("LoadChildrenAfter ~475: despite onToChilds beginning this coroutine, currentChildList wasn't null", MessageType.Warning);
             }  //OnToSiblings REQUIRES an initial value to start at, unless you want different conditions for a post-OnToChild scroll
             else if (!_onToChildsBeganThisCoroutine)
             {
-                if (originalSelGOWhenCoroutineStarted != internalConsensusList_LCA)  //this was originally meant to check whether the INDEXES matched.  somehow i ended up writing this around GOs instead, and including a local variable meant to represent a list on accident to boot.  well done.
+                if (originalSelGOWhenCoroutineStarted == candidateSelection)  //this was originally meant to check whether the INDEXES matched.  somehow i ended up writing this around GOs instead, and including a local variable meant to represent a list on accident to boot.  well done.
                 {
-                    internalConsensusList_LCA = _selecIndex.FindIndexedGOIn(listOfSiblings);
-
-                    newChildIndex = currentChildIndex;  //If NavToChild has run at all, this will be 0.  if BabyCycle was erroneously running during coroutine, it may be some number beyond the index (babentimer has always been bad)
+                    candidateSelection = originalSelGOWhenCoroutineStarted;
+                    if (currentChildList != null)
+                    {
+                        if (newChildList != currentChildList)
+                        {
+                            newChildIndex = 0;
+                            LogGoob.WriteLine("LoadChildrenAfter ~485: _childGOList and newly-generated list from allegedly-identical candidate yielded different lists, wtf", MessageType.Warning);
+                        }
+                        else
+                        {
+                            newChildList = currentChildList;
+                            newChildIndex = currentChildIndex;
+                            if (newChildIndex > newChildList.Count)
+                            {
+                                newChildIndex = 0;
+                                LogGoob.WriteLine("LoadChildrenAfter ~495: newChildIndex didn't fit into newChildList wtf", MessageType.Error);
+                            }
+                        }
+                    }
+                    // newChildIndex = currentChildIndex;  //If NavToChild has run at all, this will be 0.  if BabyCycle was erroneously running during coroutine, it may be some number beyond the index (babentimer has always been bad)
                 }
                 else
-                {
-                    internalConsensusList_LCA = _selectedGOPublic;  //this essentially 
                     LogGoob.WriteLine($"Stopped where we started, no need to load new child list", MessageType.Info);  //YOU STILL HAVE TO INTERNALLY DEFINE internalConsensusList_LCA DINGUS
-                }
             }
             else
-                throw new Exception($"LoadChildrenAfter wack conditions.  _childGOList is {_childGOList},  ");  //nullref
+                throw new Exception($"LoadChildrenAfter wack conditions.  _childGOList is {_childGOList}");  //nullref
 
-            _childGOList = internalConsensusList_LCA.ListChildrenOrNull(); //internalConsensusList_LCA was null  //did it again  //and again
+            _childGOList = newChildList; //internalConsensusList_LCA was null  //did it again  //and again
             _indexDisplayedChild = newChildIndex;  //newChildIndex exists specifically so _arbitraryChildIndex can be defined outside the brackets //ACTUALLY, ToCHILD SHOULD PROBABLY LEAVE THIS INDEX IN A MARKER STATE AND OH BOY HERE I GO LOOPING
             LogGoob.WriteLine($"LoadChildrenAfter ~465: set _childGOList to {_childGOList} & _indexDisplayedChild to {_indexDisplayedChild}");
 
-            var firstChildAtNewChildIndex = newChildIndex.FindIndexedGOIn(_childGOList);  //SHOULD PROBABLY MAKE UNEQUIPPING CANCEL ALL CURRENT//NavToChild should go all the way down to the bottom of the well, genius. //a nullref.  also this is all lagging to hell  //another nullref    //anotha one
+            var firstChildAtNewChildIndex = newChildIndex.FindIndexedGOIn(currentChildList);  //SHOULD PROBABLY MAKE UNEQUIPPING CANCEL ALL CURRENT//NavToChild should go all the way down to the bottom of the well, genius. //a nullref.  also this is all lagging to hell  //another nullref    //anotha one
 
             _onToChildsBeganThisCoroutine = false;
-            _sgPropClass.RefreshScreen("SKIP", "SKIP", "SKIP", GOToStringOrElse(firstChildAtNewChildIndex), "SKIP");  //040623_1222: _childGOList[newChildIndex] got an OutOfRangeException from something //Another nullref from scrolling up fast, seems to make subsequent vertical scrolls no longer update the child list
+            _sgPropClass.RefreshScreen("SKIP", "SKIP", "SKIP", GOToStringOrElse(firstChildAtNewChildIndex, "LoadChildrenAfter ERROR"), "SKIP");  //040623_1222: _childGOList[newChildIndex] got an OutOfRangeException from something //Another nullref from scrolling up fast, seems to make subsequent vertical scrolls no longer update the child list
                                                                                                                       //This has to run after either DelayLoadingOf.Children condition, so                          
             StopCoroutine(timerChildrenPending);
             timerChildrenPending = null;
@@ -577,30 +595,7 @@ namespace ScaleGun420
         }
 
 
-        public void StopCoroutineStartBabiesOBSOLETE(ref Coroutine routine)  //this runs every frame in update, probably should move the bigger pulls to things that only happen sometimes
-        {
-            StopCoroutine(routine);
-            routine = null;
 
-            bool loadingCoroutinesStillRunning = (timerLoadingSiblings != null || timerChildrenPending != null);
-            if (loadingCoroutinesStillRunning)
-            {
-                throw new System.Exception("Something called StopCoroutineStartBabies while family was still loading, babies failed to start");
-            }
-            if (!_babenCycleShouldRun)
-                _babenCycleShouldRun = true;
-            else { throw new Exception("~535: _babenCycleShouldRun started out already false"); }
-
-            bool multipleBabiesInList = (_childGOList != null && _childGOList.Count > 1);
-            if (!multipleBabiesInList)  //The below line is happening constantly because GetCurrentSelection is being called constantly for the check.  icky
-                return;
-            else if (multipleBabiesInList)
-                StartBabies();
-            else if (timerLoadingSiblings != null || timerChildrenPending != null)
-                StopCyclingChildren();
-            else
-                LogGoob.Scream("BABY ERROR 498: WEIRD HAPPEN", MessageType.Info);
-        }
         private void StartBabies()
         {
             if (timerBabyCycle != null)

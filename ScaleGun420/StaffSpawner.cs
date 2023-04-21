@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Steamworks;
+using System;
 using System.Collections.Generic;
 using System.Drawing.Drawing2D;
 using System.Linq;
@@ -20,7 +21,7 @@ namespace ScaleGun420
         public GameObject _socketScalegunTorso;
         public GameObject _socketScalegunPlayerCam;
 
-        public GameObject _GO_ScalegunStaff;
+        public GameObject propGroupGO_SG;
         public GameObject _beamsJohnson;
         private GameObject _theCursor;
 
@@ -35,10 +36,10 @@ namespace ScaleGun420
         public GameObject GOtxt_SibBelow;
         public Text _text_SibBelow;
 
-        public GameObject GO_NOMCanvas;
-        public Canvas _nomCanvas;
-        public GameObject GOtxt_Child;
-        public Text _text_Child;
+        public GameObject _huskNOMCanv;
+        public Canvas _canvasCpntNOM;
+        public GameObject huskTxt_Child;
+        public Text _textCpnt_Child;
 
         public GameObject _sgPlaceholderGO;
 
@@ -61,9 +62,9 @@ namespace ScaleGun420
 
             _GO_sgTool = Locator.GetPlayerBody().transform.CreateChild("ScalegunHusk", false);
 
-            _GO_ScalegunStaff = _GO_sgTool.transform.InstantiatePrefab("brittlehollow/meshes/props", "BrittleHollow_Body/Sector_BH/Sector_NorthHemisphere/Sector_NorthPole/Sector_HangingCity" +
+            propGroupGO_SG = _GO_sgTool.transform.InstantiatePrefab("brittlehollow/meshes/props", "BrittleHollow_Body/Sector_BH/Sector_NorthHemisphere/Sector_NorthPole/Sector_HangingCity" +
             "/Sector_HangingCity_BlackHoleForge/BlackHoleForgePivot/Props_BlackHoleForge/Prefab_NOM_Staff", true, new Vector3(0, -0.9f, -0.0005f), new Vector3(0, 180, 0));  //040723_1811: Set to spawn active because idk, everything's broken now
-            _GO_ScalegunStaff.name = "ScalegunGroup";
+            propGroupGO_SG.name = "ScalegunGroup";
 
             SpawnBeamOrigin();
 
@@ -89,6 +90,7 @@ namespace ScaleGun420
             _theCursor.transform.localPosition = _GO_sgTool.transform.localPosition;
             _theCursor.transform.localEulerAngles = _GO_sgTool.transform.localEulerAngles;
             _theCursor.AddComponent<BeamsAKATrails>();
+            //_theCursor.AddComponent<PlayerLockOnTargeting>();
             //cursorGO.SetActive(false);
 
             DupeTranslatorCanvasGO();
@@ -96,20 +98,21 @@ namespace ScaleGun420
             StealGOsForSiblingLabels();
 
 
-
-            HomebrewGOForNOMCanvas();
+            SpawnTextCanvas(propGroupGO_SG.transform, "SG_NOMCanvas", "SG_Babens");
+            ///HomebrewGOForNOMCanvas();
+            ///
 
             //wack ass
             _GO_sgTool.AddComponent<ScalegunToolClass>();  //hopefully the host _sgtool_GO's inactivity prevents its new ScalegunTool pilot from waking up, or it'll reach for ScalegunPropClass too early
             _GO_sgTool.AddComponent<ScalegunAnimationSuite>();
             _GO_sgTool.AddComponent<ScalegunPropClass>(); //ScalegunTool declares a PropClass; hopefully not 2late to attach & designate it to the _sgPropGroupject.
-            _GO_sgTool.AddComponent<SgComputer>();
+            _GO_sgTool.AddComponent<SgNavComputer>();
             _GO_sgTool.AddComponent<TheEditMode>();
 
             //_GO_sgTool.SetActive(true);
             _GO_sgTool.SetActive(true);
             //   _thCanvas.enabled = false; //031823_0614: doing this since TranslatorProp did it but it wasn't here yet //update: nope //031823_1524: Sudden unexpected nullref?
-            // _nomCanvas.enabled = false;
+            // _canvasCpntNOM.enabled = false;
             //_sgOwnPropGroupject = ScaleGun420Modbehavior.Instance._ //Might have to define it here.  How do I break the chains?
 
             //_theProp.SetActive(true);  //what NomaiTranslatorProp does, but better-labeled.  TranslatorProp sets its whole parent propgroup inactive at end of its Awake (the parts of it relevant to me) }
@@ -133,7 +136,7 @@ namespace ScaleGun420
 
         private void DupeTranslatorCanvasGO()
         {
-            GO_THCanvas = Instantiate(GameObject.Find("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas"), _GO_ScalegunStaff.transform);
+            GO_THCanvas = Instantiate(GameObject.Find("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas"), propGroupGO_SG.transform);
 
             GO_THCanvas.name = "SG_THCanvas";
 
@@ -141,7 +144,7 @@ namespace ScaleGun420
             GO_THCanvas.transform.localPosition = new Vector3(0.15f, 1.75f, 0.05f);
             GO_THCanvas.transform.localScale = new Vector3(0.0003f, 0.0003f, 0.0003f);
 
-            _mainTextRecTra = _GO_ScalegunStaff.transform.GetComponentInChildren<RectTransform>(true); //031823_0523: swapped to before _sgpTextFieldMain gets defined, idk why //040723_1516: What IS a RectTransform, anyway, and which one does this grab?
+            _mainTextRecTra = propGroupGO_SG.transform.GetComponentInChildren<RectTransform>(true); //031823_0523: swapped to before _sgpTextFieldMain gets defined, idk why //040723_1516: What IS a RectTransform, anyway, and which one does this grab?
             _mainTextRecTra.pivot = new Vector2(1f, 0.5f);  //idfk brother, i think it's setting them correctly
 
             _thCanvas = GO_THCanvas.transform.GetComponentInChildren<Canvas>(true);
@@ -169,37 +172,80 @@ namespace ScaleGun420
 
         private void StealGOsForSiblingLabels()
         {
-            GOtxt_SibAbove = GO_THCanvas.transform.InstantiateTextObj("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas/PageNumberText", "SG_SiblingUp",
+            GOtxt_SibAbove = GO_THCanvas.transform.InstantiateTextGO_FromPathForSomeReason("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas/PageNumberText", "SG_SiblingUp",
                 out _text_SibAbove, new Vector2(siblingAlignment, 140), _textSizeDelta, _horizontalOverflow);
 
-            GOtxt_SibBelow = GO_THCanvas.transform.InstantiateTextObj("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas/PageNumberText", "SG_SiblingDown",
+            GOtxt_SibBelow = GO_THCanvas.transform.InstantiateTextGO_FromPathForSomeReason("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas/PageNumberText", "SG_SiblingDown",
                 out _text_SibBelow, new Vector2(siblingAlignment, 0), _textSizeDelta, _horizontalOverflow);
         }
+
+        public void SpawnTextCanvas(Transform asChildOf, string nameCanvasGO_spawner, string nameTextGO_spawner)
+        {
+            Transform attachTransform_internal = propGroupGO_SG.transform;
+            if (asChildOf != null && asChildOf.gameObject != null)
+                attachTransform_internal = asChildOf;
+
+
+            Vector2 canvRTSizeDelta = new Vector2(1400, 200);
+            float goCanvScale = 0.0004f;
+            Vector3 goCanvLocalPosition = new Vector3(0, 1.7f, 0.15f);
+            Vector3 goCanvLocalEulers = new Vector3(45, 180, 0);
+
+            Canvas canvas = attachTransform_internal.transform.AddCanvasGO(
+                nameCanvasGO_spawner, canvRTSizeDelta, goCanvScale, goCanvLocalPosition, goCanvLocalEulers);
+
+
+            Vector2 txt_rectSizeDelta = new Vector2(500, 500);
+            int fontSize = 40;
+            string spaceFontName = "fonts/english - latin/SpaceMono-Regular";
+
+            Text text = canvas.transform.AddTextGO(
+                nameTextGO_spawner, txt_rectSizeDelta, fontSize, spaceFontName);
+        }
+        /// <summary>
+        /// Notes, discoveries, and recommended ingredient measurements:
+        /// 
+        ///   \__ canvHusk __/
+        /// -=- RectTransform -=-
+        ///  .localScale = 0.00004
+        ///  .sizeDelta =  1000 x 200
+        ///  
+        /// 
+        ///   \___ txtHusk ___/
+        /// -=- RectTransform -=-
+        ///   .sizeDelta = 500 x 500 (pending the razor)
+        ///   
+        ///   -=-  TextCpnt: -=-
+        ///   .fontSize  40
+        ///   
+        /// 
+        /// </summary>
         private void HomebrewGOForNOMCanvas()
         {
-            GO_NOMCanvas = _GO_ScalegunStaff.GivesBirthTo("SG_NOMCanvas", true, new Vector3(0, 1.7f, 0.15f), new Vector3(45, 180, 0), 0.003f);  //For some reason, spawns with a text component visible from the main GameObject, idk why
+            _huskNOMCanv = propGroupGO_SG.GivesBirthTo("SG_NOMCanvas", true, new Vector3(0, 1.7f, 0.15f), new Vector3(45, 180, 0), 0.003f);  //For some reason, spawns with a text component visible from the main GameObject, idk why
 
-            _nomCanvas = GO_NOMCanvas.AddComponent<Canvas>();  //rectTransform seems to come prepackaged for some reason idfk
-            _nomCanvas.worldCamera = Locator.GetPlayerCamera().mainCamera;  //Check when canvases are set, and you'll find these values as the only ones being set
-            _nomCanvas.renderMode = RenderMode.WorldSpace;
+            _canvasCpntNOM = _huskNOMCanv.AddComponent<Canvas>();  //rectTransform seems to come prepackaged for some reason idfk
+            _canvasCpntNOM.worldCamera = Locator.GetPlayerCamera().mainCamera;  //Check when canvases are set, and you'll find these values as the only ones being set
+            _canvasCpntNOM.renderMode = RenderMode.WorldSpace;
 
-            GOtxt_Child = GO_NOMCanvas.GivesBirthTo("SG_Babens", true);   //Get the TextGenerator? idk it's in the instantiated stuff but not in Text by default
-            _text_Child = GOtxt_Child.AddComponent<Text>();
+            huskTxt_Child = _huskNOMCanv.GivesBirthTo("SG_Babens", true);   //Get the TextGenerator? idk it's in the instantiated stuff but not in Text by default
+            _textCpnt_Child = huskTxt_Child.AddComponent<Text>();
 
-            RandomizeFontForSomeReasonSpawner();
-            GOtxt_Child.AddComponent<TypeEffectText>(); //is this a whole text component in and of itself?
+            huskTxt_Child.GetComponent<RectTransform>().sizeDelta = new Vector2(500, 500);
 
-            //_sgpTxtGO_Child = _sgpGO_NOMCanvas.transform.InstantiateTextObj("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas/PageNumberText", "Children",
+            Font spaceFont = new Font("SpaceMono-Regular");
+
+            //RandomizeFontForSomeReasonSpawner();
+            huskTxt_Child.AddComponent<TypeEffectText>(); //is this a whole text component in and of itself?
+            //_sgpTxtGO_Child = _sgpGO_NOMCanvas.transform.InstantiateTextGO_FromPathForSomeReason("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas/PageNumberText", "Children",
             // out _sgpTxt_Child, new Vector2(siblingAlignment + 900, 75), textSizeDelta, horizontalOverflow);
-
             //
-
         }
         private void RandomizeFontForSomeReasonSpawner()
         {
             var fontList = Font.GetOSInstalledFontNames();
             int fontIndex = UnityEngine.Random.Range(0, (fontList.Count()));
-            _text_Child.font = UnityEngine.Font.CreateDynamicFontFromOSFont(fontList[fontIndex].ToString(), 100);  //idk what the size parameter does; i've set it to 1 and to 100 and there's no noticeable difference; maybe it's instantly getting overwritten by something?  idk
+            _textCpnt_Child.font = UnityEngine.Font.CreateDynamicFontFromOSFont(fontList[fontIndex].ToString(), 100);  //idk what the size parameter does; i've set it to 1 and to 100 and there's no noticeable difference; maybe it's instantly getting overwritten by something?  idk
         }
 
         private void SpawnBeamOrigin()
@@ -207,7 +253,7 @@ namespace ScaleGun420
             _beamsJohnson = GameObject.CreatePrimitive(PrimitiveType.Cube);
             _beamsJohnson.name = "BeamOrigin_SG";
             _beamsJohnson.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-            _beamsJohnson.transform.parent = _GO_ScalegunStaff.transform;
+            _beamsJohnson.transform.parent = propGroupGO_SG.transform;
             _beamsJohnson.transform.localPosition = new Vector3(0f, 2f, 0.0005f);
             _beamsJohnson.transform.localEulerAngles = default;
 
