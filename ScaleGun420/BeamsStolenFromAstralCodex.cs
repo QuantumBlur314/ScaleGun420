@@ -40,6 +40,11 @@ namespace ScaleGun420
             _sgCursorTransform = _cursorSG.transform;
             _sgBeamOriginTransform = transform.GetChildComponentByName<Transform>("BeamOrigin_SG");
 
+            //below was taken from Start, idk if this will help  //042223_2016 Nope that didn't work either, idfk chief. <--_2010: Yeah now we're back to the beams not rendering, let's try just defining trails
+
+            //trails = GetComponentsInChildren<LineRenderer>(true).ToList();
+
+
         }
 
         private enum CornerTransform  //could probably do this more cleanly with some movesprings 
@@ -52,18 +57,26 @@ namespace ScaleGun420
             DownBackLeft = 5,
         }
 
-        public virtual void Start()
+        public virtual void Start()  //guess the nullref in SetBeamsActiveSG on startup/first Prop.FinishEquipAnimation means this Start hasn't run yet, otherwise trails wouldn't be null then
         {
             trails = GetComponentsInChildren<LineRenderer>(true).ToList();
             cursorCorners = new List<Vector3>();
             for (int i = 0; i < 6; i++)
             { cursorCorners.Add(new Vector3(0, 0, 0)); }
             widthMultiplier = 0.5f;
+            gameObject.SetActive(false);   //  WORKS!!!! 
         }
         private void RecommendedVectors()
         {
             Vector3 Start = transform.position;
             Vector3 End = transform.worldToLocalMatrix.MultiplyPoint(_sgCursorTransform.position);
+        }
+        public void SetBeamsActiveSG(bool activateBeams)
+        {
+            this.enabled = activateBeams;
+            gameObject.SetActive(activateBeams);  // nope actually this works almost perfectly aside from starting visible //idk if this will do the thing, it might just deactivate the cursor and any connected gameObject and cause the whole game to collapse
+            ///for (int i = 0; i < trails.Count; i++)    //nullref on start , because 
+            /// trails[i].enabled = activateBeams;
         }
 
         private void EnumeratedSetCorners(Transform theOrigin, int theBeamInt)  //this is illegibile but it does the joj
@@ -119,11 +132,11 @@ namespace ScaleGun420
                 return;
             //if (updateTimerTick < 10f)
             //    updateTimerTick += 0.1f;
-           // else
-           // {
-           //     LogGoob.WriteLine("Beams Update ticking nicely", OWML.Common.MessageType.Info);
-           //     updateTimerTick = 0f;
-          //  }
+            // else
+            // {
+            //     LogGoob.WriteLine("Beams Update ticking nicely", OWML.Common.MessageType.Info);
+            //     updateTimerTick = 0f;
+            //  }
             //OffsetCornersTransformPoints(_cursorSG);
             Transform currentCursorLocation = _cursorSG.transform;
             for (int i = 0; i < trails.Count; i++)

@@ -92,6 +92,8 @@ namespace ScaleGun420
             _manipulatorGO_SG.SetActive(false);
         
         }
+        private void OnDisable()
+        { }
         private GameObject GetSelectedObject()
         {
             if (_sEMCpu._selectedGOPublic == null)
@@ -310,8 +312,6 @@ namespace ScaleGun420
 
 
         }
-        private void OnDisable()
-        { }
 
     }
 }

@@ -45,7 +45,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
 
         //private ScalegunToolClass _propsToolRef;
         private SgNavComputer _computer;
-
+        private BeamsAKATrails _lightBeams;
 
 
         public GameObject _testHuskCanvas;
@@ -83,9 +83,13 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             _sgpTxt_SibBelow = _sgp_THCanvas.transform.GetChildComponentByName<Text>("SG_SiblingDown");
             _sgpTxt_Child = _sgp_NOMCanvas.transform.GetChildComponentByName<Text>("SG_Babens");
 
+            _lightBeams = transform.GetComponentInChildren<BeamsAKATrails>();
+
+
             LogGoob.WriteLine($"ScalegunPropClass reports SgNavComputer _computer is {_computer} attached to {_computer.transform.gameObject}");
 
             _sgPropGOSelf.SetActive(false);
+
         }
         private void Start()
         {
@@ -115,6 +119,7 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
             this._sgp_THCanvas.enabled = true; //032123_1605: if putting this down here fixes it, i swear... //032123_1613: I was building to the wrong directory.  now i have it working, no bugs.  the world may never know
             _sgPropGOSelf.SetActive(true);  //032123_1535: not set to instance of an object? 
             //_sgpTxt_Child.RandomFont();
+            _lightBeams.SetBeamsActiveSG(true);
         }
         public void OnUnequipTool() //done & working
         {
@@ -129,14 +134,13 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         {
             this._sgp_NOMCanvas.enabled = false;
             this._sgp_THCanvas.enabled = false; //031823_0611: Enabled this code, didn't fix anything, but it's what the translator prop does.  //032123_1543: disabled this code again, and if it starts working again then I think the canvas is getting called early //reenabling
+           _lightBeams.SetBeamsActiveSG(false);  //first 
             _sgPropGOSelf.SetActive(false);
         }
 
         private bool ShouldEditText(string stringToCheck)
         { return (stringToCheck != "SKIP" && stringToCheck != "SKIP (UnityEngine.GameObject)"); }
 
-        private void FetchComponents()
-        { }
         public void RefreshScreen(string parentOrSKIP, string sibAboveOrSKIP, string sibBelowOrSKIP, string childOrSKIP, string currentSelFieldOverride = $"ax15_computer._selectedObjectPublic_ax15")
         {
             //once I figure out how the TypeEffectText thing works, have separate thing like "ax15_ROLLTEXT_ax15" to evoke stuff like I do with "SKIP"

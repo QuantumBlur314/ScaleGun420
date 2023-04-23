@@ -321,7 +321,7 @@ namespace ScaleGun420
             lowerSibling = GOToStringOrElse(lowerSibGOInternal, textIfNoSiblings);
         }
 
-        public static void TextFromAdjacentSiblingsIn(this int ofIndex, List<GameObject> inList, out string upperSibling, out string lowerSibling, string textIfNoSiblings = "")
+        public static void StringAdjacentSiblingsElse(this int ofIndex, List<GameObject> inList, out string upperSibling, out string lowerSibling, string textIfNoSiblings = "")
         {
             GameObject upperSibGOInternal = null;
             GameObject lowerSibGOInternal = null;
