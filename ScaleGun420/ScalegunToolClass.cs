@@ -111,8 +111,9 @@ namespace ScaleGun420
                 this.transform.parent = _camHoldTransform.transform;   //THE TOOL IS DUPLICATING (THUS DOUBLING) THE HoldTransformGO's TRANSFORM AS ITS _holdTransform.  THIS ISN'T OPTIMAL BUT YOU ALREADY ORIENTED IT IDFK WELL DONE I GUESS
                 _holdTransform = _camHoldTransform.transform;  //Oh wait, literally just don't make the transforms their parent, just make them a reference 
 
-                _toolComputer.StopCyclingChildren();
-                _toolEditMode.BeginEditing();   //try just enabling it here, then giving the edit mode an OnEnable
+                _toolComputer.StopCyclingChildren();  //probably just make a "LeaveSelectionMode" method for the computer, Tool itself doesn't need to know the Computer's business
+                _toolEditMode.OnEnterEditMode();
+                _sgPropClass.OnEnterEditMode(); //try just enabling it here, then giving the edit mode an OnEnable
                 // if (this.HasEquipAnimation())
                 //{
                 //    base.transform.localRotation = this._stowTransform.localRotation;
@@ -125,7 +126,7 @@ namespace ScaleGun420
         {
             if (_isInEditMode)
             {
-                transform.parent = Locator.GetPlayerTransform();  //This used to work, i think I'm overcomplicating idfk
+                transform.parent = Locator.GetPlayerTransform();  //this should definitely be cleaner 
                 _holdTransform = _bodyHoldTransform.transform;
                 this._isInEditMode = false;
 
@@ -133,6 +134,10 @@ namespace ScaleGun420
                 {
                     this._isLeavingEditMode = true;
                     this._isEditModeCentered = false;
+
+                    _sgPropClass.OnLeaveEditMode();
+                    _toolEditMode.OnLeaveEditMode();
+
                 }
             }
         }
@@ -152,14 +157,14 @@ namespace ScaleGun420
         public override void Update()
         {
             base.Update();        //PlayerTool's base Update method handles deploy/stow anims; Everything else here is for Scalegun functions
-            _animSuite.ToolPositionalUpdate(ref _isLeavingEditMode, ref _isEditModeCentered, ref _isInEditMode, 5f, _moveSpringPosition);                     // PlayerTool is already sketchy enough, I don't like the idea of locking modes behind hold positions idk, seems like a dangerous 
+            _animSuite.ToolPositionalUpdate(ref _isLeavingEditMode, ref _isEditModeCentered, ref _isInEditMode, 5f, _moveSpringPosition);                // PlayerTool is already sketchy enough, I don't like the idea of locking modes behind hold positions idk, seems like a dangerous 
 
             if (!this._isEquipped || this._isPuttingAway)           //Only does additional stuff if ScalegunTool is equipped.  DISABLED ON A HUNCH  UPDATE HUNCH WAS WRONG, CARRY ON
             { return; }
             ///keeping timer in Update loop is "icky"
             //While-loops freeze the entire runtime until they're done, might not want that 
             //do the ol' TardisDematQueue "set it beyond the maximum time" trick
-            if (_vanillaSwapper.IsInToolMode(SGToolmode) && OWInput.IsInputMode(InputMode.Character))
+            if (_vanillaSwapper.IsInToolMode(SGToolmode) && (OWInput.IsInputMode(InputMode.Character) || OWInput.IsInputMode(InputMode.Roasting)))
             {
                 if (OWInput.IsNewlyPressed(InputLibrary.freeLook, InputMode.Character))  //Maybe don't restrict holding it up to your face, pointlessly raise the skill ceiling for dweebs who wanna practice blind-nav'ing Hierarchies because that's funny.
                     if (!_isInEditMode)
@@ -172,7 +177,6 @@ namespace ScaleGun420
                     if (OWInput.IsNewlyPressed(InputLibrary.toolActionPrimary))   //031823_1505: Changed a bunch of stuff to __instance for cleanliness; may or may not bork things //031823_1525: Okay so apparently that made it start nullreffing? //REBUILDING IS FAILING, THANKS MICROSOFT.NET FRAMEWORK BUG
                     {
                         _toolComputer.EyesDrillHoles();
-
                     }
                     if (_toolComputer._selectedGOPublic == null)  //if the _selectedGOPublic is null, this is where I want the whack mode to work
                         return;

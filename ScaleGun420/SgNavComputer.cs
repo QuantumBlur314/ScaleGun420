@@ -88,7 +88,7 @@ namespace ScaleGun420
 
         public void OnUnequipTool()
         {
-            StopCyclingChildren();  //this probably can't run/the rest of UnequipTool can't finish until _toolComputer is active
+            StopCyclingChildren();  //no, what are you talking about?  it's fine.   <---//this probably can't run/the rest of UnequipTool can't finish until _toolComputer is active
             _sgToolClass.LeaveEditMode();
             ClearTerminal();
             KillNavCoroutines();
@@ -123,7 +123,7 @@ namespace ScaleGun420
             }
             if (_selectedGOPublic.ToString().Contains(_colliderFilter))
             {
-                LogGoob.Scream("Inadvisable to edit colliders");
+                LogGoob.Scream("Inadvisable to edit this object");
                 return false;
             }
             return true;
@@ -499,9 +499,8 @@ namespace ScaleGun420
             else
                 throw new Exception($"Wackditions.  _childGOList is {currentChildList}. also this means Corby was wrong and flag3 wasn't a perfect inverse of shouldPullFreshChildList");  //nullref
 
-            if (proposedChildIndex > proposedChildList.Count)
+            if (proposedChildList != null && proposedChildIndex > proposedChildList.Count)  //should probably NULLCHECK PROPOSEDCHILDLIST DINGUS
                 throw new Exception("New proposed child index was above the prosposed list.count, reset newChildIndex to 0 as failsafe");
-
 
             if (shouldPullFreshChildList)  //the stuff in "else if (!shouldPullFreshChildList)" above is just for clarity's sake, the whole point of the method is not having to update these fields unless conditions render the current fields outdated
             {
