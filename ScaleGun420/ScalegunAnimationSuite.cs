@@ -5,6 +5,14 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
+
+
+
+///TO DO: 
+/// A.)  use Campfire.CheckStickIntersection + RoastingStickController.Update as model for Staff Whacking ?
+/// B.)  Create cursor placeholder with smoother animations using Mathf.SmoothStep(?) /less intensive/fewer beams? it gotta spin tho except when TheEditMode is rotating stuff, then for purely cosmetic reasons it should lock on
+/// C.) Shake up which mode is which and possibly add another holster animation similar to how Solanum holds it for while you're _isDragging
+/// D.)  Fix the fucked-up way you attach the tool to the cameraholster then duplicate the transform animations through both the Scalegun AND its holster object (it's weird and suboptimal and the sooner it's fixed the better)
 namespace ScaleGun420
 {
     public class ScalegunAnimationSuite : MonoBehaviour

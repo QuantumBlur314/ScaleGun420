@@ -4,6 +4,7 @@ using Steamworks;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -23,7 +24,6 @@ namespace ScaleGun420
             //ScaleGun420Modbehavior.Instance.ModHelper.Console.WriteLine($"{current}");  
             return current.parent.GetPath() + "/" + current.name; //burrows UP
         }
-
 
         //myCoolCreateChildMethod.cs mangled and mingled with Vio's
         //btw the first parameter being "this" makes sure it references whatever thingy is calling the method, and makes that first parameter not need to be manually defined if the method is after "thingdoingthemethod.SpawnChildGOAtParent"
@@ -72,7 +72,7 @@ namespace ScaleGun420
             return newPrefab;
         }
 
-        public static GameObject InstantiateTextObj(this Transform parentTransform, string pathToGO, string customNameOfText,  //CHECK TO SEE WHETHER 
+        public static GameObject InstantiateTextGO_FromPathForSomeReason(this Transform parentTransform, string pathToGO, string customNameOfText,  //CHECK TO SEE WHETHER 
             out Text textComponent, Vector2 localPosition = default, Vector2 sizeDelta = default, HorizontalWrapMode horizontalOverflow = default, bool spawnActive = true)
         {//^^ NOTICE the "ref", this means it will let you put in a field
             GameObject newTextBeast = ScaleGun420Modbehavior.Instantiate(GameObject.Find(pathToGO).transform.gameObject, parentTransform);
@@ -90,6 +90,80 @@ namespace ScaleGun420
         }
 
 
+        public static Canvas AddCanvasGO(this Transform parentTransform, string gOName = "CanvasGO_ax15", Vector2 rectTranSizeDelta_1400x200dflt = default, float newGOScale = 0.0004f, Vector3 gOLocalPosition = default, Vector3 gOLocalEulerAngles = default)
+        {
+            if (rectTranSizeDelta_1400x200dflt == default)
+                rectTranSizeDelta_1400x200dflt = new Vector2(1400, 200);
+
+            GameObject canvGO_internal = parentTransform.CreateChild(gOName, true, gOLocalPosition, gOLocalEulerAngles, newGOScale);
+            Canvas canvasComponent = canvGO_internal.AddComponent<Canvas>();
+            canvasComponent.worldCamera = Locator.GetPlayerCamera().mainCamera;
+            canvasComponent.renderMode = RenderMode.WorldSpace;
+
+            RectTransform rectTransform_intrnl = canvGO_internal.GetComponent<RectTransform>();
+            rectTransform_intrnl.sizeDelta = rectTranSizeDelta_1400x200dflt;
+
+            return canvasComponent;
+        }
+
+        public static Text AddTextGO(this Transform parentTransform, string gOName = "TextGO_ax15", Vector2 sizeDelta500x500 = default, int fontSize = 40, string fontPath = "fonts/english - latin/SpaceMono-Regular")
+        {
+            if (sizeDelta500x500 == default)
+                sizeDelta500x500 = new Vector2(500, 500);
+
+            GameObject txtGO_internal = parentTransform.CreateChild(gOName, true);   //Get the TextGenerator? idk it's in the instantiated stuff but not in Text by default
+            Text textComponent = txtGO_internal.AddComponent<Text>();
+
+            var fontInternal = Resources.Load<UnityEngine.Font>(fontPath);
+            if (fontInternal == null)
+            {
+                LogGoob.WriteLine($"ax15: {fontPath} is not a valid font path!  Picked random font instead.", MessageType.Warning);
+                textComponent.RandomFont();
+            }
+            else
+                textComponent.font = fontInternal;
+            textComponent.rectTransform.sizeDelta = sizeDelta500x500;
+            textComponent.fontSize = fontSize;
+
+            return textComponent;
+        }
+        public static void GOToLocalTransformIn(this GameObject gameObject, GameObject destinationGO)
+        {
+            if (destinationGO == null)
+                return;
+            gameObject.transform.parent = destinationGO.transform;   //why nullref   //this is prombaly bad idea in retrospect
+            gameObject.transform.localPosition = new Vector3(0, 0, 0);
+            gameObject.transform.localEulerAngles = new Vector3(0, 0, 0);
+        }
+
+
+        public static GameObject AssignCanvasGOPlusText(this GameObject currentGO, out Canvas canvasCpnt, out GameObject txtGO, out Text textCpnt)  //the compile-time constant issue is apparently a C# restriction according to Kazoo
+        {
+            Vector2 canvGO_rectSizeDelta = new Vector2(1400, 200);
+            Vector2 txtGO_rectSizeDelta = new Vector2(500, 500);
+            int textCpnt_fontSize = 40;
+
+            GameObject canvGO = currentGO.GivesBirthTo("TestCanvasGO_SG", true);  //For some reason, spawns with a text component visible from the main GameObject, idk why
+            canvasCpnt = canvGO.AddComponent<Canvas>();  //rectTransform seems to come prepackaged for some reason idfk
+            canvasCpnt.worldCamera = Locator.GetPlayerCamera().mainCamera;  //Check when canvases are set, and you'll find these values as the only ones being set
+            canvasCpnt.renderMode = RenderMode.WorldSpace;
+            canvGO.GetComponent<RectTransform>().sizeDelta = canvGO_rectSizeDelta;
+
+            txtGO = canvGO.GivesBirthTo("TestTextGO_SG", true);   //Get the TextGenerator? idk it's in the instantiated stuff but not in Text by default
+            textCpnt = txtGO.AddComponent<Text>();
+            textCpnt.fontSize = textCpnt_fontSize;
+            txtGO.GetComponent<RectTransform>().sizeDelta = txtGO_rectSizeDelta; //size of the box ENCLOSING text; doesn't affect text size, just strangulates it
+
+            txtGO.AddComponent<TypeEffectText>();
+
+            return canvGO;
+
+
+            //is this a whole text component in and of itself?
+            //_sgpTxtGO_Child = _sgpGO_NOMCanvas.transform.InstantiateTextGO_FromPathForSomeReason("Player_Body/PlayerCamera/NomaiTranslatorProp/TranslatorGroup/Canvas/PageNumberText", "Children",
+            // out _sgpTxt_Child, new Vector2(siblingAlignment + 900, 75), textSizeDelta, horizontalOverflow);
+            //
+        }
         //  private static T InstaPrefabAnyType<T>(this Transform parentTransform, string streamingAssetsBath, string prefabBath, bool spawnsActive, Vector3 localPosition = default, Vector3 localEulerAngles = default)
         // where T : UnityEngine.Component
         // {
@@ -121,6 +195,13 @@ namespace ScaleGun420
             return null;
         }
 
+
+        public static void RandomFont(this Text textCpntToRandomize, int internalSize_ThisDoesNothingIdk = 100)
+        {
+            var fontList = UnityEngine.Font.GetOSInstalledFontNames();
+            int fontIndex = UnityEngine.Random.Range(0, (fontList.Count()));
+            textCpntToRandomize.font = UnityEngine.Font.CreateDynamicFontFromOSFont(fontList[fontIndex].ToString(), internalSize_ThisDoesNothingIdk);  //idk what the size parameter does; i've set it to 1 and to 100 and there's no noticeable difference; maybe it's instantly getting overwritten by something?  idk
+        }
 
 
         public static int AdjacentSibIndexIn(this int currentIndex, List<GameObject> listToCheck, int toDirection = 1)
@@ -170,30 +251,24 @@ namespace ScaleGun420
         }
         public static List<GameObject> ListChildrenOrNull(this GameObject current) //thanks to Corby and Idiot 
         {
-            if (current == null)
-                throw new Exception("ListChildrenOrNull Ext ~175: current GameObject was null");
-            if (current.transform == null)
-            {
-                LogGoob.WriteLine("current.transform was null", MessageType.Warning);
-                return null;
-            }
+            if (current == null || current.transform == null)
+                throw new Exception($"current GameObject {current} was null, or somehow missing a transform");
             if (current.transform.childCount <= 0)  //nullref'd //nullref'd again, computer line 420(nice)
-                return null;
-            else
             {
-                var children = new List<GameObject>();
-                foreach (Transform child in current.transform)
-                    children.Add(child.gameObject);
-                return children;
+                LogGoob.WriteLine($"X.ListChildrenOrNull~260: {current} didn't have any children, returned null.");
+                return null;
             }
+
+            var children = new List<GameObject>();
+            foreach (Transform child in current.transform)
+                children.Add(child.gameObject);
+            return children;
         }
+
         public static GameObject FindIndexedGOIn(this int gOIndex, List<GameObject> inList)  //_siblingsOfSelGO starts null  
         {
             if (inList == null || gOIndex < 0)
-            {
-                LogGoob.WriteLine("Something called FindIndexedGOIn using a list that was currently null (or the gOIndex was < 0, if you're still doing that) Returning null", MessageType.Warning);
-                return null;
-            }
+                throw new Exception($"Null: a gOIndex of {gOIndex} and a list of {inList}");
             if (gOIndex > inList.Count)
                 throw new Exception("GetGOAtIndexIfPossible was called with a gOIndex greater than the inList.Count!");
 
@@ -246,7 +321,7 @@ namespace ScaleGun420
             lowerSibling = GOToStringOrElse(lowerSibGOInternal, textIfNoSiblings);
         }
 
-        public static void TextFromAdjacentSiblingsIn(this int ofIndex, List<GameObject> inList, out string upperSibling, out string lowerSibling, string textIfNoSiblings = "")
+        public static void StringAdjacentSiblingsElse(this int ofIndex, List<GameObject> inList, out string upperSibling, out string lowerSibling, string textIfNoSiblings = "")
         {
             GameObject upperSibGOInternal = null;
             GameObject lowerSibGOInternal = null;
@@ -260,6 +335,8 @@ namespace ScaleGun420
             upperSibling = GOToStringOrElse(upperSibGOInternal, textIfNoSiblings);
             lowerSibling = GOToStringOrElse(lowerSibGOInternal, textIfNoSiblings);
         }
+
     }
+
 }
 
