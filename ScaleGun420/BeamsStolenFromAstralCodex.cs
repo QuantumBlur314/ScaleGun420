@@ -71,7 +71,7 @@ namespace ScaleGun420
             Vector3 Start = transform.position;
             Vector3 End = transform.worldToLocalMatrix.MultiplyPoint(_sgCursorTransform.position);
         }
-        public void SetBeamsActiveSG(bool activateBeams)
+        public void SetBeamsActiveSG(bool activateBeams)  //should probably call this in EditMode instead, leaving editmode should disable these
         {
             this.enabled = activateBeams;
             gameObject.SetActive(activateBeams);  // nope actually this works almost perfectly aside from starting visible //idk if this will do the thing, it might just deactivate the cursor and any connected gameObject and cause the whole game to collapse

@@ -115,16 +115,17 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         public void OnEquipTool()   //done & working  //032123_1550: forcing this method made the staff start working, meaning something in the ToolClass isn't enabling
         {
             base.enabled = true;  //just like translatorprop, 
-            this._sgp_NOMCanvas.enabled = true;
-            this._sgp_THCanvas.enabled = true; //032123_1605: if putting this down here fixes it, i swear... //032123_1613: I was building to the wrong directory.  now i have it working, no bugs.  the world may never know
+            _sgp_NOMCanvas.enabled = true;
+            _sgp_THCanvas.enabled = true; //032123_1605: if putting this down here fixes it, i swear... //032123_1613: I was building to the wrong directory.  now i have it working, no bugs.  the world may never know
             _sgPropGOSelf.SetActive(true);  //032123_1535: not set to instance of an object? 
-            //_sgpTxt_Child.RandomFont();
-            _lightBeams.SetBeamsActiveSG(true);
+                                            //_sgpTxt_Child.RandomFont();
+
         }
         public void OnUnequipTool() //done & working
         {
             base.enabled = false;
         }
+
 
 
         //MAYBE MAKE ENUMERATOR FOR ALL HIERARCHY NAVIGATION DIRECTIONS, UNIFY IT?
@@ -134,8 +135,16 @@ namespace ScaleGun420   //031923_1832: CURRENTLY, B DOESN'T WORK ON THE FIRST EQ
         {
             this._sgp_NOMCanvas.enabled = false;
             this._sgp_THCanvas.enabled = false; //031823_0611: Enabled this code, didn't fix anything, but it's what the translator prop does.  //032123_1543: disabled this code again, and if it starts working again then I think the canvas is getting called early //reenabling
-           _lightBeams.SetBeamsActiveSG(false);  //first 
+            //_lightBeams.SetBeamsActiveSG(false);  //first 
             _sgPropGOSelf.SetActive(false);
+        }
+        public void OnEnterEditMode()
+        { _lightBeams.SetBeamsActiveSG(true); }
+        //apparently this is necessary in order to make the beast wake up idfk 
+
+        public void OnLeaveEditMode()
+        {
+            _lightBeams.SetBeamsActiveSG(false);  //first 
         }
 
         private bool ShouldEditText(string stringToCheck)

@@ -90,7 +90,7 @@ namespace ScaleGun420
 
             _placeholderGO_SG.SetActive(false);
             _manipulatorGO_SG.SetActive(false);
-        
+
         }
         private void OnDisable()
         { }
@@ -100,12 +100,24 @@ namespace ScaleGun420
                 return null;
             return _sEMCpu._selectedGOPublic;
         }
-
-        //should just be an OnEnable whatsit
-        public void BeginEditing()  //Perhaps having the beans attached to a GO that gets disconnected from the thing
+        public void OnEnterEditMode()
         {
+            base.enabled = true;
             _placeholderGO_SG?.SetActive(true);
             _manipulatorGO_SG?.SetActive(true);
+            BeginEditing();
+        }
+        public void OnLeaveEditMode()
+        {
+            CancelCurrentEdit();
+            base.enabled = false;
+            _placeholderGO_SG?.SetActive(false);
+            _manipulatorGO_SG?.SetActive(false);
+
+        }
+        //should just be an OnEnable whatsit
+        private void BeginEditing()  //Perhaps having the beans attached to a GO that gets disconnected from the thing
+        {
             _theVictim = GetSelectedObject();
             GOToLocalTransformOf(ref _placeholderGO_SG);  //this one is promble  
             GOToLocalTransformOf(ref _manipulatorGO_SG);  //Currently, this beast ends up wherever
@@ -152,7 +164,10 @@ namespace ScaleGun420
         //if i somehow eventually get to the point of fully reparenting victims, probably best to hop em back to 
         private void CancelCurrentEdit()
         {
+            if (dragObjectTimer != null)
+                StopCoroutine(dragObjectTimer);
             dragObjectTimer = null;
+
             LosslessPositionalTransformEXPERIMENTAL(_theVictim, _placeholderGO_SG.transform);
 
         }
@@ -225,7 +240,7 @@ namespace ScaleGun420
             pivotTransform.localRotation = Quaternion.Slerp(pivotTransform.localRotation, quaternion, 0.5f) * Quaternion.identity;
         }
 
-        private void StopRotating()
+        private void StopRotating()  //rotating is handled by the Update, as opposed to dragging, because stupid
         {
             if (!_isRotating)
                 return;
@@ -269,9 +284,10 @@ namespace ScaleGun420
         {
             if (!IsStaffInEditMode())  //oh this is actual hell ok
             {
-                if (_isDragging)
+                if (_isDragging || _isRotating)
                 {
                     CancelCurrentEdit();
+                    StopRotating();
                     _isDragging = false;
                 }
                 return;
@@ -300,14 +316,11 @@ namespace ScaleGun420
                 }
             }
 
-            if (OWInput.IsPressed(InputLibrary.lockOn))
-            {
-                if (!_isRotating)
-                    BeginRotating();
-                else
-                    UpdateRotation(_manipulatorGO_SG);
-            }
-            else if (_isRotating == true && !OWInput.IsPressed(InputLibrary.lockOn))
+            if (!_isRotating && OWInput.IsPressed(InputLibrary.lockOn))
+                BeginRotating();
+            else if (_isRotating && OWInput.IsPressed(InputLibrary.lockOn))
+                UpdateRotation(_manipulatorGO_SG);
+            else if(_isRotating && !OWInput.IsPressed(InputLibrary.lockOn))
                 StopRotating();
 
 
